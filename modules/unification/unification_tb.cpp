@@ -52,15 +52,7 @@ int sc_main (int argc, char* argv[]) {
   printf("Combined X and Y images...\n");
   
   //Iterate over image
-  for(unsigned char *x = img_x, *y = img_y, *u = img_unificated; x < img_x + pixel_count, y < img_y + pixel_count, u< img_unificated + pixel_count; x+=channels, y+=channels, u+=channels){
-	  pixel_x = *x;
-	  pixel_y = *y;
-	  //printf("Operands: Pixel #%0d -> pixel_x = %0d, pixel_y = %0d\n",int(x-img_x), pixel_x, pixel_y);
-  	  
-	  unification_U1.unificate(pixel_x, pixel_y, &pixel_magnitude);
-  	  //printf("RESULT: pixel_magnitude = %d\n", pixel_magnitude);
-	  *u = pixel_magnitude;
-  }
+  unification_U1.unificate_img(img_x, img_y, img_unificated, pixel_count, channels);
   printf("Unification finished.\n");
   //FIXME: Add comparison with reference combined image, and time measurement
 
