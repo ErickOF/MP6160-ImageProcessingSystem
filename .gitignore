@@ -221,4 +221,5 @@ pyrightconfig.json
 
 # Ignore generate images from datagen tool
 tools/datagen/src/imgs/*_grayscale_image*
+tools/datagen/src/imgs/*_noisy_image*
 tools/datagen/src/imgs/*_sobel_*
