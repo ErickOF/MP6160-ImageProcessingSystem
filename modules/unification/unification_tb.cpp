@@ -20,6 +20,11 @@ int sc_main (int argc, char* argv[]) {
   int i;
   int width, height, channels, pixel_count;
   unsigned char *img_x, *img_y, *img_unificated;
+
+  //Ref Image pointer
+  unsigned char *img_ref;
+  int error_count;
+  float error_med;
   
   unification_module unification_U1 ("unification_U1");
   
@@ -35,6 +40,7 @@ int sc_main (int argc, char* argv[]) {
   // Load Image
   img_x = stbi_load("../../tools/datagen/src/imgs/car_sobel_x_result.jpg", &width, &height, &channels, 0);
   img_y = stbi_load("../../tools/datagen/src/imgs/car_sobel_y_result.jpg", &width, &height, &channels, 0);
+  img_ref = stbi_load("../../tools/datagen/src/imgs/car_sobel_combined_result.jpg", &width, &height, &channels, 0);
   pixel_count = width * height * channels;
 
   //Allocate memory for output image
@@ -54,7 +60,23 @@ int sc_main (int argc, char* argv[]) {
   //Iterate over image
   unification_U1.unificate_img(img_x, img_y, img_unificated, pixel_count, channels);
   printf("Unification finished.\n");
-  //FIXME: Add comparison with reference combined image, and time measurement
+
+  //Compare with reference image
+  error_count = 0;
+  error_med = 0;
+  for(unsigned char *ref = img_ref, *result = img_unificated; ref < img_ref + pixel_count && result< img_unificated + pixel_count; ref+=channels, result+=channels){
+    //printf("Pixel #%0d, Ref Value: %0d, Result Value: %0d\n", int(ref-img_ref), *ref, *result);
+    error_count += (*ref != *result);
+    error_med += abs(*ref - *result);
+  }
+  error_med /= error_count;
+  printf("-----------------------------------\n");
+  printf("Comparison Results:\n");
+  printf("Error Count: %0d, Error Rate: %0.2f\n", error_count, (100*(error_count+0.0))/pixel_count);
+  printf("Mean Error Distance: %0.2f\n", error_med);
+  printf("-----------------------------------\n");
+
+  //FIXME: Add time measurement
 
   cout << "@" << sc_time_stamp() <<" Terminating simulation\n" << endl;
   
