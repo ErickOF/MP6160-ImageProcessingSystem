@@ -15,15 +15,15 @@
 SC_MODULE (unification_module) {
   
   //-----------Internal variables-------------------
-  unsigned char x, y;
-  unsigned char *magnitude;
+  int x, y;
+  int *magnitude;
   
   //-----------Constructor-------------------
   SC_CTOR(unification_module) {
   } // End of Constructor
 
   //------------Code Starts Here-------------------------
-  void unificate(unsigned char x, unsigned char y, unsigned char* magnitude) {
+  void unificate(int x, int y, int* magnitude) {
     this->x = x;
     this->y = y;
     this->magnitude = magnitude;
@@ -37,10 +37,10 @@ SC_MODULE (unification_module) {
 
   void unificate_img(unsigned char *img_x, unsigned char *img_y, unsigned char *img_unificated, int img_size, int channels){
     //Iterate over image
-    for(unsigned char *x = img_x, *y = img_y, *u = img_unificated; x < img_x + img_size, y < img_y + img_size, u< img_unificated + img_size; x+=channels, y+=channels, u+=channels){
-      unsigned char pixel_magnitude;
-      unsigned char pixel_x = *x;
-      unsigned char pixel_y = *y;
+    for(unsigned char *x = img_x, *y = img_y, *u = img_unificated; x < img_x + img_size && y < img_y + img_size && u< img_unificated + img_size; x+=channels, y+=channels, u+=channels){
+      int pixel_magnitude;
+      int pixel_x = int(*x);
+      int pixel_y = int(*y);
       //printf("Operands: Pixel #%0d -> pixel_x = %0d, pixel_y = %0d\n",int(x-img_x), pixel_x, pixel_y);
         
       this->unificate(pixel_x, pixel_y, &pixel_magnitude);
