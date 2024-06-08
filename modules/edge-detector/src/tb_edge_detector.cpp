@@ -31,6 +31,11 @@ int sc_main(int, char*[])
   int** tmpValues;
   int maxTmpValue = 0;
 #endif // TEST_NORMALIZE_MAGNITUDE
+#ifdef EDGE_DETECTOR_LT_EN
+  int total_number_of_pixels;
+  int current_number_of_pixels = 0;
+  int next_target_of_completion = 10.0;
+#endif // EDGE_DETECTOR_LT_EN
 
   // Pass command linke arguments
   sc_argc();
@@ -55,6 +60,10 @@ int sc_main(int, char*[])
   cvtColor(colorImage, greyImage, cv::COLOR_BGR2GRAY);
   
   Mat detectedImage(greyImage.rows, greyImage.cols, CV_8UC1);
+  
+#ifdef EDGE_DETECTOR_LT_EN
+  total_number_of_pixels = greyImage.rows * greyImage.cols;
+#endif // EDGE_DETECTOR_LT_EN
   
 #ifdef TEST_NORMALIZE_MAGNITUDE
   tmpValues = new int*[greyImage.rows];
@@ -170,6 +179,9 @@ int sc_main(int, char*[])
       }
       
       edge_detector.set_local_window(localWindow);
+#ifdef EDGE_DETECTOR_LT_EN
+      sc_start(30, SC_NS);
+#endif // EDGE_DETECTOR_LT_EN
       localGradientX = edge_detector.obtain_sobel_gradient_x();
       localGradientY = edge_detector.obtain_sobel_gradient_y();
       
@@ -190,6 +202,14 @@ int sc_main(int, char*[])
         detectedImage.at<uchar>(i, j) = localResult;
       }
 #endif // TEST_NORMALIZE_MAGNITUDE
+#ifdef EDGE_DETECTOR_LT_EN
+      current_number_of_pixels++;
+      if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion)
+      {
+        std::cout << "@" << sc_time_stamp() << " Image processing completed at " << next_target_of_completion << std::endl;
+        next_target_of_completion += 10.0;
+      }
+#endif // EDGE_DETECTOR_LT_EN
     }
   }
   
