@@ -6,11 +6,21 @@
 #endif // IPS_DUMP_EN
 #include <systemc.h>
 
-#define IPS_FILTER_PV_EN
-
+#ifndef IPS_FILTER_KERNEL_SIZE
 #define IPS_FILTER_KERNEL_SIZE 3
+#endif // IPS_FILTER_KERNEL_SIZE
+#ifndef IPS_IN_TYPE_TB
 #define IPS_IN_TYPE_TB float
+#endif // IPS_IN_TYPE_TB
+#ifndef IPS_OUT_TYPE_TB
 #define IPS_OUT_TYPE_TB float
+#endif // IPS_OUT_TYPE_TB
+
+#ifndef IPS_FILTER_PV_EN
+// N * N * copy_pixel_to_mem_time + mult + redux + copy_pixel_to_mem_time
+// Image is copied pixel by pixel
+#define DELAY_TIME = (IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * 1) + 4 + 2 + 1;
+#endif // IPS_FILTER_PV_EN
 
 #ifdef IPS_FILTER_AT_EN
 #include "ips_filter_at_model.hpp"
@@ -82,6 +92,7 @@ void run_one_window()
   // Instantiate filter module and do the connection
 #ifdef IPS_DUMP_EN
   Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE> filter("filter", wf);
+  sc_trace(wf, result, "result");
 #else
   Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE> filter("filter");
 #endif // IPS_DEBUG_EN
@@ -94,14 +105,21 @@ void run_one_window()
 #endif // IPS_DEBUG_EN
 
   // Apply convolution
+#ifdef IPS_FILTER_PV_EN
   filter.filter(img_window, result);
+#elif defined(IPS_FILTER_LT_EN)
+  filter.filter(img_window, &result);
+  sc_start(DELAY_TIME + 10, SC_NS);
+#elif defined(IPS_FILTER_AT_EN)
+  sc_start(DELAY_TIME + 10, SC_NS);
+#endif // IPS_FILTER_XX_EN
+
 #ifdef IPS_DEBUG_EN
   SC_REPORT_INFO("TEST_MODE_ONE_WINDOW", "filtering");
   std::cout << "Result = " << result << std::endl;
 #endif // IPS_DEBUG_EN
 
 #ifdef IPS_DUMP_EN
-  sc_trace(wf, result, "result");
   sc_start(1, SC_NS);
 #endif // IPS_DUMP_EN
 
