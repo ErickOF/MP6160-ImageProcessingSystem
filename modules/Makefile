@@ -1,4 +1,6 @@
+ifndef USER_DEF_SYSTEMC_DIR
 SYSTEMC?=$(HOME)/systemc-2.3.3
+endif # USER_DEF_SYSTEMC_DIR
 TARGET?=test
 
 # Compiler
@@ -16,6 +18,15 @@ OBJDIR=obj
 BINDIR=./
 INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2
 LIBDIR=-L. -L$(SYSTEMC)/lib-linux64
+
+ifdef INCLUDE_OPENCV
+# Target
+LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
+
+# Source directories
+INCDIR+=-I/usr/local/include/opencv4
+LIBDIR+=-L/usr/local/lib
+endif # INCLUDE_OPENCV
 
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 INCLUDES := $(wildcard $(INCDIR)/*.hpp)
