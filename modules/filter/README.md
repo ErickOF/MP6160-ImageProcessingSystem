@@ -42,6 +42,13 @@ Some additional options can used to debug and dump the waveform:
 * `IPS_DUMP_EN`: Creates a VCD file with each value of the window and kernel,
  and the result.
 
+To compile a specific model, you can use the switches:
+
+* `IPS_FILTER_PV_EN`: Programmer's View model.
+* `IPS_FILTER_LT_EN`: Loosely Timed model.
+* `IPS_FILTER_AT_EN`: Approximately Timed model.
+* `IPS_FILTER_CA_EN`: Cycle Approximate model (pending to be implemented).
+
 ### **Compilation**
 Runs the `make` command with the corresponding switches to compile.
 
@@ -58,6 +65,9 @@ make run
 ```
 
 ### **Open Waveform**
+
+Since VCD is not generated, this command will not work for the PV model.
+
 ```shell
 make waveform
 ```
