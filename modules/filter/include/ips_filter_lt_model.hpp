@@ -120,9 +120,6 @@ void Filter<IN, OUT, N>::filter(IN* img_window, OUT* result)
     for (j = 0; j < N; ++j)
         this->img_window_tmp[i * N + j] = (OUT) img_window[i * N + j];
 
-  // N * N * copy_pixel_to_mem_time + mult + redux + copy_pixel_to_mem_time
-  // Image is copied pixel by pixel
-  const float DELAY_TIME = (N * N * 1) + 4 + 2 + 1;
   this->event.notify(DELAY_TIME, SC_NS);
 }
 

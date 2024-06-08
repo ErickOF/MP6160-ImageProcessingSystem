@@ -16,6 +16,12 @@
 #define IPS_OUT_TYPE_TB float
 #endif // IPS_OUT_TYPE_TB
 
+#ifndef IPS_FILTER_PV_EN
+// N * N * copy_pixel_to_mem_time + mult + redux + copy_pixel_to_mem_time
+// Image is copied pixel by pixel
+#define DELAY_TIME = (IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * 1) + 4 + 2 + 1;
+#endif // IPS_FILTER_PV_EN
+
 #ifdef IPS_FILTER_AT_EN
 #include "ips_filter_at_model.hpp"
 #elif defined(IPS_FILTER_LT_EN)
@@ -103,7 +109,9 @@ void run_one_window()
   filter.filter(img_window, result);
 #elif defined(IPS_FILTER_LT_EN)
   filter.filter(img_window, &result);
-  sc_start(100, SC_NS);
+  sc_start(DELAY_TIME + 10, SC_NS);
+#elif defined(IPS_FILTER_AT_EN)
+  sc_start(DELAY_TIME + 10, SC_NS);
 #endif // IPS_FILTER_XX_EN
 
 #ifdef IPS_DEBUG_EN
