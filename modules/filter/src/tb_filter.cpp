@@ -6,11 +6,15 @@
 #endif // IPS_DUMP_EN
 #include <systemc.h>
 
-#define IPS_FILTER_PV_EN
-
+#ifndef IPS_FILTER_KERNEL_SIZE
 #define IPS_FILTER_KERNEL_SIZE 3
+#endif // IPS_FILTER_KERNEL_SIZE
+#ifndef IPS_IN_TYPE_TB
 #define IPS_IN_TYPE_TB float
+#endif // IPS_IN_TYPE_TB
+#ifndef IPS_OUT_TYPE_TB
 #define IPS_OUT_TYPE_TB float
+#endif // IPS_OUT_TYPE_TB
 
 #ifdef IPS_FILTER_AT_EN
 #include "ips_filter_at_model.hpp"
