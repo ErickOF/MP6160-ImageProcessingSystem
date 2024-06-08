@@ -1,5 +1,5 @@
-#ifndef IPS_FILTER_FILTER_HPP
-#define IPS_FILTER_FILTER_HPP
+#ifndef IPS_FILTER_PV_MODEL_HPP
+#define IPS_FILTER_PV_MODEL_HPP
 #ifdef IPS_DEBUG_EN
 #include <iostream>
 #endif // IPS_DEBUG_ENi
@@ -23,7 +23,6 @@ SC_MODULE(Filter)
    * @brief Default constructor for Filter
    */
   SC_CTOR(Filter);
-  //template <typename IN, typename OUT, uint8_t N>
 #ifdef IPS_DUMP_EN
   Filter(sc_core::sc_module_name name, sc_core::sc_trace_file* wf)
     : sc_core::sc_module(name), wf(wf)
@@ -79,4 +78,4 @@ void Filter<IN, OUT, N>::init_kernel()
   }
 #endif // IPS_DEBUG_EN
 }
-#endif // IPS_FILTER_FILTER_HPP
+#endif // IPS_FILTER_PV_MODEL_HPP
