@@ -19,7 +19,7 @@
 #ifndef IPS_FILTER_PV_EN
 // N * N * copy_pixel_to_mem_time + mult + redux + copy_pixel_to_mem_time
 // Image is copied pixel by pixel
-#define DELAY_TIME = (IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * 1) + 4 + 2 + 1;
+#define DELAY_TIME (IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * 1) + 4 + 2 + 1
 #endif // IPS_FILTER_PV_EN
 
 #ifdef IPS_FILTER_AT_EN
@@ -54,6 +54,11 @@ void run_one_window()
   // Variables
   IPS_IN_TYPE_TB *img_window;
   IPS_OUT_TYPE_TB result;
+
+#ifdef IPS_FILTER_AT_EN
+  sc_signal<IPS_IN_TYPE_TB*> s_img_window;
+  sc_signal<IPS_OUT_TYPE_TB> s_result;
+#endif // IPS_FILTER_AT_EN
 
   // Initialize image window
   img_window = new IPS_IN_TYPE_TB[IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
@@ -96,6 +101,12 @@ void run_one_window()
 #else
   Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE> filter("filter");
 #endif // IPS_DEBUG_EN
+#ifdef IPS_FILTER_AT_EN
+  s_img_window.write(img_window);
+
+  filter.img_window(s_img_window);
+  filter.result(s_result);
+#endif // IPS_FILTER_AT_EN
 
   sc_start();
 
@@ -111,7 +122,10 @@ void run_one_window()
   filter.filter(img_window, &result);
   sc_start(DELAY_TIME + 10, SC_NS);
 #elif defined(IPS_FILTER_AT_EN)
+  filter.filter();
   sc_start(DELAY_TIME + 10, SC_NS);
+
+  result = s_result.read();
 #endif // IPS_FILTER_XX_EN
 
 #ifdef IPS_DEBUG_EN
