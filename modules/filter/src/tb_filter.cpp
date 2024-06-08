@@ -86,6 +86,7 @@ void run_one_window()
   // Instantiate filter module and do the connection
 #ifdef IPS_DUMP_EN
   Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE> filter("filter", wf);
+  sc_trace(wf, result, "result");
 #else
   Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE> filter("filter");
 #endif // IPS_DEBUG_EN
@@ -98,14 +99,19 @@ void run_one_window()
 #endif // IPS_DEBUG_EN
 
   // Apply convolution
+#ifdef IPS_FILTER_PV_EN
   filter.filter(img_window, result);
+#elif defined(IPS_FILTER_LT_EN)
+  filter.filter(img_window, &result);
+  sc_start(100, SC_NS);
+#endif // IPS_FILTER_XX_EN
+
 #ifdef IPS_DEBUG_EN
   SC_REPORT_INFO("TEST_MODE_ONE_WINDOW", "filtering");
   std::cout << "Result = " << result << std::endl;
 #endif // IPS_DEBUG_EN
 
 #ifdef IPS_DUMP_EN
-  sc_trace(wf, result, "result");
   sc_start(1, SC_NS);
 #endif // IPS_DUMP_EN
 
