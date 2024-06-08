@@ -1,3 +1,7 @@
+#ifdef EDGE_DETECTOR_PV_EN
+#ifndef SOBEL_EDGE_DETECTOR_CPP
+#define SOBEL_EDGE_DETECTOR_CPP
+
 #include "sobel_edge_detector_pv_model.hpp"
 
 void Edge_Detector::set_local_window(int window[3][3])
@@ -50,3 +54,6 @@ int Edge_Detector::obtain_sobel_gradient_y()
 
   return this->resultSobelGradientY;
 }
+
+#endif // SOBEL_EDGE_DETECTOR_CPP
+#endif // EDGE_DETECTOR_PV_EN

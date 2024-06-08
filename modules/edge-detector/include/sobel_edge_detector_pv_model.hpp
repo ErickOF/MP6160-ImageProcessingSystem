@@ -1,3 +1,4 @@
+#ifdef EDGE_DETECTOR_PV_EN
 #ifndef SOBEL_EDGE_DETECTOR_HPP
 #define SOBEL_EDGE_DETECTOR_HPP
 
@@ -36,3 +37,4 @@ SC_MODULE(Edge_Detector)
 };
 
 #endif // SOBEL_EDGE_DETECTOR_HPP
+#endif // EDGE_DETECTOR_PV_EN

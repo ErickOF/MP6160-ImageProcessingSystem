@@ -11,7 +11,12 @@
 
 #include <cmath>
 
+#ifdef EDGE_DETECTOR_PV_EN
 #include "sobel_edge_detector_pv_model.hpp"
+#elif defined(EDGE_DETECTOR_LT_EN)
+#include "sobel_edge_detector_lt_model.hpp"
+#error "No EDGE_DETECTOR macro is defined. Please define one of EDGE_DETECTOR_AT_EN (Not yet implemented), EDGE_DETECTOR_LT_EN, or EDGE_DETECTOR_PV_EN."
+#endif // EDGE_DETECTOR_XX_EN
 
 using namespace cv; 
 

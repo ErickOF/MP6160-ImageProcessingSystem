@@ -26,6 +26,24 @@ ifdef TEST_NORMALIZE_MAGNITUDE
 	LFLAGS += -DTEST_NORMALIZE_MAGNITUDE
 endif # TEST_NORMALIZE_MAGNITUDE
 
+# Defining preprocessor directive for using PV model
+ifdef EDGE_DETECTOR_PV_EN
+	CFLAGS += -DEDGE_DETECTOR_PV_EN
+	LFLAGS += -DEDGE_DETECTOR_PV_EN
+endif # EDGE_DETECTOR_PV_EN
+
+# Defining preprocessor directive for using PV model
+ifdef EDGE_DETECTOR_LT_EN
+	CFLAGS += -DEDGE_DETECTOR_LT_EN
+	LFLAGS += -DEDGE_DETECTOR_LT_EN
+endif # EDGE_DETECTOR_LT_EN
+
+# Defining preprocessor directive for using PV model
+ifdef EDGE_DETECTOR_AT_EN
+	CFLAGS += -DEDGE_DETECTOR_AT_EN
+	LFLAGS += -DEDGE_DETECTOR_AT_EN
+endif # EDGE_DETECTOR_AT_EN
+
 # Run the compiled file
 run:
 	@./test
