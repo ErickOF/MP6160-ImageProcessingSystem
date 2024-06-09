@@ -114,6 +114,10 @@ void run_image()
 #else
   Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE> filter("filter");
 #endif // IPS_DUMP_EN
+#ifdef IPS_FILTER_AT_EN
+  filter.img_window(s_img_window);
+  filter.result(s_result);
+#endif // IPS_FILTER_AT_EN
 
   sc_start();
 
@@ -128,7 +132,7 @@ void run_image()
     for (x = 0; x < image.cols - IPS_FILTER_KERNEL_SIZE; ++x)
     {
 #ifdef IPS_DEBUG_EN
-      //SC_REPORT_INFO("TEST_MODE_IMAGE", "filtering");
+      SC_REPORT_INFO("TEST_MODE_IMAGE", "filtering");
 #endif // IPS_DEBUG_EN
 
       // Define the ROI
@@ -141,12 +145,12 @@ void run_image()
         {
           img_window[i * IPS_FILTER_KERNEL_SIZE + j] = sub_img.at<IPS_IN_TYPE_TB>(i, j);
 #ifdef IPS_DEBUG_EN
-          //std::cout << "[" << img_window[i * IPS_FILTER_KERNEL_SIZE + j] << "]";
+          std::cout << "[" << img_window[i * IPS_FILTER_KERNEL_SIZE + j] << "]";
 #endif // IPS_DEBUG_EN
         }
 
 #ifdef IPS_DEBUG_EN
-        //std::cout << std::endl;
+        std::cout << std::endl;
 #endif // IPS_DEBUG_EN
       }
 
@@ -157,6 +161,7 @@ void run_image()
       filter.filter(img_window, &result);
       sc_start(DELAY_TIME + 10, SC_NS);
 #elif defined(IPS_FILTER_AT_EN)
+      s_img_window.write(img_window);
       filter.filter();
       sc_start(DELAY_TIME + 10, SC_NS);
 
@@ -164,7 +169,7 @@ void run_image()
 #endif // IPS_FILTER_XX_EN
 
 #ifdef IPS_DEBUG_EN
-      //std::cout << "Result[" << x << "][" << y << "] = " << result << std::endl << std::endl;
+      std::cout << "Result[" << x << "][" << y << "] = " << result << std::endl << std::endl;
 #endif // IPS_DEBUG_EN
     }
   }
