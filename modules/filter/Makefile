@@ -1,12 +1,13 @@
 # Adding stb lib for image handling
-INCDIR_STB=lib/stb
-INCLUDES_STB := $(wildcard $(INCDIR_STB)/*.h)
+CFLAGS_OPENCV := $(shell pkg-config --cflags opencv4)
+LFLAGS_OPENCV := $(shell pkg-config --libs opencv4)
 
 # Include common Makefile
 include ../Makefile
 
 # Include stb lib for compilation
-INCLUDES += INCLUDES_STB
+CFLAGS += $(CFLAGS_OPENCV)
+LFLAGS += $(LFLAGS_OPENCV)
 
 # Defining preprocessor directive for debug
 ifdef IPS_DEBUG_EN
@@ -20,18 +21,21 @@ ifdef IPS_DUMP_EN
 		LFLAGS += -DIPS_DUMP_EN
 endif # IPS_DUMP_EN
 
-
-# Defining preprocessor directive for test mode one wildcard normal
+# Defining preprocessor directive for test modes
+ifdef TEST_MODE_IMAGE
+		CFLAGS += -DTEST_MODE_IMAGE
+		LFLAGS += -DTEST_MODE_IMAGE
+else
+ifdef TEST_MODE_ONE_WINDOW_RANDOM
+		CFLAGS += -DTEST_MODE_ONE_WINDOW -DTEST_MODE_ONE_WINDOW_RANDOM
+		LFLAGS += -DTEST_MODE_ONE_WINDOW -DTEST_MODE_ONE_WINDOW_RANDOM
+else
 ifdef TEST_MODE_ONE_WINDOW_NORMAL
 		CFLAGS += -DTEST_MODE_ONE_WINDOW -DTEST_MODE_ONE_WINDOW_NORMAL
 		LFLAGS += -DTEST_MODE_ONE_WINDOW -DTEST_MODE_ONE_WINDOW_NORMAL
 endif # TEST_MODE_ONE_WINDOW_NORMAL
-
-# Defining preprocessor directive for test mode one window random
-ifdef TEST_MODE_ONE_WINDOW_RANDOM
-		CFLAGS += -DTEST_MODE_ONE_WINDOW -DTEST_MODE_ONE_WINDOW_RANDOM
-		LFLAGS += -DTEST_MODE_ONE_WINDOW -DTEST_MODE_ONE_WINDOW_RANDOM
 endif # TEST_MODE_ONE_WINDOW_RANDOM
+endif # TEST_MODE_IMAGE
 
 # Defining preprocessor directive for model - by default PV model
 ifdef IPS_FILTER_LT_EN
