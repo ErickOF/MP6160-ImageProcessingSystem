@@ -227,3 +227,9 @@ tools/datagen/src/imgs/*_sobel_*
 # Ignore VCD files
 *.vcd
 test
+
+# Ignore output images
+modules/filter/*.bitmap
+modules/filter/*.gif
+modules/filter/*.jpg
+modules/filter/*.png

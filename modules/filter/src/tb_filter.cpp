@@ -64,6 +64,8 @@ void run_image()
   cv::Mat image;
   read_image.convertTo(image, CV_32F);
 
+  cv::Mat o_img(image.size(), image.type());
+
 #ifdef IPS_DUMP_EN
   std::cout << "Loading image: " << img_path << std::endl;
 #endif // IPS_DUMP_EN
@@ -168,8 +170,10 @@ void run_image()
       result = s_result.read();
 #endif // IPS_FILTER_XX_EN
 
+      o_img.at<IPS_OUT_TYPE_TB>(y, x) = result;
+
 #ifdef IPS_DEBUG_EN
-      std::cout << "Result[" << x << "][" << y << "] = " << result << std::endl << std::endl;
+      std::cout << "Result[" << x << "][" << y << "] = " << o_img.at<IPS_OUT_TYPE_TB>(y, x) << std::endl << std::endl;
 #endif // IPS_DEBUG_EN
     }
   }
@@ -177,6 +181,14 @@ void run_image()
 #ifdef IPS_DUMP_EN
   sc_start(1, SC_NS);
 #endif // IPS_DUMP_EN
+
+  // Convert the floating-point image to 8-bit unsigned integer for saving
+  cv::Mat final_img;
+  o_img.convertTo(final_img, CV_8U, 1.0);
+
+  // Save the final image
+  std::string output_img_path = "filtered_image.png";
+  cv::imwrite(output_img_path, final_img);
 
   delete [] img_window;
 }
