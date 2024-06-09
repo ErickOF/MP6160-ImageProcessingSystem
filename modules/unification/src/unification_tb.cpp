@@ -3,20 +3,25 @@
 //By: Roger Morales Monge
 //Description: Simple TB for pixel unification modules
 //--------------------------------------------------------
-#include <systemc.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "lib/stb_image_write.h"
-#include "unification_pv_model.cpp"
-//#include "unification_lt_model.cpp"
-//#include "unification_at_model.cpp"
 
+#include <systemc.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "include/stb_image_write.h"
+
+
+#include "math.h"
+
+#ifdef IMG_UNIFICATE_PV_EN
+#include "unification_pv_model.hpp"
+#endif
 
 int sc_main (int argc, char* argv[]) {
               
-  int pixel_x, pixel_y;
-  int pixel_magnitude;
+  unsigned char pixel_x, pixel_y;
+  unsigned char pixel_magnitude;
   int i;
   int width, height, channels, pixel_count;
   unsigned char *img_x, *img_y, *img_unificated;
@@ -26,7 +31,7 @@ int sc_main (int argc, char* argv[]) {
   int error_count;
   float error_med;
   
-  unification_module unification_U1 ("unification_U1");
+  img_unification_module unification_U1 ("unification_U1");
   
   // Open VCD file
   sc_trace_file *wf = sc_create_vcd_trace_file("unification_U1");
