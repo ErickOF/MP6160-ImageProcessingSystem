@@ -98,26 +98,11 @@ void Filter<IN, OUT, N>::exec_filter()
     // Getting the image window to filter
     IN* img_window_tmp = this->img_window.read();
 
-#ifdef IPS_DEBUG_EN
-    std::cout << "Performing convolution" << std::endl;
-#endif // IPS_DEBUG_EN
-
     // Perform the convolution
     for (i = 0; i < N; ++i)
       for (j = 0; j < N; ++j)
-      {
-#ifdef IPS_DEBUG_EN
-        std::cout << "Starting [" << i << "][" << j << "]" << std::endl;
-#endif // IPS_DEBUG_EN
         result_tmp += this->kernel[i * N + j] * ((OUT) img_window_tmp[i * N + j]);
-#ifdef IPS_DEBUG_EN
-        std::cout << "Done [" << i << "][" << j << "]" << std::endl;
-#endif // IPS_DEBUG_EN
-      }
 
-#ifdef IPS_DEBUG_EN
-    std::cout << "Convolution result is done" << std::endl;
-#endif // IPS_DEBUG_EN
     this->result.write(result_tmp);
   }
 }
@@ -166,6 +151,21 @@ void Filter<IN, OUT, N>::init()
 
     std::cout << std::endl;
   }
+#else
+#ifdef IPS_DUMP_EN
+  size_t i, j;
+
+  for (i = 0; i < N; ++i)
+  {
+    for (j = 0; j < N; ++j)
+    {
+      // Adding the signals to the waveform
+      std::ostringstream var_name;
+      var_name << "kernel_" << i << "_" << j;
+      sc_trace(this->wf, this->kernel[i * N + j], var_name.str());
+    }
+  }
+#endif // IPS_DUMP_EN
 #endif // IPS_DEBUG_EN
 }
 #endif // IPS_FILTER_AT_MODEL_HPP
