@@ -156,6 +156,21 @@ void Filter<IN, OUT, N>::init()
 
     std::cout << std::endl;
   }
+#else
+#ifdef IPS_DUMP_EN
+  size_t i, j;
+
+  for (i = 0; i < N; ++i)
+  {
+    for (j = 0; j < N; ++j)
+    {
+      // Adding the signals to the waveform
+      std::ostringstream var_name;
+      var_name << "kernel_" << i << "_" << j;
+      sc_trace(this->wf, this->kernel[i * N + j], var_name.str());
+    }
+  }
+#endif // IPS_DUMP_EN
 #endif // IPS_DEBUG_EN
 }
 #endif // IPS_FILTER_LT_MODEL_HPP
