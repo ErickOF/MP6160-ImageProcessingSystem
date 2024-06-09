@@ -5,9 +5,9 @@
 //--------------------------------------------------------
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
+#include "include/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "lib/stb_image_write.h"
+#include "include/stb_image_write.h"
 
 #include <systemc.h>
 #include "math.h"
