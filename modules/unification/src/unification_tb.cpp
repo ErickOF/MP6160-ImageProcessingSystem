@@ -4,14 +4,12 @@
 //Description: Simple TB for pixel unification modules
 //--------------------------------------------------------
 
-#include <systemc.h>
-
 #define STB_IMAGE_IMPLEMENTATION
-#include "include/stb_image.h"
+#include "lib/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "include/stb_image_write.h"
+#include "lib/stb_image_write.h"
 
-
+#include <systemc.h>
 #include "math.h"
 
 #ifdef IMG_UNIFICATE_PV_EN
@@ -74,7 +72,7 @@ int sc_main (int argc, char* argv[]) {
     error_count += (*ref != *result);
     error_med += abs(*ref - *result);
   }
-  error_med /= error_count;
+  error_med /= pixel_count;
   printf("-----------------------------------\n");
   printf("Comparison Results:\n");
   printf("Error Count: %0d, Error Rate: %0.2f\n", error_count, (100*(error_count+0.0))/pixel_count);
