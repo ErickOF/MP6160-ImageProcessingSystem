@@ -5,7 +5,7 @@ TARGET?=test
 
 # Compiler
 CC=g++
-CFLAGS=-Wall -I. -O3 -g -Wextra -Wunused-function
+CFLAGS=-Wall -I. -O3 -g -std=c++17 -Wextra -Wunused-function
 
 # Target
 LD=g++
@@ -24,8 +24,8 @@ ifdef INCLUDE_OPENCV
 LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
 
 # Source directories
-INCDIR+=-I/usr/local/include/opencv4
-LIBDIR+=-L/usr/local/lib
+INCDIR+=-I$(OPENCV_H_DIR)
+LIBDIR+=-L$(OPENCV_SO_DIR)
 endif # INCLUDE_OPENCV
 
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
