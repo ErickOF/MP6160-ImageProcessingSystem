@@ -3,7 +3,7 @@ TARGET?=test
 
 # Compiler
 CC=g++
-CFLAGS=-Wall -I. -O3 -g -Wextra -Wunused-function
+CFLAGS=-Wall -I. -O3 -g -std=c++17 -Wextra -Wunused-function
 
 # Target
 LD=g++
