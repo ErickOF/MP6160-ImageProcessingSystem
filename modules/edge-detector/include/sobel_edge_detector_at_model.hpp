@@ -11,6 +11,11 @@ SC_MODULE(Edge_Detector)
   sc_inout<sc_uint<64>> data;
   sc_in<sc_uint<24>> address;
   
+  const double delay_full_adder_1_bit = 0.361;
+  const double delay_full_adder = delay_full_adder_1_bit * 16;
+  
+  const double delay_multiplier = 9.82;
+  
   const sc_int<16> sobelGradientX[3][3] = {{-1,  0,  1},
                                            {-2,  0,  2},
                                            {-1,  0,  1}};

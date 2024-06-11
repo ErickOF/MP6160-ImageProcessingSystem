@@ -92,7 +92,7 @@ void Edge_Detector::compute_sobel_gradient_x()
   {
     wait(gotLocalWindow);
     
-    mult_x.notify(20, SC_NS);
+    mult_x.notify(delay_multiplier, SC_NS);
   }
 }
 
@@ -102,7 +102,7 @@ void Edge_Detector::compute_sobel_gradient_y()
   {
     wait(gotLocalWindow);
     
-    mult_y.notify(20, SC_NS);
+    mult_y.notify(delay_multiplier, SC_NS);
   }
 }
 
@@ -120,7 +120,7 @@ void Edge_Detector::perform_mult_gradient_x()
       }
     }
     
-    sum_x.notify(10, SC_NS);
+    sum_x.notify(delay_full_adder, SC_NS);
   }
 }
 
@@ -138,7 +138,7 @@ void Edge_Detector::perform_mult_gradient_y()
       }
     }
     
-    sum_y.notify(10, SC_NS);
+    sum_y.notify(delay_full_adder, SC_NS);
   }
 }
 

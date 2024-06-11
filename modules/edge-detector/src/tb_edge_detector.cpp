@@ -55,7 +55,7 @@ int sc_main(int, char*[])
   
   // Open VCD file
   sc_trace_file* wf = sc_create_vcd_trace_file("edge_detector");
-  wf->set_time_unit(1, SC_NS);
+  wf->set_time_unit(1, SC_PS);
 
   Edge_Detector edge_detector("edge_detector");
 #ifdef EDGE_DETECTOR_AT_EN
@@ -240,7 +240,7 @@ int sc_main(int, char*[])
       edge_detector.write();
       sc_start(10, SC_NS);
       
-      sc_start(80, SC_NS);
+      sc_start(20, SC_NS);
       
       address = SOBEL_OUTPUT;
       edge_detector.read();
