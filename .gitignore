@@ -220,6 +220,11 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/c++,python,jupyternotebooks
 
 # Ignore generate images from datagen tool
+modules/unification/*.bitmap
+modules/unification/*.gif
+modules/unification/*.jpeg
+modules/unification/*.jpg
+modules/unification/*.png
 tools/datagen/src/imgs/*_grayscale_image*
 tools/datagen/src/imgs/*_noisy_image*
 tools/datagen/src/imgs/*_sobel_*
@@ -227,9 +232,3 @@ tools/datagen/src/imgs/*_sobel_*
 # Ignore VCD files
 *.vcd
 test
-
-# Ignore output images
-modules/filter/*.bitmap
-modules/filter/*.gif
-modules/filter/*.jpg
-modules/filter/*.png
