@@ -25,7 +25,7 @@ using namespace cv;
 
 int sc_main(int, char*[])
 {
-  Mat greyImage, colorImage;
+  Mat greyImage;
   
 #ifndef EDGE_DETECTOR_AT_EN
   int localWindow[3][3];
@@ -96,18 +96,17 @@ int sc_main(int, char*[])
   sc_trace(wf, edge_detector.resultSobelGradientY, "resultSobelGradientY");
 #endif // EDGE_DETECTOR_AT_EN
   
-  colorImage = imread("../../tools/datagen/src/imgs/car.jpg", IMREAD_UNCHANGED);
+  greyImage = imread("../../tools/datagen/src/imgs/car_grayscale_image.jpg", IMREAD_GRAYSCALE);
   
-  if (colorImage.empty())
+  if (greyImage.empty())
   { 
     cout << "Image File " << "Not Found" << endl; 
 
-    // wait for any key press 
-    return -1; 
+    return -1;
   }
   
-  cvtColor(colorImage, greyImage, cv::COLOR_BGR2GRAY);
-  
+  Mat detectedImageX(greyImage.rows, greyImage.cols, CV_8UC1);
+  Mat detectedImageY(greyImage.rows, greyImage.cols, CV_8UC1);
   Mat detectedImage(greyImage.rows, greyImage.cols, CV_8UC1);
   
 #if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
@@ -282,6 +281,30 @@ int sc_main(int, char*[])
         detectedImage.at<uchar>(i, j) = localResult;
       }
 #endif // TEST_NORMALIZE_MAGNITUDE
+      if (localGradientX > 255)
+      {
+        detectedImageX.at<uchar>(i, j) = 255;
+      }
+      else if (localGradientX < 0)
+      {
+        detectedImageX.at<uchar>(i, j) = (-localGradientX);
+      }
+      else
+      {
+        detectedImageX.at<uchar>(i, j) = localGradientX;
+      }
+      if (localGradientY > 255)
+      {
+        detectedImageY.at<uchar>(i, j) = 255;
+      }
+      else if (localGradientY < 0)
+      {
+        detectedImageY.at<uchar>(i, j) = (-localGradientY);
+      }
+      else
+      {
+        detectedImageY.at<uchar>(i, j) = localGradientY;
+      }
 #if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
       current_number_of_pixels++;
       if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion)
@@ -303,15 +326,22 @@ int sc_main(int, char*[])
   }
 #endif // TEST_NORMALIZE_MAGNITUDE
   
-  imshow("Window Name", colorImage);
+  imshow("Original Image", greyImage);
   
   waitKey(0);
   
-  imshow("Window Name", greyImage);
+  imshow("Gradient X", detectedImageX);
+  imwrite("detectedImageX.jpg", detectedImageX);
   
   waitKey(0);
   
-  imshow("Window Name", detectedImage);
+  imshow("Gradient Y", detectedImageY);
+  imwrite("detectedImageY.jpg", detectedImageY);
+  
+  waitKey(0);
+  
+  imshow("Gradient Total", detectedImage);
+  imwrite("detectedImage.jpg", detectedImage);
   
   waitKey(0);
 
