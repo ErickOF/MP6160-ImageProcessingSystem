@@ -228,3 +228,7 @@ modules/unification/*.png
 tools/datagen/src/imgs/*_grayscale_image*
 tools/datagen/src/imgs/*_noisy_image*
 tools/datagen/src/imgs/*_sobel_*
+
+# Ignore VCD files
+*.vcd
+test
