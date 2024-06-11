@@ -1,13 +1,9 @@
-# Adding stb lib for image handling
-CFLAGS_OPENCV := $(shell pkg-config --cflags opencv4)
-LFLAGS_OPENCV := $(shell pkg-config --libs opencv4)
-
 # Include common Makefile
 include ../Makefile
 
-# Include stb lib for compilation
-CFLAGS += $(CFLAGS_OPENCV)
-LFLAGS += $(LFLAGS_OPENCV)
+# Include OpenCV for compilation
+CFLAGS += $(shell pkg-config --cflags opencv4)
+LFLAGS += $(shell pkg-config --libs opencv4)
 
 # Defining preprocessor directive for debug
 ifdef IPS_DEBUG_EN
