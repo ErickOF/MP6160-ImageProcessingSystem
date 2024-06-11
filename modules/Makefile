@@ -14,6 +14,13 @@ LD=g++
 LFLAGS=-Wall -I. -lm -g
 LIBS=-lsystemc -lm
 
+# Source directories
+SRCDIR=src
+OBJDIR=obj
+BINDIR=./
+INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2
+LIBDIR=-L. -L$(SYSTEMC)/lib-linux64
+
 ifdef INCLUDE_OPENCV
 # Target
 LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
@@ -27,13 +34,6 @@ CFLAGS += $(shell pkg-config --cflags opencv4)
 LFLAGS += $(shell pkg-config --libs opencv4)
 endif # INCLUDE_OPENCV_PKG
 endif # INCLUDE_OPENCV
-
-# Source directories
-SRCDIR=src
-OBJDIR=obj
-BINDIR=./
-INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2
-LIBDIR=-L. -L$(SYSTEMC)/lib-linux64
 
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 INCLUDES := $(wildcard $(INCDIR)/*.hpp)
