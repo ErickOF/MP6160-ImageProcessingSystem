@@ -1,6 +1,8 @@
 # Include common Makefile
 include ../Makefile
 
+CFLAGS+=-std=c++17
+
 ifdef INCLUDE_OPENCV
 # Target
 LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
