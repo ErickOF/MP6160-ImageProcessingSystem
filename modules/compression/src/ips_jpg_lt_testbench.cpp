@@ -1,3 +1,4 @@
+#ifdef IPS_JPG_LT_EN
 #define int64  systemc_int64
 #define uint64 systemc_uint64
 #include <systemc.h>
@@ -9,7 +10,7 @@
 #undef int64
 #undef uint64
 
-#include "ips_jpg_lt_model.cpp"
+#include "ips_jpg_lt_model.hpp"
 
 const int Nrows = 208;
 const int Ncols = 288;
@@ -105,3 +106,4 @@ int sc_main (int argc, char* argv[]) {
   return 0;// Terminate simulation
 
  }
+#endif // IPS_JPG_LT_EN
