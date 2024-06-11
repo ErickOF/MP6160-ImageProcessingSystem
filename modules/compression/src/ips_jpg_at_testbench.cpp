@@ -11,8 +11,8 @@
 
 #include "ips_jpg_at_model.cpp"
 
-const int Nrows = 16;
-const int Ncols = 24;
+const int Nrows = 208;
+const int Ncols = 288;
 
 struct Image {
     int matrix[Nrows][Ncols];
@@ -107,9 +107,9 @@ int sc_main (int argc, char* argv[]) {
   //}
   //printMatrix(output_image, image_rows, image_cols);
   
-  int output_size;
+  int output_size = 0;
   jpg_comp.JPEG_compression();
-  sc_start(10000,SC_NS);
+  sc_start(700000,SC_NS);
   output_size = Array_size.read();
   
   signed char output_array[output_size];

@@ -128,15 +128,15 @@ SC_MODULE (jpg_output) {
   void compression_operation() {
     while(true) {
 		wait(compression_event);
-        int output_size;
+        int output_size = 0;
 		//Level shift
 		for(int i=0; i<(image_rows*image_cols);i++){
 			image[i]=image[i]-128;
 		}
 		wait(100, SC_NS);
 		int Number_of_blocks = image_rows*image_cols/(Block_rows*Block_cols);
-		int block_output[Number_of_blocks][Block_rows*Block_cols];
-		int block_output_size[Number_of_blocks];
+		int block_output[Number_of_blocks][Block_rows*Block_cols] = {0};
+		int block_output_size[Number_of_blocks] = {0};
 		int block_counter = 0;
 		output_size = 0;
 		for(int row=0; row<image_rows; row+=Block_rows)	{

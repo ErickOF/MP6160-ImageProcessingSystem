@@ -20,21 +20,21 @@ SC_MODULE (jpg_output) {
   //const int Block_rows = 8;
   //const int Block_cols = 8;
   double* image;
-  int image_rows;
-  int image_cols;
+  int image_rows = 480;
+  int image_cols = 640;
   signed char EOB = 127; // end of block
   
   //input variables
-  int PixelValue;
-  int row;
-  int col;
+  int PixelValue = 0;
+  int row = 0;
+  int col = 0;
   
   //output variables
   signed char *Element;
-  int index;
+  int index = 0;
   
   //compression variables
-  int *output_size;
+  int *output_size = 0;
   
   int quantificator[8][8] = { // quantization table
   {16,11,10,16,24,40,51,61},
@@ -124,8 +124,8 @@ SC_MODULE (jpg_output) {
 			image[i]=image[i]-128;
 		}
 		int Number_of_blocks = image_rows*image_cols/(Block_rows*Block_cols);
-		int block_output[Number_of_blocks][Block_rows*Block_cols];
-		int block_output_size[Number_of_blocks];
+		int block_output[Number_of_blocks][Block_rows*Block_cols] = {0};
+		int block_output_size[Number_of_blocks] = {0};
 		int block_counter = 0;
 		*output_size = 0;
 		for(int row=0; row<image_rows; row+=Block_rows)	{
@@ -159,7 +159,7 @@ SC_MODULE (jpg_output) {
         cos_table[row][col] = cos((((2*row)+1)*col*PI)/16);
 	  }
 	}
-    double temp;
+    double temp = 0.0;
 	for(int row=row_offset; row<row_offset+Block_rows; row++)
 	{
  	  double* i_row = &image[row * image_cols];

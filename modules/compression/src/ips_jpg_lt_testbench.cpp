@@ -11,11 +11,11 @@
 
 #include "ips_jpg_lt_model.cpp"
 
-const int Nrows = 16;
-const int Ncols = 24;
+const int Nrows = 208;
+const int Ncols = 288;
 
 struct Image {
-    int matrix[Nrows][Ncols];
+    int matrix[Nrows][Ncols] = {0};
 };
 
 Image dummy_img(int i_rows, int i_cols)
@@ -86,9 +86,9 @@ int sc_main (int argc, char* argv[]) {
   //}
   //printMatrix(output_image, image_rows, image_cols);
   
-  int output_size;
+  int output_size = 0;
   jpg_comp.JPEG_compression(&output_size);
-  sc_start(10000,SC_NS);
+  sc_start(700000,SC_NS);
   
   signed char output_array[output_size];
   sc_trace(wf, output_array, "output_array");
