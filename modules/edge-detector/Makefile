@@ -1,18 +1,6 @@
 # Include common Makefile
 include ../Makefile
 
-ifdef INCLUDE_OPENCV
-# Target
-LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
-
-# Source directories
-INCDIR+=-I/usr/local/include/opencv4
-LIBDIR+=-L/usr/local/lib
-else
-CFLAGS += $(shell pkg-config --cflags opencv4)
-LFLAGS += $(shell pkg-config --libs opencv4)
-endif # INCLUDE_OPENCV
-
 # Defining preprocessor directive for debug
 ifdef IPS_DEBUG_EN
 	CFLAGS += -DIPS_DEBUG_EN

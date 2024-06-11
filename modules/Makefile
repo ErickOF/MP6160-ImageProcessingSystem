@@ -1,14 +1,32 @@
-SYSTEMC?=$(HOME)/systemc-2.3.3
+SYSTEMC?=$(SYSTEMC_HOME)
 TARGET?=test
 
 # Compiler
 CC=g++
 CFLAGS=-Wall -I. -O3 -g -Wextra -Wunused-function
 
+ifdef USE_CPP17
+CFLAGS+=-std=c++17
+endif
+
 # Target
 LD=g++
 LFLAGS=-Wall -I. -lm -g
 LIBS=-lsystemc -lm
+
+ifdef INCLUDE_OPENCV
+# Target
+LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
+
+# Source directories
+INCDIR+=-I$(OPENCV_H_DIR)
+LIBDIR+=-L$(OPENCV_SO_DIR)
+else
+ifdef INCLUDE_OPENCV_PKG
+CFLAGS += $(shell pkg-config --cflags opencv4)
+LFLAGS += $(shell pkg-config --libs opencv4)
+endif # INCLUDE_OPENCV_PKG
+endif # INCLUDE_OPENCV
 
 # Source directories
 SRCDIR=src

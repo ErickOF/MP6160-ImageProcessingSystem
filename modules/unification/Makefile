@@ -8,7 +8,6 @@ include ../Makefile
 # Include stb lib for compilation
 INCLUDES += INCLUDES_STB
 
-
 # Defining preprocessor directive for using PV model
 ifdef IMG_UNIFICATE_PV_EN
 	CFLAGS += -DIMG_UNIFICATE_PV_EN
