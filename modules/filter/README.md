@@ -3,16 +3,16 @@
 ## **Filter Algorithm: Mean Filter**
 The mean filter algorithm replaces each pixel value with the average of all
 pixel values in an N by N window (N = 3, 5, 7, etc), where the pixel to
-replace is the centering pixel. Assuming that the centering pixel is in (0, 0)
+replace is the centring pixel. Assuming that the centering pixel is in (0, 0)
 position:
 
-$
+$$
 img(row, col) = \sum_{i = -N/2}^{N/2} {\sum_{j = -N/2}^{-N/2} {img(row + i, col + j)}}
-$
+$$
 
 Also, it can computed using a convolution like:
 
-$
+$$
 img(row, col) = \begin{bmatrix}
   \frac{1}{N^{2}} & \dots  & \frac{1}{N^{2}} \\
   \vdots          & \ddots & \vdots          \\
@@ -24,7 +24,7 @@ img(row, col) = \begin{bmatrix}
   \vdots                    & \ddots & \vdots                     \\
   img(row + N/2, col - N/2) & \dots  & img(row + N/2, col + N/2)
 \end{bmatrix}
-$
+$$
 
 
 ## **Usage**
