@@ -12,11 +12,11 @@
 
 #include "ips_jpg_pv_model.hpp"
 
-const int Nrows = 452;
-const int Ncols = 640;
+const int n_rows = 452;
+const int n_cols = 640;
 
 struct Image {
-    int matrix[Nrows][Ncols] = {0};
+    int matrix[n_rows][n_cols] = {0};
 };
 
 Image dummy_img(int i_rows, int i_cols)
@@ -33,7 +33,7 @@ Image dummy_img(int i_rows, int i_cols)
  	return dummy;
 }
 
-void printMatrix(Image image, int image_rows, int image_cols)
+void print_matrix(Image image, int image_rows, int image_cols)
 {
     for (int i = 0; i < image_rows; ++i) {
         for (int j = 0; j < image_cols; ++j) {
@@ -43,7 +43,7 @@ void printMatrix(Image image, int image_rows, int image_cols)
     }
 }
 
-void printArray(signed char *Arr, int array_length)
+void print_array(signed char *Arr, int array_length)
 {
     for (int i = 0; i < array_length; ++i) {
        cout << int(Arr[i])<<" ";
@@ -51,7 +51,7 @@ void printArray(signed char *Arr, int array_length)
 	cout << endl;
 }
 int sc_main (int argc, char* argv[]) {
-  Image input_image = dummy_img(Nrows, Ncols);
+  Image input_image = dummy_img(n_rows, n_cols);
   int image_rows = sizeof(input_image.matrix)/ sizeof(input_image.matrix[0]);
   int image_cols = sizeof(input_image.matrix[0])/ sizeof(int);
   //Image output_image;
@@ -74,7 +74,7 @@ int sc_main (int argc, char* argv[]) {
   //printMatrix(input_image, image_rows, image_cols);
   for (int i = 0; i < image_rows; ++i) {
   	for (int j = 0; j < image_cols; ++j) {
-  		jpg_comp.InputPixel(input_image.matrix[i][j],i,j);
+  		jpg_comp.input_pixel(input_image.matrix[i][j],i,j);
   	}
   }
   
@@ -87,12 +87,12 @@ int sc_main (int argc, char* argv[]) {
   //printMatrix(output_image, image_rows, image_cols);
   
   int output_size = 0;
-  jpg_comp.JPEG_compression(&output_size);
+  jpg_comp.jpeg_compression(&output_size);
   
   signed char output_array[output_size];
   sc_trace(wf, output_array, "output_array");
   for (int i = 0; i < output_size; ++i) {
-	  jpg_comp.OutputByte(output_array,i);
+	  jpg_comp.output_byte(output_array,i);
   }
   
   cout << "OUTPUT: an array with " << output_size << " elements" << endl;
