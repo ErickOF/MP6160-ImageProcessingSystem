@@ -11,11 +11,11 @@
 
 #include "ips_jpg_lt_model.cpp"
 
-const int Nrows = 208;
-const int Ncols = 288;
+const int n_rows = 208;
+const int n_cols = 288;
 
 struct Image {
-    int matrix[Nrows][Ncols] = {0};
+    int matrix[n_rows][n_cols] = {0};
 };
 
 Image dummy_img(int i_rows, int i_cols)
@@ -32,7 +32,7 @@ Image dummy_img(int i_rows, int i_cols)
  	return dummy;
 }
 
-void printMatrix(Image image, int image_rows, int image_cols)
+void print_matrix(Image image, int image_rows, int image_cols)
 {
     for (int i = 0; i < image_rows; ++i) {
         for (int j = 0; j < image_cols; ++j) {
@@ -42,7 +42,7 @@ void printMatrix(Image image, int image_rows, int image_cols)
     }
 }
 
-void printArray(signed char *Arr, int array_length)
+void print_array(signed char *Arr, int array_length)
 {
     for (int i = 0; i < array_length; ++i) {
        cout << int(Arr[i])<<" ";
@@ -50,7 +50,7 @@ void printArray(signed char *Arr, int array_length)
 	cout << endl;
 }
 int sc_main (int argc, char* argv[]) {
-  Image input_image = dummy_img(Nrows, Ncols);
+  Image input_image = dummy_img(n_rows, n_cols);
   int image_rows = sizeof(input_image.matrix)/ sizeof(input_image.matrix[0]);
   int image_cols = sizeof(input_image.matrix[0])/ sizeof(int);
   //Image output_image;
@@ -70,10 +70,10 @@ int sc_main (int argc, char* argv[]) {
   cout << "@" << sc_time_stamp()<< endl;
 
   cout << "INPUT: an array with " << image_rows*image_cols << " elements" << endl;
-  //printMatrix(input_image, image_rows, image_cols);
+  //print_matrix(input_image, image_rows, image_cols);
   for (int i = 0; i < image_rows; ++i) {
   	for (int j = 0; j < image_cols; ++j) {
-  		jpg_comp.InputPixel(input_image.matrix[i][j],i,j);
+  		jpg_comp.input_pixel(input_image.matrix[i][j],i,j);
 		sc_start(100,SC_NS);
   	}
   }
@@ -81,24 +81,24 @@ int sc_main (int argc, char* argv[]) {
   //output_image = input_image;
   //for (int i = 0; i < image_rows; ++i) {
   //	for (int j = 0; j < image_cols; ++j) {
-  //		jpg_comp.OutputPixel(&output_image.matrix[i][j],i,j);
+  //		jpg_comp.output_pixel(&output_image.matrix[i][j],i,j);
   //	}
   //}
-  //printMatrix(output_image, image_rows, image_cols);
+  //print_matrix(output_image, image_rows, image_cols);
   
   int output_size = 0;
-  jpg_comp.JPEG_compression(&output_size);
+  jpg_comp.jpeg_compression(&output_size);
   sc_start(700000,SC_NS);
   
   signed char output_array[output_size];
   sc_trace(wf, output_array, "output_array");
   for (int i = 0; i < output_size; ++i) {
-	  jpg_comp.OutputByte(output_array,i);
+	  jpg_comp.output_byte(output_array,i);
 	  sc_start(100,SC_NS);
   }
   
   cout << "OUTPUT: an array with " << output_size << " elements" << endl;
-  //printArray(output_array,output_size);
+  //print_array(output_array,output_size);
   
   cout << "@" << sc_time_stamp() <<" Terminating simulation\n" << endl;
   sc_close_vcd_trace_file(wf);

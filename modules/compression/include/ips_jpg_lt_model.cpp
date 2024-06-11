@@ -5,32 +5,32 @@
  * It takes the image and compresses it into jpeg format
  * It is done in 4 parts:
  * 1. Divides the image in 8x8 pixel blocks; for 8-bit grayscale images the a level shift is done by substracting 128 from each pixel.
- * 2. Discrete Cosine Transform (DCT) of the 8x8 image.
+ * 2. Discrete Cosine Transform (dct) of the 8x8 image.
  * 3. Each transformed 8x8 block is divided by a quantization value for each block entry.
  * 4. Each quantized 8x8 block is reordered by a Zig-Zag sequence into a array of size 64.
  * *5. Entropy compression by variable length encoding (huffman). Used to maximize compression. Not implemented here.
  */
 #define PI 3.1415926535897932384626433832795
-#define Block_rows 8
-#define Block_cols 8
+#define BLOCK_ROWS 8
+#define BLOCK_COLS 8
 
 SC_MODULE (jpg_output) {
   
   //-----------Internal variables-------------------
-  //const int Block_rows = 8;
-  //const int Block_cols = 8;
+  //const int BLOCK_ROWS = 8;
+  //const int BLOCK_COLS = 8;
   double* image;
   int image_rows = 480;
   int image_cols = 640;
-  signed char EOB = 127; // end of block
+  signed char eob = 127; // end of block
   
   //input variables
-  int PixelValue = 0;
+  int pixel_value = 0;
   int row = 0;
   int col = 0;
   
   //output variables
-  signed char *Element;
+  signed char *element;
   int index = 0;
   
   //compression variables
@@ -61,11 +61,11 @@ SC_MODULE (jpg_output) {
   // Constructor for compressor
   SC_HAS_PROCESS(jpg_output);
     jpg_output(sc_module_name jpg_compressor, int im_rows = 480, int im_cols = 640): sc_module(jpg_compressor){
-	  if(im_rows%Block_rows==0) {image_rows=im_rows;}
-      else {image_rows=(im_rows/Block_rows+1)*Block_rows;}
+	  if(im_rows%BLOCK_ROWS==0) {image_rows=im_rows;}
+      else {image_rows=(im_rows/BLOCK_ROWS+1)*BLOCK_ROWS;}
       
-      if(im_cols%Block_cols==0) {image_cols=im_cols;}
-      else {image_cols=(im_cols/Block_cols+1)*Block_cols;}
+      if(im_cols%BLOCK_COLS==0) {image_cols=im_cols;}
+      else {image_cols=(im_cols/BLOCK_COLS+1)*BLOCK_COLS;}
       
       image = new double[image_rows*image_cols];
       //initialize the image matrix to avoid nan
@@ -78,8 +78,8 @@ SC_MODULE (jpg_output) {
   } // End of Constructor
 
   //------------Code Starts Here-------------------------
-  void InputPixel(int PixelValue_local, int row_local, int col_local) {
-    PixelValue = PixelValue_local;
+  void input_pixel(int pixel_value_local, int row_local, int col_local) {
+    pixel_value = pixel_value_local;
 	row = row_local;
 	col = col_local;
 	input_event.notify(8, SC_NS);
@@ -89,17 +89,17 @@ SC_MODULE (jpg_output) {
 	  while(true) {
 		wait(output_event);
 		double* i_row = &image[row * image_cols];
-		i_row[col] = double(PixelValue);
+		i_row[col] = double(pixel_value);
 	  }
   }
 
-  //void OutputPixel(int *Pixel, int row, int col) {
+  //void output_pixel(int *Pixel, int row, int col) {
   //  double* i_row = &image[row * image_cols];
   //  *Pixel = int(i_row[col]);
   //}
 
-  void OutputByte(signed char *Element_local, int index_local) {
-    Element = Element_local;
+  void output_byte(signed char *element_local, int index_local) {
+    element = element_local;
 	index = index_local;
 	output_event.notify(8, SC_NS);
   }
@@ -107,11 +107,11 @@ SC_MODULE (jpg_output) {
   void output_operation(){
 	  while(true) {
 		wait(output_event);
-		Element[index] = image[index];
+		element[index] = image[index];
 	  }
   }
 
-  void JPEG_compression(int *output_size_local) {
+  void jpeg_compression(int *output_size_local) {
 	  output_size = output_size_local;
 	  compression_event.notify(9000, SC_NS);
   }
@@ -123,47 +123,47 @@ SC_MODULE (jpg_output) {
 		for(int i=0; i<(image_rows*image_cols);i++){
 			image[i]=image[i]-128;
 		}
-		int Number_of_blocks = image_rows*image_cols/(Block_rows*Block_cols);
-		int block_output[Number_of_blocks][Block_rows*Block_cols] = {0};
-		int block_output_size[Number_of_blocks] = {0};
+		int number_of_blocks = image_rows*image_cols/(BLOCK_ROWS*BLOCK_COLS);
+		int block_output[number_of_blocks][BLOCK_ROWS*BLOCK_COLS] = {0};
+		int block_output_size[number_of_blocks] = {0};
 		int block_counter = 0;
 		*output_size = 0;
-		for(int row=0; row<image_rows; row+=Block_rows)	{
+		for(int row=0; row<image_rows; row+=BLOCK_ROWS)	{
 		  double* i_row = &image[row * image_cols];
-		  for(int col=0; col<image_cols; col+=Block_cols) { //Divided the image in 8×8 blocks
-			DCT(row,col);
-			Quantization(row,col);
+		  for(int col=0; col<image_cols; col+=BLOCK_COLS) { //Divided the image in 8×8 blocks
+			dct(row,col);
+			quantization(row,col);
 			
-			ZigZag(row,col,&block_output_size[block_counter],block_output[block_counter]);
+			zigzag(row,col,&block_output_size[block_counter],block_output[block_counter]);
 			*output_size += block_output_size[block_counter]+1;
 			block_counter++;
 		  }
 		}
 		int output_counter = 0;
-		for(int block_index=0;block_index<Number_of_blocks;block_index++){
+		for(int block_index=0;block_index<number_of_blocks;block_index++){
 		  for(int out_index=0; out_index<block_output_size[block_index];out_index++){
 			image[output_counter]=block_output[block_index][out_index];
 			output_counter++;
 		  }
-		  image[output_counter]=EOB;
+		  image[output_counter]=eob;
 		  output_counter++;
 		}
 	}
   }  
   
-  void DCT(int row_offset, int col_offset) {
-    double cos_table[Block_rows][Block_cols];
-	for (int row = 0; row < Block_rows; row++) //make the cosine table
+  void dct(int row_offset, int col_offset) {
+    double cos_table[BLOCK_ROWS][BLOCK_COLS];
+	for (int row = 0; row < BLOCK_ROWS; row++) //make the cosine table
 	{
-      for (int col = 0; col < Block_cols; col++) {
+      for (int col = 0; col < BLOCK_COLS; col++) {
         cos_table[row][col] = cos((((2*row)+1)*col*PI)/16);
 	  }
 	}
     double temp = 0.0;
-	for(int row=row_offset; row<row_offset+Block_rows; row++)
+	for(int row=row_offset; row<row_offset+BLOCK_ROWS; row++)
 	{
  	  double* i_row = &image[row * image_cols];
-	  for(int col=col_offset; col<col_offset+Block_cols; col++) {
+	  for(int col=col_offset; col<col_offset+BLOCK_COLS; col++) {
 		//i_row[col] = cos_table[row-row_offset][col-col_offset];
 		temp = 0.0;
     	for (int x = 0; x < 8; x++){
@@ -186,22 +186,22 @@ SC_MODULE (jpg_output) {
 	}
   }
 
-  void Quantization(int row_offset, int col_offset) {
-    for(int row=row_offset; row<row_offset+Block_rows; row++)
+  void quantization(int row_offset, int col_offset) {
+    for(int row=row_offset; row<row_offset+BLOCK_ROWS; row++)
 	{
       double* i_row = &image[row * image_cols];
- 	  for(int col=col_offset; col<col_offset+Block_cols; col++) {
+ 	  for(int col=col_offset; col<col_offset+BLOCK_COLS; col++) {
 		i_row[col] = round(i_row[col]/quantificator[row-row_offset][col-col_offset]);
       }
 	}
   }
 
-  void ZigZag(int row_offset, int col_offset, int *block_output_size, int *block_output) {
+  void zigzag(int row_offset, int col_offset, int *block_output_size, int *block_output) {
 	int index_last_non_zero_value = 0; // index to last non-zero in a block zigzag array
-    for(int row=row_offset; row<row_offset+Block_rows; row++)
+    for(int row=row_offset; row<row_offset+BLOCK_ROWS; row++)
 	{
       double* i_row = &image[row * image_cols];
- 	  for(int col=col_offset; col<col_offset+Block_cols; col++) {
+ 	  for(int col=col_offset; col<col_offset+BLOCK_COLS; col++) {
 		int temp_index = zigzag_index[(row-row_offset)*8+(col-col_offset)];
 		block_output[temp_index]=i_row[col];
 		if(i_row[col] !=0 && temp_index>index_last_non_zero_value) {index_last_non_zero_value = temp_index+1;}
