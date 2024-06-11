@@ -254,7 +254,7 @@ int sc_main(int, char*[])
         localGradientY[m] = data.read()[m + 16];
       }
       
-      localResult = localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
+      localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
 #endif // EDGE_DETECTOR_AT_EN
 #ifndef EDGE_DETECTOR_AT_EN
 #ifdef EDGE_DETECTOR_LT_EN
