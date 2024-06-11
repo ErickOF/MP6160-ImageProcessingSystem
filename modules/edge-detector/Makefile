@@ -1,12 +1,14 @@
-# Adding stb lib for image handling
-INCDIR_STB=lib/stb
-INCLUDES_STB := $(wildcard $(INCDIR_STB)/*.h)
-
 # Include common Makefile
 include ../Makefile
 
-# Include stb lib for compilation
-INCLUDES += INCLUDES_STB
+ifdef INCLUDE_OPENCV
+# Target
+LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
+
+# Source directories
+INCDIR+=-I/usr/local/include/opencv4
+LIBDIR+=-L/usr/local/lib
+endif # INCLUDE_OPENCV
 
 # Defining preprocessor directive for debug
 ifdef IPS_DEBUG_EN
