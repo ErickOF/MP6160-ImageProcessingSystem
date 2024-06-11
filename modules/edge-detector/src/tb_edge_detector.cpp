@@ -15,7 +15,10 @@
 #include "sobel_edge_detector_pv_model.hpp"
 #elif defined(EDGE_DETECTOR_LT_EN)
 #include "sobel_edge_detector_lt_model.hpp"
-#error "No EDGE_DETECTOR macro is defined. Please define one of EDGE_DETECTOR_AT_EN (Not yet implemented), EDGE_DETECTOR_LT_EN, or EDGE_DETECTOR_PV_EN."
+#elif defined(EDGE_DETECTOR_AT_EN)
+#include "sobel_edge_detector_at_model.hpp"
+#else
+#error "No EDGE_DETECTOR macro is defined. Please define one of EDGE_DETECTOR_AT_EN, EDGE_DETECTOR_LT_EN, or EDGE_DETECTOR_PV_EN."
 #endif // EDGE_DETECTOR_XX_EN
 
 using namespace cv; 
@@ -24,18 +27,27 @@ int sc_main(int, char*[])
 {
   Mat greyImage, colorImage;
   
+#ifndef EDGE_DETECTOR_AT_EN
   int localWindow[3][3];
   int localGradientX, localGradientY;
+#else
+  sc_uint<8> localWindow[3][3];
+  sc_int<16> localGradientX, localGradientY;
+#endif // EDGE_DETECTOR_AT_EN
   int localResult;
 #ifdef TEST_NORMALIZE_MAGNITUDE
   int** tmpValues;
   int maxTmpValue = 0;
 #endif // TEST_NORMALIZE_MAGNITUDE
-#ifdef EDGE_DETECTOR_LT_EN
+#ifdef EDGE_DETECTOR_AT_EN
+  sc_signal<sc_uint<64>> data;
+  sc_signal<sc_uint<24>> address;
+#endif // EDGE_DETECTOR_AT_EN
+#if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
   int total_number_of_pixels;
   int current_number_of_pixels = 0;
   int next_target_of_completion = 10.0;
-#endif // EDGE_DETECTOR_LT_EN
+#endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
 
   // Pass command linke arguments
   sc_argc();
@@ -46,6 +58,43 @@ int sc_main(int, char*[])
   wf->set_time_unit(1, SC_NS);
 
   Edge_Detector edge_detector("edge_detector");
+#ifdef EDGE_DETECTOR_AT_EN
+  edge_detector.data(data);
+  edge_detector.address(address);
+  
+  // Dump the desired signals
+  sc_trace(wf, data, "data");
+  sc_trace(wf, address, "address");
+  sc_trace(wf, edge_detector.localWindow[0][0], "localWindow(0)(0)");
+  sc_trace(wf, edge_detector.localWindow[0][1], "localWindow(0)(1)");
+  sc_trace(wf, edge_detector.localWindow[0][2], "localWindow(0)(2)");
+  sc_trace(wf, edge_detector.localWindow[1][0], "localWindow(1)(0)");
+  sc_trace(wf, edge_detector.localWindow[1][1], "localWindow(1)(1)");
+  sc_trace(wf, edge_detector.localWindow[1][2], "localWindow(1)(2)");
+  sc_trace(wf, edge_detector.localWindow[2][0], "localWindow(0)(0)");
+  sc_trace(wf, edge_detector.localWindow[2][1], "localWindow(2)(1)");
+  sc_trace(wf, edge_detector.localWindow[2][2], "localWindow(2)(2)");
+  sc_trace(wf, edge_detector.localMultX[0][0], "localMultX(0)(0)");
+  sc_trace(wf, edge_detector.localMultX[0][1], "localMultX(0)(1)");
+  sc_trace(wf, edge_detector.localMultX[0][2], "localMultX(0)(2)");
+  sc_trace(wf, edge_detector.localMultX[1][0], "localMultX(1)(0)");
+  sc_trace(wf, edge_detector.localMultX[1][1], "localMultX(1)(1)");
+  sc_trace(wf, edge_detector.localMultX[1][2], "localMultX(1)(2)");
+  sc_trace(wf, edge_detector.localMultX[2][0], "localMultX(0)(0)");
+  sc_trace(wf, edge_detector.localMultX[2][1], "localMultX(2)(1)");
+  sc_trace(wf, edge_detector.localMultX[2][2], "localMultX(2)(2)");
+  sc_trace(wf, edge_detector.localMultY[0][0], "localMultY(0)(0)");
+  sc_trace(wf, edge_detector.localMultY[0][1], "localMultY(0)(1)");
+  sc_trace(wf, edge_detector.localMultY[0][2], "localMultY(0)(2)");
+  sc_trace(wf, edge_detector.localMultY[1][0], "localMultY(1)(0)");
+  sc_trace(wf, edge_detector.localMultY[1][1], "localMultY(1)(1)");
+  sc_trace(wf, edge_detector.localMultY[1][2], "localMultY(1)(2)");
+  sc_trace(wf, edge_detector.localMultY[2][0], "localMultY(0)(0)");
+  sc_trace(wf, edge_detector.localMultY[2][1], "localMultY(2)(1)");
+  sc_trace(wf, edge_detector.localMultY[2][2], "localMultY(2)(2)");
+  sc_trace(wf, edge_detector.resultSobelGradientX, "resultSobelGradientX");
+  sc_trace(wf, edge_detector.resultSobelGradientY, "resultSobelGradientY");
+#endif // EDGE_DETECTOR_AT_EN
   
   colorImage = imread("../../tools/datagen/src/imgs/car.jpg", IMREAD_UNCHANGED);
   
@@ -61,9 +110,9 @@ int sc_main(int, char*[])
   
   Mat detectedImage(greyImage.rows, greyImage.cols, CV_8UC1);
   
-#ifdef EDGE_DETECTOR_LT_EN
+#if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
   total_number_of_pixels = greyImage.rows * greyImage.cols;
-#endif // EDGE_DETECTOR_LT_EN
+#endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
   
 #ifdef TEST_NORMALIZE_MAGNITUDE
   tmpValues = new int*[greyImage.rows];
@@ -91,7 +140,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if ((i == 0) && (j == greyImage.cols - 1)) // Upper right corner
@@ -102,7 +151,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if (i == 0) // Upper border
@@ -113,7 +162,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if ((i == greyImage.rows - 1) && (j == 0)) // Lower left corner
@@ -124,7 +173,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if ((i == greyImage.rows - 1) && (j == greyImage.cols - 1)) // Lower right corner
@@ -135,7 +184,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if (i == greyImage.rows - 1) // Lower border
@@ -146,7 +195,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if (j == 0) // Left border
@@ -157,7 +206,7 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else if (j == greyImage.cols - 1) // Right border
@@ -168,17 +217,47 @@ int sc_main(int, char*[])
             }
             else
             {
-              localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
             }
           }
           else
           {
-            localWindow[k][l] = (int)greyImage.at<uchar>(i + k - 1, j + l - 1);
+            localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
           }
         }
       }
       
+#ifndef EDGE_DETECTOR_AT_EN
       edge_detector.set_local_window(localWindow);
+#else
+      data = (localWindow[2][1], localWindow[2][0], localWindow[1][2], localWindow[1][1], localWindow[1][0], localWindow[0][2], localWindow[0][1], localWindow[0][0]);
+      address = SOBEL_INPUT_0;
+      edge_detector.write();
+      sc_start(10, SC_NS);
+      
+      data = (sc_uint<56>(0), localWindow[2][2]);
+      address = SOBEL_INPUT_1;
+      edge_detector.write();
+      sc_start(10, SC_NS);
+      
+      sc_start(80, SC_NS);
+      
+      address = SOBEL_OUTPUT;
+      edge_detector.read();
+      sc_start(10, SC_NS);
+      
+      for (int m = 0; m < 16; m++)
+      {
+        localGradientX[m] = data.read()[m];
+      }
+      for (int m = 0; m < 16; m++)
+      {
+        localGradientY[m] = data.read()[m + 16];
+      }
+      
+      localResult = localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
+#endif // EDGE_DETECTOR_AT_EN
+#ifndef EDGE_DETECTOR_AT_EN
 #ifdef EDGE_DETECTOR_LT_EN
       sc_start(30, SC_NS);
 #endif // EDGE_DETECTOR_LT_EN
@@ -186,6 +265,7 @@ int sc_main(int, char*[])
       localGradientY = edge_detector.obtain_sobel_gradient_y();
       
       localResult = (int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
+#endif // EDGE_DETECTOR_AT_EN
 #ifdef TEST_NORMALIZE_MAGNITUDE
       tmpValues[i][j] = localResult;
       if (localResult > maxTmpValue)
@@ -202,14 +282,14 @@ int sc_main(int, char*[])
         detectedImage.at<uchar>(i, j) = localResult;
       }
 #endif // TEST_NORMALIZE_MAGNITUDE
-#ifdef EDGE_DETECTOR_LT_EN
+#if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
       current_number_of_pixels++;
       if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion)
       {
         std::cout << "@" << sc_time_stamp() << " Image processing completed at " << next_target_of_completion << std::endl;
         next_target_of_completion += 10.0;
       }
-#endif // EDGE_DETECTOR_LT_EN
+#endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
     }
   }
   
