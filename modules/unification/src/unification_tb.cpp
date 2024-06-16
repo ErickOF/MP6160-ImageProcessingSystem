@@ -10,17 +10,15 @@
 #include "include/stb_image_write.h"
 
 #include <systemc.h>
-#include "math.h"
+#include <math.h>
 
 #ifdef IMG_UNIFICATE_PV_EN
 #include "unification_pv_model.hpp"
 #endif
 
-int sc_main (int argc, char* argv[]) {
-              
+int sc_main(int, char*[]) {
   unsigned char pixel_x, pixel_y;
   unsigned char pixel_magnitude;
-  int i;
   int width, height, channels, pixel_count;
   unsigned char *img_x, *img_y, *img_unificated;
 
