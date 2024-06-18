@@ -15,13 +15,16 @@
 const int n_rows = 208;
 const int n_cols = 288;
 
+namespace ips
+{
 struct Image {
     int matrix[n_rows][n_cols] = {0};
 };
+}
 
-Image dummy_img(int i_rows, int i_cols)
+ips::Image dummy_img(int i_rows, int i_cols)
 {
-    Image dummy;
+    ips::Image dummy = {};
     // Fill the image with values
 	int filler = 10;
     for (int i = 0; i < i_rows; i++) {
@@ -33,25 +36,8 @@ Image dummy_img(int i_rows, int i_cols)
  	return dummy;
 }
 
-void print_matrix(Image image, int image_rows, int image_cols)
-{
-    for (int i = 0; i < image_rows; ++i) {
-        for (int j = 0; j < image_cols; ++j) {
-            cout << image.matrix[i][j]<<" ";
-        }
-        cout << endl;
-    }
-}
-
-void print_array(signed char *Arr, int array_length)
-{
-    for (int i = 0; i < array_length; ++i) {
-       cout << int(Arr[i])<<" ";
-    }
-	cout << endl;
-}
-int sc_main (int argc, char* argv[]) {
-  Image input_image = dummy_img(n_rows, n_cols);
+int sc_main (int, char*[]) {
+  ips::Image input_image = dummy_img(n_rows, n_cols);
   int image_rows = sizeof(input_image.matrix)/ sizeof(input_image.matrix[0]);
   int image_cols = sizeof(input_image.matrix[0])/ sizeof(int);
   //Image output_image;
@@ -104,6 +90,5 @@ int sc_main (int argc, char* argv[]) {
   cout << "@" << sc_time_stamp() <<" Terminating simulation\n" << endl;
   sc_close_vcd_trace_file(wf);
   return 0;// Terminate simulation
-
- }
+}
 #endif // IPS_JPG_LT_EN
