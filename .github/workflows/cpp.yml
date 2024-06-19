@@ -20,7 +20,7 @@ jobs:
     - name: Install OpenCV
       run: sudo apt-get install -y libopencv-dev
     - name: wget SystemC
-      run: wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz && tar -xzfv 3.0.0.tar.gz
+      run: wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz && tar -xzf 3.0.0.tar.gz
     - name: Install SystemC
       run: cd systemc-3.0.0 && mkdir objdir && cd objdir && export CXX=g++ && ../configure --prefix=/usr/local/systemc-3.0.0 && make && make check && make install
     - name: Compile Compression
