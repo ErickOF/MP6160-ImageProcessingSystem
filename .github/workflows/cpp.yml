@@ -17,11 +17,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: install dependencies
+    - name: Install OpenCV
       run: sudo apt-get install -y libopencv-dev
-    - name: compile compression
+    - name: wget SystemC
+      run: wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz && tar -xzf 3.0.0.tar.gz && mv 3.0.0 systemc-3.0.0
+    - name: Install SystemC
+      run: cd systemc-3.0.0 && mkdir objdir && cd objdir && export CXX=g++ && ../configure --prefix=/usr/local/systemc-3.0.0 && make && make check && make install
+    - name: Compile Compression
       working-directory: ./modules/compression
       run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
-    - name: compile edge detector
+    - name: Compile Edge Detector
       working-directory: ./modules/edge-detector
       run: make EDGE_DETECTOR_AT_EN=1 INCLUDE_OPENCV_PKG=1
+    - name: Compile Filter
+      working-directory: ./modules/filter
+      run: make IPS_FILTER_LT_EN=1 TEST_MODE_IMAGE=1 IPS_DUMP_EN=1 INCLUDE_OPENCV_PKG=1
+    - name: Compile RGB2Gray
+      working-directory: ./modules/rgb2gray
+      run: make RGB2GRAY_PV_EN=1 INCLUDE_OPENCV_PKG=1
+    - name: Compile Unification
+      working-directory: ./modules/unification
+      run: make IMG_UNIFICATE_PV_EN=1
