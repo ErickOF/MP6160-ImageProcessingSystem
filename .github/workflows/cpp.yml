@@ -1,0 +1,27 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches:
+    - main
+    - dev
+  pull_request:
+    branches: 
+    - main
+    - dev
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: install dependencies
+      run: sudo apt-get install -y libopencv-dev
+    - name: compile compression
+      working-directory: ./modules/compression
+      run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
+    - name: compile edge detector
+      working-directory: ./modules/edge-detector
+      run: make EDGE_DETECTOR_AT_EN=1 INCLUDE_OPENCV_PKG=1

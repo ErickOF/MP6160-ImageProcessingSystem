@@ -22,4 +22,4 @@ run:
 
 # Show waveform
 waveform:
-	@gtkwave input_matrix.vcd
+	@gtkwave jpeg_compressor.vcd
