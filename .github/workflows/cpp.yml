@@ -35,11 +35,11 @@ jobs:
         wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz
         tar -xzf 3.0.0.tar.gz
         cd systemc-3.0.0
-        mkdir objdir
+        mkdir -p objdir
         cd objdir
         export CXX=g++
         ../configure --prefix=/usr/local/systemc-3.0.0
-        mkdir examples/
+        mkdir -p examples/
         cp -r ../examples/* examples/
         make
         make check
