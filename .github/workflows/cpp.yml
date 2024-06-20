@@ -12,17 +12,38 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install OpenCV
-      run: sudo apt-get install -y libopencv-dev
-    - name: wget SystemC
-      run: wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz && tar -xzf 3.0.0.tar.gz
-    - name: Install SystemC
-      run: cd systemc-3.0.0 && mkdir objdir && cd objdir && export CXX=g++ && ../configure --prefix=/usr/local/systemc-3.0.0 && make && make check && make install
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Cache tools
+      id: cache-deps
+      uses: actions/cache@v2
+      with:
+        path: |
+          /usr/local/systemc-3.0.0
+        key: ${{ runner.os }}-build-${{ hashFiles('**/setup-dependencies.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+
+    - name: Install Dependencies
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+      run: |
+        sudo apt-get install -y libopencv-dev
+        wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz
+        tar -xzf 3.0.0.tar.gz
+        cd systemc-3.0.0
+        mkdir objdir
+        cd objdir
+        export CXX=g++
+        ../configure --prefix=/usr/local/systemc-3.0.0
+        mkdir examples/
+        cp -r ../examples/* examples/
+        make
+        make check
+        make install
     - name: Compile Compression
       working-directory: ./modules/compression
       run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
