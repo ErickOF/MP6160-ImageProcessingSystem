@@ -32,9 +32,8 @@ jobs:
       if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         sudo apt-get install -y libopencv-dev
-        wget https://github.com/accellera-official/systemc/archive/refs/tags/3.0.0.tar.gz
-        tar -xzf 3.0.0.tar.gz
-        cd systemc-3.0.0
+        git clone https://github.com/accellera-official/systemc.git
+        cd systemc
         mkdir -p objdir
         cd objdir
         export CXX=g++
