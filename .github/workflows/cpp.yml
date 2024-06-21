@@ -14,6 +14,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ACTIONS_STEP_DEBUG: true
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -31,9 +34,12 @@ jobs:
     - name: Install Dependencies
       if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
+        set -x
         sudo apt-get install libopencv-dev
+        rm -rf systemc-3.0.0
         git clone https://github.com/accellera-official/systemc.git systemc-3.0.0
         cd systemc-3.0.0
+        ./config/bootstrap
         mkdir -p objdir
         cd objdir
         export CXX=g++
