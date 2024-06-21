@@ -27,6 +27,7 @@ jobs:
       with:
         path: |
           /usr/local/systemc-3.0.0
+          $HOME/systemc-3.0.0
         key: ${{ runner.os }}-build-${{ hashFiles('**/setup-dependencies.sh') }}
         restore-keys: |
           ${{ runner.os }}-build-
@@ -36,6 +37,7 @@ jobs:
       run: |
         set -x
         sudo apt-get install libopencv-dev
+        cd $HOME
         rm -rf systemc-3.0.0
         git clone https://github.com/accellera-official/systemc.git systemc-3.0.0
         cd systemc-3.0.0
@@ -47,8 +49,7 @@ jobs:
         mkdir -p examples/
         cp -r ../examples/* examples/
         make
-        make check
-        make install
+        sudo make install
     - name: Compile Compression
       working-directory: ./modules/compression
       run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
