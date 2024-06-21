@@ -50,6 +50,8 @@ jobs:
         cp -r ../examples/* examples/
         make
         sudo make install
+        export SYSTEMC_HOME=/usr/local/systemc-3.0.0
+        export LD_LIBRARY_PATH=$SYSTEMC_HOME/lib-linux64
     - name: Compile Compression
       working-directory: ./modules/compression
       run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
