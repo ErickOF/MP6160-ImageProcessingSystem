@@ -4,66 +4,67 @@ on:
   push:
     branches:
     - main
-    - dev
+#    - dev
   pull_request:
     branches: 
     - main
-    - dev
+#    - dev
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ACTIONS_STEP_DEBUG: true
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Cache tools
-      id: cache-deps
-      uses: actions/cache@v2
-      with:
-        path: |
-          /usr/local/systemc-3.0.0
-          $HOME/systemc-3.0.0
-        key: ${{ runner.os }}-build-${{ hashFiles('**/setup-dependencies.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-build-
-
-    - name: Install Dependencies
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        set -x
-        sudo apt-get install libopencv-dev
-        cd $HOME
-        rm -rf systemc-3.0.0
-        git clone https://github.com/accellera-official/systemc.git systemc-3.0.0
-        cd systemc-3.0.0
-        ./config/bootstrap
-        mkdir -p objdir
-        cd objdir
-        export CXX=g++
-        ../configure --prefix=/usr/local/systemc-3.0.0
-        mkdir -p examples/
-        cp -r ../examples/* examples/
-        make
-        sudo make install
-        export SYSTEMC_HOME=/usr/local/systemc-3.0.0
-        export LD_LIBRARY_PATH=$SYSTEMC_HOME/lib-linux64
-    - name: Compile Compression
-      working-directory: ./modules/compression
-      run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
-    - name: Compile Edge Detector
-      working-directory: ./modules/edge-detector
-      run: make EDGE_DETECTOR_AT_EN=1 INCLUDE_OPENCV_PKG=1
-    - name: Compile Filter
-      working-directory: ./modules/filter
-      run: make IPS_FILTER_LT_EN=1 TEST_MODE_IMAGE=1 IPS_DUMP_EN=1 INCLUDE_OPENCV_PKG=1
-    - name: Compile RGB2Gray
-      working-directory: ./modules/rgb2gray
-      run: make RGB2GRAY_PV_EN=1 INCLUDE_OPENCV_PKG=1
-    - name: Compile Unification
-      working-directory: ./modules/unification
-      run: make IMG_UNIFICATE_PV_EN=1
+#    env:
+#      ACTIONS_STEP_DEBUG: true
+#
+#    steps:
+#    - name: Checkout code
+#      uses: actions/checkout@v4
+#
+#    - name: Cache tools
+#      id: cache-deps
+#      uses: actions/cache@v2
+#      with:
+#        path: |
+#          /usr/local/systemc-3.0.0
+#          $HOME/systemc-3.0.0
+#        key: ${{ runner.os }}-build-${{ hashFiles('**/setup-dependencies.sh') }}
+#        restore-keys: |
+#          ${{ runner.os }}-build-
+#
+#    - name: Install Dependencies
+#      if: steps.cache-deps.outputs.cache-hit != 'true'
+#      run: |
+#        set -x
+#        sudo apt-get install libopencv-dev
+#        cd $HOME
+#        rm -rf systemc-3.0.0
+#        git clone https://github.com/accellera-official/systemc.git systemc-3.0.0
+#        cd systemc-3.0.0
+#        ./config/bootstrap
+#        mkdir -p objdir
+#        cd objdir
+#        export CXX=g++
+#        ../configure --prefix=/usr/local/systemc-3.0.0
+#        mkdir -p examples/
+#        cp -r ../examples/* examples/
+#        make
+#        sudo make install
+#        export SYSTEMC_HOME=/usr/local/systemc-3.0.0
+#        export LD_LIBRARY_PATH=$SYSTEMC_HOME/lib-linux64
+#    - name: Compile Compression
+#      working-directory: ./modules/compression
+#      run: make IPS_JPG_AT_EN=1 INCLUDE_OPENCV_PKG=1
+#    - name: Compile Edge Detector
+#      working-directory: ./modules/edge-detector
+#      run: make EDGE_DETECTOR_AT_EN=1 INCLUDE_OPENCV_PKG=1
+#    - name: Compile Filter
+#      working-directory: ./modules/filter
+#      run: make IPS_FILTER_LT_EN=1 TEST_MODE_IMAGE=1 IPS_DUMP_EN=1 INCLUDE_OPENCV_PKG=1
+#    - name: Compile RGB2Gray
+#      working-directory: ./modules/rgb2gray
+#      run: make RGB2GRAY_PV_EN=1 INCLUDE_OPENCV_PKG=1
+#    - name: Compile Unification
+#      working-directory: ./modules/unification
+#      run: make IMG_UNIFICATE_PV_EN=1
+#
