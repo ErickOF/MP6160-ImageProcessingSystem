@@ -1,15 +1,22 @@
-#ifndef IPS_TEST_DAC_HPP
-#define IPS_TEST_DAC_HPP
+#ifndef IPS_SEQ_ITEM_DAC_HPP
+#define IPS_SEQ_ITEM_DAC_HPP
 
 #include <cstdlib>
 
 
+/**
+ * @brief This class is used to generate the digital code for the test
+ * 
+ * @tparam N 
+ */
 template <unsigned int N>
-SCA_TDF_MODULE(test_dac) {
+SCA_TDF_MODULE(seq_item_dac)
+{
 public:
   sca_tdf::sca_out<sc_dt::sc_uint<N> > o_dig;
 
-  SCA_CTOR(test_dac) {
+  SCA_CTOR(seq_item_dac)
+  {
     set_timestep(sca_core::sca_time(0.1, sc_core::SC_US));
   }
 
@@ -19,4 +26,4 @@ public:
   }
 };
 
-#endif // IPS_TEST_DAC_HPP
+#endif // IPS_SEQ_ITEM_DAC_HPP
