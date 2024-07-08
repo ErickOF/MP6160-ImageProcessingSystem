@@ -191,9 +191,9 @@ SC_MODULE(Tb_top)
         printf("Data_returned: %0d\n", *data_returned);
         printf("Data_returned: %0d\n", *(data_returned+1));
         
-        edge_detector_DUT->set_local_window(localWindow);
-        //localGradientX = edge_detector_DUT->obtain_sobel_gradient_x();
-        //localGradientY = edge_detector_DUT->obtain_sobel_gradient_y();
+        //edge_detector_DUT->set_local_window(localWindow);
+        localGradientX = edge_detector_DUT->obtain_sobel_gradient_x();
+        localGradientY = edge_detector_DUT->obtain_sobel_gradient_y();
 
         printf("Data_returned2: %0d\n", localGradientX);
         printf("Data_returned2: %0d\n", localGradientY);
@@ -226,8 +226,10 @@ SC_MODULE(Tb_top)
         
         localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
 #endif // EDGE_DETECTOR_AT_EN
+        cout << "HERE01" << endl;
         localGradientX = *data_returned;
         localGradientY = *(data_returned+1);
+        cout << "HERE01" << endl;
       
         localResult = (int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
 #ifdef TEST_NORMALIZE_MAGNITUDE
