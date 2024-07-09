@@ -27,6 +27,8 @@ using namespace std;
 #include "sobel_edge_detector_tlm.hpp"
 #include "img_initiator.cpp"
 
+#include "common_func.hpp"
+
 SC_MODULE(Tb_top)
 {
   img_initiator *initiator;
@@ -182,21 +184,21 @@ SC_MODULE(Tb_top)
           }
         }
         initiator->write(local_window_ptr, 0, 9*4);
-        printf("OUTSIDE");
+        dbgprint("OUTSIDE");
         wait(sc_time(100, SC_NS));
-        printf("OUTSIDE");
+        dbgprint("OUTSIDE");
         int* data_returned = new int;
         initiator->read(data_returned, 0, 2*4);
-        // printf("OUTSIDE");
-        printf("Data_returned: %0d\n", *data_returned);
-        printf("Data_returned: %0d\n", *(data_returned+1));
+        // dbgprint("OUTSIDE");
+        dbgprint("Data_returned: %0d\n", *data_returned);
+        dbgprint("Data_returned: %0d\n", *(data_returned+1));
         
         //edge_detector_DUT->set_local_window(localWindow);
         localGradientX = edge_detector_DUT->obtain_sobel_gradient_x();
         localGradientY = edge_detector_DUT->obtain_sobel_gradient_y();
 
-        printf("Data_returned2: %0d\n", localGradientX);
-        printf("Data_returned2: %0d\n", localGradientY);
+        dbgprint("Data_returned2: %0d\n", localGradientX);
+        dbgprint("Data_returned2: %0d\n", localGradientY);
 
         
         //initiator->write(&localWindow[0][0]+8, 1);
@@ -226,10 +228,10 @@ SC_MODULE(Tb_top)
         
         localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
 #endif // EDGE_DETECTOR_AT_EN
-        cout << "HERE01" << endl;
+        dbgprint("HERE01");
         localGradientX = *data_returned;
         localGradientY = *(data_returned+1);
-        cout << "HERE01" << endl;
+        dbgprint("HERE01");
       
         localResult = (int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
 #ifdef TEST_NORMALIZE_MAGNITUDE
@@ -268,7 +270,7 @@ SC_MODULE(Tb_top)
 #if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
         current_number_of_pixels++;
         if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
-          std::cout << "@" << sc_time_stamp() << " Image processing completed at " << next_target_of_completion << std::endl;
+          dbgprint("At time %s Image processing completed at %0d", sc_time_stamp().to_string().c_str(), next_target_of_completion);
           next_target_of_completion += 10.0;
         }
 #endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
@@ -355,7 +357,7 @@ int sc_main(int, char*[])
   
   sc_start();
 
-  std::cout << "@" << sc_time_stamp() << " Terminating simulation" << std::endl;
+  dbgprint("At time %s Terminating simulation", sc_time_stamp().to_string().c_str());
   sc_close_vcd_trace_file(wf);
 
   return 0;

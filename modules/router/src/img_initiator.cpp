@@ -16,6 +16,8 @@ using namespace std;
 #include "tlm_utils/simple_target_socket.h"
 #include "tlm_utils/peq_with_cb_and_phase.h"
 
+#include "common_func.hpp"
+
 //const char* tlm_enum_names[] = {"TLM_ACCEPTED", "TLM_UPDATED", "TLM_COMPLETED"}; 
 
 // Initiator module generating generic payload transactions   
@@ -74,9 +76,9 @@ struct img_initiator: sc_module
 
     data = reinterpret_cast<int*>(this->data);
     //-----------DEBUG-----------
-    printf("[DEBUG] Reading at Initiator: ");
+    dbgprint("Reading at Initiator: ");
     for (int i = 0; i < this->pending_transaction->get_data_length()/sizeof(int); ++i){
-      printf("%02x", *(reinterpret_cast<int*>(this->data)+i));
+      dbgprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -98,9 +100,9 @@ struct img_initiator: sc_module
     transaction->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE); //Mandatory Initial Value
 
     //-----------DEBUG-----------
-    printf("[DEBUG] Writing: ");
+    dbgprint("Writing: ");
     for (int i = 0; i < data_length/sizeof(int); ++i){
-      printf("%02x", *(data+i));
+      dbgprint("%02x", *(data+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -118,7 +120,7 @@ struct img_initiator: sc_module
     //Begin Request
     phase = tlm::BEGIN_REQ;
     transaction->acquire();
-    cout << name() << " BEGIN_REQ SENT" << " TRANS ID " << 0 << " at time " << sc_time_stamp() << endl;
+    dbgprint("%s BEGIN_REQ SENT TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
     pending_transaction = transaction;
     status = socket->nb_transport_fw(*transaction, phase, this->write_delay);  // Non-blocking transport call   
 
@@ -126,8 +128,7 @@ struct img_initiator: sc_module
     switch (status) {   
         //Case 1: Transaction was accepted
         case tlm::TLM_ACCEPTED: {
-          printf("%s:\t %s received -> Transaction ID %d at time %s\n", name(), "TLM_ACCEPTED", 0, sc_time_stamp());
-          //cout << name() << " TLM_ACCEPTED RECEIVED " << " TRANS ID " << transaction->transaction_id << " at time " << sc_time_stamp() << endl;
+          dbgprint("%s:\t %s received -> Transaction ID %d at time %s", name(), "TLM_ACCEPTED", 0, sc_time_stamp().to_string().c_str());
           check_transaction(*transaction);
           transaction->release();
           pending_transaction = 0;
@@ -137,7 +138,7 @@ struct img_initiator: sc_module
 
         //Not implementing Updated and Completed Status
         default: {
-          printf("%s:\t [ERROR] Invalid status received at initiator", name());
+          dbgprint("%s:\t [ERROR] Invalid status received at initiator", name());
           break;
         }
     }
@@ -145,9 +146,9 @@ struct img_initiator: sc_module
     //Wait for response transaction
     wait(transaction_received_e);
     //-----------DEBUG-----------
-    printf("[DEBUG1] Reading at Initiator: ");
+    dbgprint("[DEBUG1] Reading at Initiator: ");
     for (int i = 0; i < this->data_length/sizeof(int); ++i){
-    printf("%02x", *(reinterpret_cast<int*>(this->data)+i));
+      dbgprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -162,7 +163,7 @@ struct img_initiator: sc_module
   { 
     //Call event queue
     m_peq.notify(trans, phase, delay);
-    cout<<"HERE"<<endl;
+    dbgprint("HERE");
     return tlm::TLM_ACCEPTED;
   }
 
@@ -170,12 +171,12 @@ struct img_initiator: sc_module
   void peq_cb(tlm::tlm_generic_payload& trans, const tlm::tlm_phase& phase)
   {
 
-    //printf("%s:\t %s received -> Transaction ID %d from address %x at time %s\n", name(), phase, this->id_extension->transaction_id, trans.get_address(), sc_time_stamp());
+    //dbgprint("%s:\t %s received -> Transaction ID %d from address %x at time %s\n", name(), phase, this->id_extension->transaction_id, trans.get_address(), sc_time_stamp());
     //cout << name() << " " <<hex << trans.get_address() << " BEGIN_RESP RECEIVED at " << sc_time_stamp() << endl;
     switch (phase) {
       case tlm::BEGIN_RESP: {
 
-        cout<<"HERE3"<<endl;
+        dbgprint("HERE3");
 
         trans.acquire();
         this->data_length = trans.get_data_length();
@@ -188,24 +189,24 @@ struct img_initiator: sc_module
         //Initiator dont care about confirming resp transaction. So nothing else to do.
 
         //-----------DEBUG-----------
-        printf("[DEBUG] Reading at Initiator: ");
+        dbgprint("[DEBUG] Reading at Initiator: ");
         for (int i = 0; i < trans.get_data_length()/sizeof(int); ++i){
-        printf("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
+          dbgprint("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
         }
         printf("\n");
         //-----------DEBUG-----------
 
-        cout<<"HERE3"<<endl;
+        dbgprint("HERE3");
 
         transaction_received_e.notify();
         //-----------DEBUG-----------
-        printf("[DEBUG] Reading at Initiator: ");
+        dbgprint("[DEBUG] Reading at Initiator: ");
         for (int i = 0; i < this->data_length/sizeof(int); ++i){
-        printf("%02x", *(reinterpret_cast<int*>(this->data)+i));
+          dbgprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
         }
         printf("\n");
         //-----------DEBUG-----------
-        cout<<"HERE10"<<endl;
+        dbgprint("HERE10");
         break;
       }
       default: {

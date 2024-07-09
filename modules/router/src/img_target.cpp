@@ -11,6 +11,8 @@ using namespace std;
 #include "tlm_utils/simple_target_socket.h"
 #include "tlm_utils/peq_with_cb_and_phase.h"
 
+#include "common_func.hpp"
+
 //For an internal response phase
 DECLARE_EXTENDED_PHASE(internal_processing_ph);
 
@@ -71,7 +73,7 @@ struct img_target: sc_module
         switch (phase) {
             //Case 1: Target is receiving the first transaction of communication -> BEGIN_REQ
             case tlm::BEGIN_REQ: {
-                cout << name() << " BEGIN_REQ RECEIVED" << " TRANS ID " << 0 << " at time " << sc_time_stamp() << endl;      
+                dbgprint("%s BEGIN_REQ RECEIVED TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
                 //Check for errors here
 
                 // Increment the transaction reference count
@@ -90,7 +92,7 @@ struct img_target: sc_module
             }
             default: {
                 if (phase == internal_processing_ph){
-                    cout << "INTERNAL PHASE: PROCESSING TRANSACTION" << endl;
+                    dbgprint("INTERNAL PHASE: PROCESSING TRANSACTION");
                     process_transaction(trans);
                 }
                 break;
@@ -106,12 +108,12 @@ struct img_target: sc_module
 
         response_phase = tlm::BEGIN_RESP;
         status = socket->nb_transport_bw(trans, response_phase, response_delay);
-        cout << "HERE" << endl;
+        dbgprint("HERE");
         
         //Check Initiator response
         switch(status) {
             case tlm::TLM_ACCEPTED: {
-                cout << name() << " TLM_ACCEPTED RECEIVED" << " TRANS ID " << 0 <<  " at time " << sc_time_stamp() << endl;
+                dbgprint("%s TLM_ACCEPTED RECEIVED TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
                 // Target only care about acknowledge of the succesful response
                 trans.release();
                 break;
@@ -119,7 +121,7 @@ struct img_target: sc_module
 
             //Not implementing Updated and Completed Status
             default: {
-                printf("%s:\t [ERROR] Invalid status received at target", name());
+                dbgprint("%s:\t [ERROR] Invalid status received at target", name());
                 break;
             }
         }
@@ -140,7 +142,7 @@ struct img_target: sc_module
         tlm::tlm_sync_enum status;
         tlm::tlm_phase phase;
 
-        cout << name() << " Processing transaction: " << 0 << endl;
+        dbgprint("%s Processing transaction: %0d", name(), 0);
 
         //get variables from transaction
         tlm::tlm_command cmd      = trans.get_command();   
@@ -154,12 +156,13 @@ struct img_target: sc_module
         switch(cmd) {
             case tlm::TLM_READ_COMMAND: {
                 unsigned char* response_data_ptr;
+                response_data_ptr = (unsigned char*)malloc(2 * sizeof(int));
                 this->do_when_read_transaction(response_data_ptr);
                 //Add read according to length
                 //-----------DEBUG-----------
-                printf("[DEBUG] Reading: ");
+                dbgprint("[DEBUG] Reading: ");
                 for (int i = 0; i < len/sizeof(int); ++i){
-                printf("%02x", *(reinterpret_cast<int*>(response_data_ptr)+i));
+                  dbgprint("%02x", *(reinterpret_cast<int*>(response_data_ptr)+i));
                 }
                 printf("\n");
                 //-----------DEBUG-----------
@@ -169,21 +172,21 @@ struct img_target: sc_module
             case tlm::TLM_WRITE_COMMAND: {
                 this->do_when_write_transaction(data_ptr);
                 //-----------DEBUG-----------
-                printf("[DEBUG] Writing: ");
+                dbgprint("[DEBUG] Writing: ");
                 for (int i = 0; i < len/sizeof(int); ++i){
-                printf("%02x", *(reinterpret_cast<int*>(data_ptr)+i));
+                  dbgprint("%02x", *(reinterpret_cast<int*>(data_ptr)+i));
                 }
                 printf("\n");
                 //-----------DEBUG-----------
                 break;
             }
             default: {
-                cout << " ERROR " << "Command " << cmd << "is NOT valid" << endl;
+                dbgprint("ERROR Command %0d is NOT valid", cmd);
             }
         }
 
         //Send response
-        cout << name() << " BEGIN_RESP SENT" << " TRANS ID " << 0 <<  " at time " << sc_time_stamp() << endl;
+        dbgprint("%s BEGIN_RESP SENT TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
         send_response(trans);
     }
 };
