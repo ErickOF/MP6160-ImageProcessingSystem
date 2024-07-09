@@ -11,7 +11,7 @@ using namespace std;
 #include "tlm_utils/peq_with_cb_and_phase.h"
 
 #include "sobel_edge_detector_tlm.hpp"
-#include "tlm_transaction.cpp"
+// #include "tlm_transaction.cpp"
 
 void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data){
         int sobel_results[2];

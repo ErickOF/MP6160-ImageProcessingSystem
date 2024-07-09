@@ -3,7 +3,7 @@
 #ifndef IMG_INITIATOR_CPP
 #define IMG_INITIATOR_CPP
 
-#include "tlm_transaction.cpp"
+// #include "tlm_transaction.cpp"
 #include "transaction_memory_manager.cpp"
 
 #include "systemc.h"
