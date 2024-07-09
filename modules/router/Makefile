@@ -37,6 +37,24 @@ ifdef EDGE_DETECTOR_AT_EN
 	LFLAGS += -DEDGE_DETECTOR_AT_EN
 endif # EDGE_DETECTOR_AT_EN
 
+ifdef USING_TLM_TB_EN
+	CFLAGS += -DUSING_TLM_TB_EN
+	LFLAGS += -DUSING_TLM_TB_EN
+endif # USING_TLM_TB_EN
+
+.PHONY: print-all
+print-all:
+		@echo "Incdir is $(INCDIR)"
+		@echo "Srcdir is $(SRCDIR)"
+		@echo "Srcdirs are $(SRCDIRS)"
+		@echo "Includes are $(INCLUDES)"
+		@echo "Sources are $(SOURCES)"
+		@echo "Objects are $(OBJECTS)"
+
+.PHONY: print-flags
+print-flags:
+		@echo "Flags are $(CFLAGS)"
+
 # Run the compiled file
 run:
 	@./test
