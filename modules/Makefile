@@ -21,6 +21,11 @@ BINDIR=./
 INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2
 LIBDIR=-L. -L$(SYSTEMC)/lib-linux64
 
+ifdef USING_TLM_TB_EN
+SRCDIRS=$(SRCDIR) ../edge-detector/src
+INCDIR+=-I../edge-detector/include
+endif # USING_TLM_TB_EN
+
 ifdef INCLUDE_OPENCV
 # Target
 LIBS+=-lopencv_imgcodecs -lopencv_core -lopencv_highgui -lopencv_imgproc
@@ -35,15 +40,29 @@ LFLAGS += $(shell pkg-config --libs opencv4)
 endif # INCLUDE_OPENCV_PKG
 endif # INCLUDE_OPENCV
 
+ifndef USING_TLM_TB_EN
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 INCLUDES := $(wildcard $(INCDIR)/*.hpp)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+else
+SOURCES = $(wildcard *.cpp) $(foreach DIR, $(SRCDIRS), $(wildcard $(DIR)/*.cpp))
+SOURCES_WITHOUT_PATH = $(notdir $(SOURCES))
+INCLUDES := $(wildcard $(INCDIR)/*.hpp)
+OBJECTS = $(SOURCES_WITHOUT_PATH:%.cpp=$(OBJDIR)/%.o)
+
+VPATH = $(sort $(dir $(SOURCES)))
+endif # USING_TLM_TB_EN
 
 $(BINDIR)/$(TARGET): clean $(OBJECTS)
 		@$(LD) $(OBJECTS) $(LFLAGS) $(LIBS) $(LIBDIR) -o $@
 
+ifndef USING_TLM_TB_EN
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 		@$(CC) $(CFLAGS) $(INCDIR) -c $< -o $@
+else
+$(OBJECTS): $(OBJDIR)/%.o : %.cpp
+		@$(CC) $(CFLAGS) $(INCDIR) -c $< -o $@
+endif # USING_TLM_TB_EN
 
 .PHONY: clean
 clean:
