@@ -69,10 +69,9 @@ SC_MODULE(Tb_top)
     Mat colorImage;
     
     unsigned char localR, localG, localB;
-    unsigned char localResult;
+    unsigned short int localResult;
     
-    int localWindow[3][3];
-    int localGradientX, localGradientY;
+    short int localGradientX, localGradientY;
     
     int total_number_of_pixels;
     int current_number_of_pixels = 0;
@@ -115,12 +114,11 @@ SC_MODULE(Tb_top)
         dbgprint("After doing a read in TB");
         dbgprint("Data_returned: %0d", *data_returned);
         
-        localResult = *data_returned;
-        grayImage.at<uchar>(i, j) = localResult;
+        grayImage.at<uchar>(i, j) = *data_returned;
         
         current_number_of_pixels++;
         if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
-          dbgprint("Image processing completed at %0d", next_target_of_completion);
+          dbgprint("Image processing completed at %f", next_target_of_completion);
           next_target_of_completion += 10.0;
         }
       }
@@ -317,12 +315,19 @@ SC_MODULE(Tb_top)
           detectedImageY.at<uchar>(i, j) = (unsigned char)localGradientY;
         }
       
-        localResult = (unsigned char)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
-        detectedImage.at<uchar>(i, j) = localResult;
+        localResult = (unsigned short int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
+        if (localResult > 255)
+        {
+          detectedImage.at<uchar>(i, j) = 255;
+        }
+        else
+        {
+          detectedImage.at<uchar>(i, j) = (unsigned char)localResult;
+        }
         
         current_number_of_pixels++;
         if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
-          dbgprint("Image processing completed at %0d", next_target_of_completion);
+          dbgprint("Image processing completed at %f", next_target_of_completion);
           next_target_of_completion += 10.0;
         }
       }
