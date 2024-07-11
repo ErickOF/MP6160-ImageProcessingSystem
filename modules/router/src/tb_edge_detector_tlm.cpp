@@ -51,7 +51,7 @@ SC_MODULE(Tb_top)
     rgb2gray_DUT = new rgb2gray_tlm("rgb2gray_DUT");
     
     sobel_initiator->start_img_initiators();
-    sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
+    sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     edge_detector_DUT->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
     gray_initiator->start_img_initiators();
     gray_initiator->set_delays(sc_time(0, SC_NS), sc_time(0, SC_NS));

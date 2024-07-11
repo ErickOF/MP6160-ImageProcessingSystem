@@ -85,7 +85,7 @@ struct img_target: sc_module
                 
                 //Queue a response
                 tlm::tlm_phase int_phase = internal_processing_ph;
-                m_peq.notify(trans, int_phase, response_delay);
+                m_peq.notify(trans, int_phase, receive_delay);
                 break;
             }
             case tlm::END_RESP:

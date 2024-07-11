@@ -124,15 +124,17 @@ struct img_initiator: sc_module
     //Transaction Management Variables
     tlm::tlm_phase phase;
     tlm::tlm_sync_enum status;
+    tlm::tlm_command cur_command;
     img_generic_extension* img_ext;
 
     //Begin Request
     phase = tlm::BEGIN_REQ;
     transaction->acquire();
     transaction->get_extension(img_ext);
+    cur_command = transaction->get_command();
     dbgmodprint("BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
     pending_transaction = transaction;
-    status = socket->nb_transport_fw(*transaction, phase, this->write_delay);  // Non-blocking transport call   
+    status = socket->nb_transport_fw(*transaction, phase, ((cur_command == tlm::TLM_WRITE_COMMAND) ? this->write_delay : this->read_delay));  // Non-blocking transport call   
 
     // Check request status returned by target
     switch (status) {   
