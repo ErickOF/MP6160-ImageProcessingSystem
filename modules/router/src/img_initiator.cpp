@@ -130,7 +130,7 @@ struct img_initiator: sc_module
     phase = tlm::BEGIN_REQ;
     transaction->acquire();
     transaction->get_extension(img_ext);
-    dbgmodprint("BEGIN_REQ SENT TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
+    dbgmodprint("BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
     pending_transaction = transaction;
     status = socket->nb_transport_fw(*transaction, phase, this->write_delay);  // Non-blocking transport call   
 
@@ -138,7 +138,7 @@ struct img_initiator: sc_module
     switch (status) {   
         //Case 1: Transaction was accepted
         case tlm::TLM_ACCEPTED: {
-          dbgmodprint("%s received -> Transaction ID %d at time %s", "TLM_ACCEPTED", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
+          dbgmodprint("%s received -> Transaction ID %d", "TLM_ACCEPTED", img_ext->transaction_number);
           check_transaction(*transaction);
           transaction->release();
           pending_transaction = 0;
@@ -181,7 +181,7 @@ struct img_initiator: sc_module
   void peq_cb(tlm::tlm_generic_payload& trans, const tlm::tlm_phase& phase)
   {
 
-    //dbgmodprint("%s received -> Transaction ID %d from address %x at time %s\n", phase, this->id_extension->transaction_id, trans.get_address(), sc_time_stamp());
+    //dbgmodprint("%s received -> Transaction ID %d from address %x", phase, this->id_extension->transaction_id);
     //cout << name() << " " <<hex << trans.get_address() << " BEGIN_RESP RECEIVED at " << sc_time_stamp() << endl;
     switch (phase) {
       case tlm::BEGIN_RESP: {

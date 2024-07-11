@@ -21,8 +21,8 @@ struct rgb2gray_tlm : public Rgb2Gray, public img_target
     }
 
     //Override do_when_transaction functions
-    virtual void do_when_read_transaction(unsigned char*& data);
-    virtual void do_when_write_transaction(unsigned char*& data);
+    virtual void do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address);
+    virtual void do_when_write_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address);
 
 };
 #endif // RGB2GRAY_TLM_HPP

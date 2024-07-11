@@ -14,27 +14,51 @@ using namespace std;
 
 #include "common_func.hpp"
 
-void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data){
-        int sobel_results[2];
+void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address){
+  short int sobel_results[4];
+  sc_int<16> local_result;
+  
+  dbgimgtarmodprint("Calling do_when_read_transaction");
 
-        sobel_results[0] = obtain_sobel_gradient_x();
-        sobel_results[1] = obtain_sobel_gradient_y();
-        dbgimgtarmodprint("%0d", sobel_results[0]);
-        dbgimgtarmodprint("%0d", sobel_results[1]);
-        memcpy(data, &sobel_results[0], 2*sizeof(int));
-    }
-void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data){
-    int window[3][3];
-    for (int* i = reinterpret_cast<int*>(data), row = 0, col = 0; i - reinterpret_cast<int*>(data) < 9; i++) {
-        window[row][col] = *i;
-        dbgimgtarmodprint("VAL: %0d -> %0d", i-reinterpret_cast<int*>(data), *i);
-        row++;
-        if (row == 3) {
-            row = 0;
-            col++;
-        }
-    }
-    this->set_local_window(window);
+  Edge_Detector::address = address;
+  read();
+  
+  for (int i = 0; i < 4; i++)
+  {
+    local_result = Edge_Detector::data.range((i + 1) * 16 - 1, i * 16).to_int();
+    sobel_results[i] = (short int)local_result;
+    dbgimgtarmodprint("%0d", sobel_results[i]);
+  }
+  
+  memcpy(data, sobel_results, 4 * sizeof(short int));
+}
+
+void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address)
+{
+  sc_uint<8> values[8];
+  
+  dbgimgtarmodprint("Calling do_when_write_transaction");
+  
+  for (int i = 0; i < 8; i++)
+  {
+    values[i] = *(data + i);
+  }
+  Edge_Detector::data = (values[7], values[6], values[5], values[4], values[3], values[2], values[1], values[0]);
+  Edge_Detector::address = address;
+  write();
+}
+
+void sobel_edge_detector_tlm::read()
+{
+  if ((Edge_Detector::address - SOBEL_OUTPUT) == 0)
+  {
+    Edge_Detector::data = (sc_uint<32>(0), resultSobelGradientY, resultSobelGradientX);
+  }
+}
+
+void sobel_edge_detector_tlm::write()
+{
+  wr_t.notify(0, SC_NS);
 }
 
 #endif

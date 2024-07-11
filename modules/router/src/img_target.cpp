@@ -81,7 +81,7 @@ struct img_target: sc_module
                 trans.acquire();
                 trans.get_extension(img_ext);
                 
-                dbgmodprint("BEGIN_REQ RECEIVED TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
+                dbgmodprint("BEGIN_REQ RECEIVED TRANS ID %0d", img_ext->transaction_number);
                 
                 //Queue a response
                 tlm::tlm_phase int_phase = internal_processing_ph;
@@ -121,7 +121,7 @@ struct img_target: sc_module
                 // Target only care about acknowledge of the succesful response
                 trans.release();
                 trans.get_extension(img_ext);
-                dbgmodprint("TLM_ACCEPTED RECEIVED TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
+                dbgmodprint("TLM_ACCEPTED RECEIVED TRANS ID %0d", img_ext->transaction_number);
                 break;
             }
 
@@ -134,10 +134,10 @@ struct img_target: sc_module
 
     }
 
-    virtual void do_when_read_transaction(unsigned char*& data){
+    virtual void do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address){
 
     }
-    virtual void do_when_write_transaction(unsigned char*&data){
+    virtual void do_when_write_transaction(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address){
 
     }
 
@@ -165,7 +165,7 @@ struct img_target: sc_module
             case tlm::TLM_READ_COMMAND: {
                 unsigned char* response_data_ptr;
                 response_data_ptr = (unsigned char*)malloc(len);
-                this->do_when_read_transaction(response_data_ptr);
+                this->do_when_read_transaction(response_data_ptr, len, addr);
                 //Add read according to length
                 //-----------DEBUG-----------
                 dbgmodprint("[DEBUG] Reading: ");
@@ -178,7 +178,7 @@ struct img_target: sc_module
                 break;
             }
             case tlm::TLM_WRITE_COMMAND: {
-                this->do_when_write_transaction(data_ptr);
+                this->do_when_write_transaction(data_ptr, len, addr);
                 //-----------DEBUG-----------
                 dbgmodprint("[DEBUG] Writing: ");
                 for (int i = 0; i < len/sizeof(int); ++i){
@@ -194,7 +194,7 @@ struct img_target: sc_module
         }
 
         //Send response
-        dbgmodprint("BEGIN_RESP SENT TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
+        dbgmodprint("BEGIN_RESP SENT TRANS ID %0d", img_ext->transaction_number);
         send_response(trans);
     }
     

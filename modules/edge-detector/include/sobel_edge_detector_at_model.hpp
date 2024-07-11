@@ -8,8 +8,13 @@
 SC_MODULE(Edge_Detector)
 {
   
+#ifndef USING_TLM_TB_EN
   sc_inout<sc_uint<64>> data;
   sc_in<sc_uint<24>> address;
+#else
+  sc_uint<64> data;
+  sc_uint<24> address;
+#endif // USING_TLM_TB_EN
   
   const double delay_full_adder_1_bit = 0.361;
   const double delay_full_adder = delay_full_adder_1_bit * 16;
@@ -49,9 +54,9 @@ SC_MODULE(Edge_Detector)
     SC_THREAD(perform_sum_gradient_y);
   }
   
-  void write();
+  virtual void write();
   
-  void read();
+  virtual void read();
   
   void wr();
   
