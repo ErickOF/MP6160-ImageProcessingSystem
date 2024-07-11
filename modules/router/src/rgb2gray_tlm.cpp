@@ -14,7 +14,7 @@ using namespace std;
 
 #include "common_func.hpp"
 
-void rgb2gray_tlm::do_when_read_transaction(unsigned char*& data){
+void rgb2gray_tlm::do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address){
   unsigned char pixel_value;
   
   pixel_value = this->obtain_gray_value();
@@ -22,7 +22,7 @@ void rgb2gray_tlm::do_when_read_transaction(unsigned char*& data){
   memcpy(data, &pixel_value, sizeof(char));
 }
 
-void rgb2gray_tlm::do_when_write_transaction(unsigned char*&data){
+void rgb2gray_tlm::do_when_write_transaction(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address){
   unsigned char rgb_values[3];
   
   unsigned char *i = data;

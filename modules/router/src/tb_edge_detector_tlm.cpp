@@ -30,8 +30,9 @@ using namespace std;
 #include "img_initiator.cpp"
 
 #include "common_func.hpp"
+#include "AddressMap.h"
 
-#if !defined(RGB2GRAY_PV_EN) || !defined(EDGE_DETECTOR_LT_EN)
+#if !defined(RGB2GRAY_PV_EN) || !defined(EDGE_DETECTOR_AT_EN)
 #error "Not all the required macros (RGB2GRAY_PV_EN and EDGE_DETECTOR_LT_EN) are defined is defined."
 #endif
 
@@ -50,11 +51,11 @@ SC_MODULE(Tb_top)
     rgb2gray_DUT = new rgb2gray_tlm("rgb2gray_DUT");
     
     sobel_initiator->start_img_initiators();
-    sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
-    edge_detector_DUT->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
+    edge_detector_DUT->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
     gray_initiator->start_img_initiators();
-    gray_initiator->set_delays(sc_time(1, SC_NS), sc_time(1, SC_NS));
-    rgb2gray_DUT->set_delays(sc_time(1, SC_NS), sc_time(1, SC_NS));
+    gray_initiator->set_delays(sc_time(0, SC_NS), sc_time(0, SC_NS));
+    rgb2gray_DUT->set_delays(sc_time(0, SC_NS), sc_time(0, SC_NS));
     
     // Bind initiator socket to target socket
     sobel_initiator->socket.bind(edge_detector_DUT->socket);
@@ -75,7 +76,7 @@ SC_MODULE(Tb_top)
     
     int total_number_of_pixels;
     int current_number_of_pixels = 0;
-    int next_target_of_completion = 10.0;
+    float next_target_of_completion = 10.0;
     
     colorImage = imread("../../tools/datagen/src/imgs/car.jpg", IMREAD_UNCHANGED);
   
@@ -106,26 +107,36 @@ SC_MODULE(Tb_top)
         *(rgb_pixel + 1) = localG;
         *(rgb_pixel + 2) = localB;
         
+        dbgprint("Before doing a write in TB");
         gray_initiator->write(rgb_pixel, 0, 3 * sizeof(char));
-        dbgprint("OUTSIDE");
-        wait(sc_time(10, SC_NS));
-        dbgprint("OUTSIDE");
+        dbgprint("After doing a write in TB");
+        dbgprint("Before doing a read in TB");
         gray_initiator->read(data_returned, 0, sizeof(char));
+        dbgprint("After doing a read in TB");
         dbgprint("Data_returned: %0d", *data_returned);
         
         localResult = *data_returned;
         grayImage.at<uchar>(i, j) = localResult;
+        
+        current_number_of_pixels++;
+        if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
+          dbgprint("Image processing completed at %0d", next_target_of_completion);
+          next_target_of_completion += 10.0;
+        }
       }
     }
     
     dbgprint("Finished gray scale conversion");
     
+    current_number_of_pixels = 0;
+    next_target_of_completion = 10.0;
+    
     for (int i = 0; i < grayImage.rows; i++)
     {
       for (int j = 0; j < grayImage.cols; j++)
       {
-        int* local_window_ptr = new int[9];
-        int* data_returned;
+        unsigned char* local_window_ptr = new unsigned char[16];
+        short int* data_returned;
         unsigned char* write_ptr;
         unsigned char* read_ptr;
         
@@ -264,28 +275,30 @@ SC_MODULE(Tb_top)
           *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
           *(local_window_ptr + 8) = grayImage.at<uchar>(i + 1, j + 1);
         }
+        for (int k = 9; k < 16; k++)
+        {
+          *(local_window_ptr + k) = 0;
+        }
         
-        write_ptr = reinterpret_cast<unsigned char*>(local_window_ptr);
-        sobel_initiator->write(write_ptr, 0, 9 * sizeof(int));
-        dbgprint("OUTSIDE");
-        wait(sc_time(100, SC_NS));
-        dbgprint("OUTSIDE");
-        sobel_initiator->read(read_ptr, 0, 2 * sizeof(int));
-        data_returned = reinterpret_cast<int*>(read_ptr);
+        write_ptr = local_window_ptr;
+        dbgprint("Before doing a write in TB");
+        sobel_initiator->write(write_ptr, SOBEL_INPUT_0, 8 * sizeof(char));
+        dbgprint("After doing a write in TB");
+        write_ptr = (local_window_ptr + 8);
+        dbgprint("Before doing a write in TB");
+        sobel_initiator->write(write_ptr, SOBEL_INPUT_1, 8 * sizeof(char));
+        dbgprint("After doing a write in TB");
+        dbgprint("Before doing a read in TB");
+        sobel_initiator->read(read_ptr, SOBEL_OUTPUT, 8 * sizeof(char));
+        dbgprint("After doing a read in TB");
+        data_returned = reinterpret_cast<short int*>(read_ptr);
         dbgprint("Data_returned: %0d\n", *data_returned);
         dbgprint("Data_returned: %0d\n", *(data_returned+1));
-        
-        //edge_detector_DUT->set_local_window(localWindow);
-        localGradientX = edge_detector_DUT->obtain_sobel_gradient_x();
-        localGradientY = edge_detector_DUT->obtain_sobel_gradient_y();
-
-        dbgprint("Data_returned2: %0d\n", localGradientX);
-        dbgprint("Data_returned2: %0d\n", localGradientY);
         
         localGradientX = *data_returned;
         localGradientY = *(data_returned+1);
         
-        if (localGradientX > 255) {
+        if ((localGradientX > 255) || (localGradientX < 255)) {
           detectedImageX.at<uchar>(i, j) = 255;
         } 
         else if (localGradientX < 0) {
@@ -294,7 +307,7 @@ SC_MODULE(Tb_top)
         else {
           detectedImageX.at<uchar>(i, j) = (unsigned char)localGradientX; 
         }
-        if (localGradientY > 255) {
+        if ((localGradientY > 255) || (localGradientY < 255)) {
           detectedImageY.at<uchar>(i, j) = 255;
         }
         else if (localGradientY < 0) {
@@ -305,17 +318,11 @@ SC_MODULE(Tb_top)
         }
       
         localResult = (unsigned char)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
-        
-        if (localResult > 255) {
-          detectedImage.at<uchar>(i, j) = 255;
-        }
-        else {
-          detectedImage.at<uchar>(i, j) = localResult;
-        }
+        detectedImage.at<uchar>(i, j) = localResult;
         
         current_number_of_pixels++;
         if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
-          dbgprint("At time %s Image processing completed at %0d", sc_time_stamp().to_string().c_str(), next_target_of_completion);
+          dbgprint("Image processing completed at %0d", next_target_of_completion);
           next_target_of_completion += 10.0;
         }
       }
@@ -339,49 +346,43 @@ int sc_main(int, char*[])
   wf->set_time_unit(1, SC_PS);
 
   Tb_top top("top");
-
-
-// #ifdef EDGE_DETECTOR_AT_EN
-//   edge_detector.data(data);
-//   edge_detector.address(address);
   
-//   // Dump the desired signals
-//   sc_trace(wf, data, "data");
-//   sc_trace(wf, address, "address");
-//   sc_trace(wf, edge_detector.localWindow[0][0], "localWindow(0)(0)");
-//   sc_trace(wf, edge_detector.localWindow[0][1], "localWindow(0)(1)");
-//   sc_trace(wf, edge_detector.localWindow[0][2], "localWindow(0)(2)");
-//   sc_trace(wf, edge_detector.localWindow[1][0], "localWindow(1)(0)");
-//   sc_trace(wf, edge_detector.localWindow[1][1], "localWindow(1)(1)");
-//   sc_trace(wf, edge_detector.localWindow[1][2], "localWindow(1)(2)");
-//   sc_trace(wf, edge_detector.localWindow[2][0], "localWindow(0)(0)");
-//   sc_trace(wf, edge_detector.localWindow[2][1], "localWindow(2)(1)");
-//   sc_trace(wf, edge_detector.localWindow[2][2], "localWindow(2)(2)");
-//   sc_trace(wf, edge_detector.localMultX[0][0], "localMultX(0)(0)");
-//   sc_trace(wf, edge_detector.localMultX[0][1], "localMultX(0)(1)");
-//   sc_trace(wf, edge_detector.localMultX[0][2], "localMultX(0)(2)");
-//   sc_trace(wf, edge_detector.localMultX[1][0], "localMultX(1)(0)");
-//   sc_trace(wf, edge_detector.localMultX[1][1], "localMultX(1)(1)");
-//   sc_trace(wf, edge_detector.localMultX[1][2], "localMultX(1)(2)");
-//   sc_trace(wf, edge_detector.localMultX[2][0], "localMultX(0)(0)");
-//   sc_trace(wf, edge_detector.localMultX[2][1], "localMultX(2)(1)");
-//   sc_trace(wf, edge_detector.localMultX[2][2], "localMultX(2)(2)");
-//   sc_trace(wf, edge_detector.localMultY[0][0], "localMultY(0)(0)");
-//   sc_trace(wf, edge_detector.localMultY[0][1], "localMultY(0)(1)");
-//   sc_trace(wf, edge_detector.localMultY[0][2], "localMultY(0)(2)");
-//   sc_trace(wf, edge_detector.localMultY[1][0], "localMultY(1)(0)");
-//   sc_trace(wf, edge_detector.localMultY[1][1], "localMultY(1)(1)");
-//   sc_trace(wf, edge_detector.localMultY[1][2], "localMultY(1)(2)");
-//   sc_trace(wf, edge_detector.localMultY[2][0], "localMultY(0)(0)");
-//   sc_trace(wf, edge_detector.localMultY[2][1], "localMultY(2)(1)");
-//   sc_trace(wf, edge_detector.localMultY[2][2], "localMultY(2)(2)");
-//   sc_trace(wf, edge_detector.resultSobelGradientX, "resultSobelGradientX");
-//   sc_trace(wf, edge_detector.resultSobelGradientY, "resultSobelGradientY");
-// #endif // EDGE_DETECTOR_AT_EN
+  // Dump the desired signals
+  sc_trace(wf, top.edge_detector_DUT->Edge_Detector::data, "data");
+  sc_trace(wf, top.edge_detector_DUT->Edge_Detector::address, "address");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[0][0], "localWindow(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[0][1], "localWindow(0)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[0][2], "localWindow(0)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[1][0], "localWindow(1)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[1][1], "localWindow(1)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[1][2], "localWindow(1)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[2][0], "localWindow(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[2][1], "localWindow(2)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[2][2], "localWindow(2)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[0][0], "localMultX(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[0][1], "localMultX(0)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[0][2], "localMultX(0)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[1][0], "localMultX(1)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[1][1], "localMultX(1)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[1][2], "localMultX(1)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[2][0], "localMultX(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[2][1], "localMultX(2)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[2][2], "localMultX(2)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[0][0], "localMultY(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[0][1], "localMultY(0)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[0][2], "localMultY(0)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[1][0], "localMultY(1)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[1][1], "localMultY(1)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[1][2], "localMultY(1)(2)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[2][0], "localMultY(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[2][1], "localMultY(2)(1)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[2][2], "localMultY(2)(2)");
+  sc_trace(wf, top.edge_detector_DUT->resultSobelGradientX, "resultSobelGradientX");
+  sc_trace(wf, top.edge_detector_DUT->resultSobelGradientY, "resultSobelGradientY");
   
   sc_start();
 
-  dbgprint("At time %s Terminating simulation", sc_time_stamp().to_string().c_str());
+  dbgprint("Terminating simulation");
   sc_close_vcd_trace_file(wf);
 
   return 0;
