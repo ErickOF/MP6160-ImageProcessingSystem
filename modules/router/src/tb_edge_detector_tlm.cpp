@@ -298,7 +298,7 @@ SC_MODULE(Tb_top)
         localGradientX = *data_returned;
         localGradientY = *(data_returned+1);
         
-        if ((localGradientX > 255) || (localGradientX < 255)) {
+        if ((localGradientX > 255) || (localGradientX < -255)) {
           detectedImageX.at<uchar>(i, j) = 255;
         } 
         else if (localGradientX < 0) {
@@ -307,7 +307,7 @@ SC_MODULE(Tb_top)
         else {
           detectedImageX.at<uchar>(i, j) = (unsigned char)localGradientX; 
         }
-        if ((localGradientY > 255) || (localGradientY < 255)) {
+        if ((localGradientY > 255) || (localGradientY < -255)) {
           detectedImageY.at<uchar>(i, j) = 255;
         }
         else if (localGradientY < 0) {
