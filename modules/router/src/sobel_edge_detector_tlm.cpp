@@ -19,15 +19,15 @@ void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data){
 
         sobel_results[0] = obtain_sobel_gradient_x();
         sobel_results[1] = obtain_sobel_gradient_y();
-        dbgprint("%0d", sobel_results[0]);
-        dbgprint("%0d", sobel_results[1]);
+        dbgimgtarmodprint("%0d", sobel_results[0]);
+        dbgimgtarmodprint("%0d", sobel_results[1]);
         memcpy(data, &sobel_results[0], 2*sizeof(int));
     }
 void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data){
     int window[3][3];
     for (int* i = reinterpret_cast<int*>(data), row = 0, col = 0; i - reinterpret_cast<int*>(data) < 9; i++) {
         window[row][col] = *i;
-        dbgprint("VAL: %0d -> %0d", i-reinterpret_cast<int*>(data), *i);
+        dbgimgtarmodprint("VAL: %0d -> %0d", i-reinterpret_cast<int*>(data), *i);
         row++;
         if (row == 3) {
             row = 0;

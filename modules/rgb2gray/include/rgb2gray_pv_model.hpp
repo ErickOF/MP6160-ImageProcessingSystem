@@ -20,7 +20,7 @@ SC_MODULE(Rgb2Gray)
   
   void compute_gray_value();
   
-  char obtain_gray_value();
+  unsigned char obtain_gray_value();
 
 };
 

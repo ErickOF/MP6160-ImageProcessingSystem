@@ -22,8 +22,11 @@ INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/includ
 LIBDIR=-L. -L$(SYSTEMC)/lib-linux64
 
 ifdef USING_TLM_TB_EN
-SRCDIRS=$(SRCDIR) ../edge-detector/src
-INCDIR+=-I../edge-detector/include
+EDGE_DIR=../edge-detector
+GRAY_DIR=../rgb2gray
+
+SRCDIRS=$(SRCDIR) $(EDGE_DIR)/src $(GRAY_DIR)/src
+INCDIR+=-I$(EDGE_DIR)/include -I$(GRAY_DIR)/include
 endif # USING_TLM_TB_EN
 
 ifdef INCLUDE_OPENCV
