@@ -1,3 +1,4 @@
+#ifndef USING_TLM_TB_EN
 #define int64  systemc_int64
 #define uint64 systemc_uint64
 #include <systemc.h>
@@ -71,3 +72,4 @@ int sc_main(int, char*[])
 
   return 0;
 }
+#endif USING_TLM_TB_EN

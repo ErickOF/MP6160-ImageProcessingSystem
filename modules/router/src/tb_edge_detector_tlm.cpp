@@ -1,3 +1,4 @@
+#ifdef USING_TLM_TB_EN
 #ifndef TB_EDGE_DETECTOR_TLM_CPP
 #define TB_EDGE_DETECTOR_TLM_CPP
 
@@ -24,172 +25,253 @@ using namespace std;
 #include "tlm_utils/simple_target_socket.h"
 #include "tlm_utils/peq_with_cb_and_phase.h"
 
+#include "rgb2gray_tlm.hpp"
 #include "sobel_edge_detector_tlm.hpp"
 #include "img_initiator.cpp"
 
 #include "common_func.hpp"
 
+#if !defined(RGB2GRAY_PV_EN) || !defined(EDGE_DETECTOR_LT_EN)
+#error "Not all the required macros (RGB2GRAY_PV_EN and EDGE_DETECTOR_LT_EN) are defined is defined."
+#endif
+
 SC_MODULE(Tb_top)
 {
-  img_initiator *initiator;
+  img_initiator *sobel_initiator;
+  img_initiator *gray_initiator;
   sobel_edge_detector_tlm *edge_detector_DUT;
-
+  rgb2gray_tlm *rgb2gray_DUT;
+  
   SC_CTOR(Tb_top)
   {
-    // Instantiate components   
-    initiator = new img_initiator("initiator");   
+    sobel_initiator = new img_initiator("sobel_initiator");
+    gray_initiator = new img_initiator("gray_initiator");
     edge_detector_DUT = new sobel_edge_detector_tlm("edge_detector_DUT");
-   
-    // Bind initiator socket to target socket   
-    initiator->socket.bind(edge_detector_DUT->socket);
-
-    SC_THREAD(thread_process);     
+    rgb2gray_DUT = new rgb2gray_tlm("rgb2gray_DUT");
+    
+    sobel_initiator->start_img_initiators();
+    sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    edge_detector_DUT->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    gray_initiator->start_img_initiators();
+    gray_initiator->set_delays(sc_time(1, SC_NS), sc_time(1, SC_NS));
+    rgb2gray_DUT->set_delays(sc_time(1, SC_NS), sc_time(1, SC_NS));
+    
+    // Bind initiator socket to target socket
+    sobel_initiator->socket.bind(edge_detector_DUT->socket);
+    gray_initiator->socket.bind(rgb2gray_DUT->socket);
+    
+    SC_THREAD(thread_process);
   }
-
+  
   void thread_process()
   {
-    Mat greyImage;
-    int localResult;
-
-    #ifndef EDGE_DETECTOR_AT_EN
-      int localWindow[3][3];
-      int localGradientX, localGradientY;
-    #else
-      sc_uint<8> localWindow[3][3];
-      sc_int<16> localGradientX, localGradientY;
-    #endif // EDGE_DETECTOR_AT_EN
+    Mat colorImage;
     
-    #ifdef TEST_NORMALIZE_MAGNITUDE
-      int** tmpValues;
-      int maxTmpValue = 0;
-    #endif // TEST_NORMALIZE_MAGNITUDE
-
-    // #ifdef EDGE_DETECTOR_AT_EN
-    //   sc_signal<sc_uint<64>> data;
-    //   sc_signal<sc_uint<24>> address;
-    // #endif // EDGE_DETECTOR_AT_EN
-
-    #if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
-      int total_number_of_pixels;
-      int current_number_of_pixels = 0;
-      int next_target_of_completion = 10.0;
-    #endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
-
-    greyImage = imread("../../tools/datagen/src/imgs/car_grayscale_image.jpg", IMREAD_GRAYSCALE);
+    unsigned char localR, localG, localB;
+    unsigned char localResult;
+    
+    int localWindow[3][3];
+    int localGradientX, localGradientY;
+    
+    int total_number_of_pixels;
+    int current_number_of_pixels = 0;
+    int next_target_of_completion = 10.0;
+    
+    colorImage = imread("../../tools/datagen/src/imgs/car.jpg", IMREAD_UNCHANGED);
   
-    if (greyImage.empty())
+    if (colorImage.empty())
     { 
-      cout << "Image File " << "Not Found" << endl; 
-      return;
+      cout << "Image File " << "Not Found" << endl;
+
+      return; 
     }
-
-    Mat detectedImageX(greyImage.rows, greyImage.cols, CV_8UC1);
-    Mat detectedImageY(greyImage.rows, greyImage.cols, CV_8UC1);
-    Mat detectedImage(greyImage.rows, greyImage.cols, CV_8UC1);
-
-    #if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
-      total_number_of_pixels = greyImage.rows * greyImage.cols;
-    #endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
-
-    #ifdef TEST_NORMALIZE_MAGNITUDE
-      tmpValues = new int*[greyImage.rows];
-      for (int i = 0; i < greyImage.rows; i++)
-      {
-        tmpValues[i] = new int[greyImage.cols];
-      }
-    #endif // TEST_NORMALIZE_MAGNITUDE
     
-    for (int i = 0; i < greyImage.rows; i++) {
-      for (int j = 0; j < greyImage.cols; j++) {
-        for (int k = 0; k < 3; k++) {
-          for (int l = 0; l < 3; l++) {
-            if ((i == 0) && (j == 0)) { // Upper left corner
-              if ((k == 0) || (l == 0)) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else if ((i == 0) && (j == greyImage.cols - 1)) { // Upper right corner
-              if ((k == 0) || (l == 2)) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else if (i == 0) { // Upper border
-              if (k == 0) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else if ((i == greyImage.rows - 1) && (j == 0)) { // Lower left corner
-              if ((k == 2) || (l == 0)) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else if ((i == greyImage.rows - 1) && (j == greyImage.cols - 1)) { // Lower right corner
-              if ((k == 2) || (l == 2)) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              } 
-            }
-            else if (i == greyImage.rows - 1) { // Lower border
-              if (k == 2) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else if (j == 0) { // Left border
-              if (l == 0) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else if (j == greyImage.cols - 1) { // Right border
-              if (l == 2) {
-                localWindow[k][l] = 0;
-              }
-              else {
-                localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-              }
-            }
-            else {
-              localWindow[k][l] = greyImage.at<uchar>(i + k - 1, j + l - 1);
-            }
-          }
-        }
-
-#ifndef EDGE_DETECTOR_AT_EN
-        //edge_detector.set_local_window(localWindow);
+    Mat grayImage(colorImage.rows, colorImage.cols, CV_8UC1);
+    Mat detectedImageX(colorImage.rows, colorImage.cols, CV_8UC1);
+    Mat detectedImageY(colorImage.rows, colorImage.cols, CV_8UC1);
+    Mat detectedImage(colorImage.rows, colorImage.cols, CV_8UC1);
+    
+    total_number_of_pixels = colorImage.rows * colorImage.cols;
+    
+    for (int i = 0; i < colorImage.rows; i++)
+    {
+      for (int j = 0; j < colorImage.cols; j++)
+      {
+        unsigned char* rgb_pixel = new unsigned char[3];
+        unsigned char* data_returned;
+        localR = colorImage.at<cv::Vec3b>(i, j)[2];
+        localG = colorImage.at<cv::Vec3b>(i, j)[1];
+        localB = colorImage.at<cv::Vec3b>(i, j)[0];
+        *(rgb_pixel + 0) = localR;
+        *(rgb_pixel + 1) = localG;
+        *(rgb_pixel + 2) = localB;
+        
+        gray_initiator->write(rgb_pixel, 0, 3 * sizeof(char));
+        dbgprint("OUTSIDE");
+        wait(sc_time(10, SC_NS));
+        dbgprint("OUTSIDE");
+        gray_initiator->read(data_returned, 0, sizeof(char));
+        dbgprint("Data_returned: %0d", *data_returned);
+        
+        localResult = *data_returned;
+        grayImage.at<uchar>(i, j) = localResult;
+      }
+    }
+    
+    dbgprint("Finished gray scale conversion");
+    
+    for (int i = 0; i < grayImage.rows; i++)
+    {
+      for (int j = 0; j < grayImage.cols; j++)
+      {
         int* local_window_ptr = new int[9];
-        for (int i = 0, row = 0, col = 0; i < 9; i++){
-          *(local_window_ptr+i) = localWindow[row++][col];
-          if (row >= 3){
-            row = 0;
-            col++;
-          }
+        int* data_returned;
+        unsigned char* write_ptr;
+        unsigned char* read_ptr;
+        
+        if ((i == 0) && (j == 0)) // Upper left corner of the image
+        {
+          // First row
+          *(local_window_ptr    ) = 0;
+          *(local_window_ptr + 1) = 0;
+          *(local_window_ptr + 2) = 0;
+          // Second row
+          *(local_window_ptr + 3) = 0;
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = grayImage.at<uchar>(i    , j + 1);
+          // Third row
+          *(local_window_ptr + 6) = 0;
+          *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
+          *(local_window_ptr + 8) = grayImage.at<uchar>(i + 1, j + 1);
         }
-        initiator->write(local_window_ptr, 0, 9*4);
+        else if ((i == 0) && (j == grayImage.cols - 1)) // Upper right corner of the image
+        {
+          // First row
+          *(local_window_ptr    ) = 0;
+          *(local_window_ptr + 1) = 0;
+          *(local_window_ptr + 2) = 0;
+          // Second row
+          *(local_window_ptr + 3) = grayImage.at<uchar>(i    , j - 1);
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = 0;
+          // Third row
+          *(local_window_ptr + 6) = grayImage.at<uchar>(i + 1, j - 1);
+          *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
+          *(local_window_ptr + 8) = 0;
+        }
+        else if (i == 0) // Upper border
+        {
+          // First row
+          *(local_window_ptr    ) = 0;
+          *(local_window_ptr + 1) = 0;
+          *(local_window_ptr + 2) = 0;
+          // Second row
+          *(local_window_ptr + 3) = grayImage.at<uchar>(i    , j - 1);
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = grayImage.at<uchar>(i    , j + 1);
+          // Third row
+          *(local_window_ptr + 6) = grayImage.at<uchar>(i + 1, j - 1);
+          *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
+          *(local_window_ptr + 8) = grayImage.at<uchar>(i + 1, j + 1);
+        }
+        else if ((i == grayImage.rows - 1) && (j == 0)) // Lower left corner of the image
+        {
+          // First row
+          *(local_window_ptr    ) = 0;
+          *(local_window_ptr + 1) = grayImage.at<uchar>(i - 1, j    );
+          *(local_window_ptr + 2) = grayImage.at<uchar>(i - 1, j + 1);
+          // Second row
+          *(local_window_ptr + 3) = 0;
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = grayImage.at<uchar>(i    , j + 1);
+          // Third row
+          *(local_window_ptr + 6) = 0;
+          *(local_window_ptr + 7) = 0;
+          *(local_window_ptr + 8) = 0;
+        }
+        else if ((i == grayImage.rows - 1) && (j == grayImage.cols - 1)) // Lower right corner of the image
+        {
+          // First row
+          *(local_window_ptr    ) = grayImage.at<uchar>(i - 1, j - 1);
+          *(local_window_ptr + 1) = grayImage.at<uchar>(i - 1, j    );
+          *(local_window_ptr + 2) = 0;
+          // Second row
+          *(local_window_ptr + 3) = grayImage.at<uchar>(i    , j - 1);
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = 0;
+          // Third row
+          *(local_window_ptr + 6) = 0;
+          *(local_window_ptr + 7) = 0;
+          *(local_window_ptr + 8) = 0;
+        }
+        else if (i == grayImage.rows - 1) // Lower border of the image
+        {
+          // First row
+          *(local_window_ptr    ) = grayImage.at<uchar>(i - 1, j - 1);
+          *(local_window_ptr + 1) = grayImage.at<uchar>(i - 1, j    );
+          *(local_window_ptr + 2) = grayImage.at<uchar>(i - 1, j + 1);
+          // Second row
+          *(local_window_ptr + 3) = grayImage.at<uchar>(i    , j - 1);
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = grayImage.at<uchar>(i    , j + 1);
+          // Third row
+          *(local_window_ptr + 6) = 0;
+          *(local_window_ptr + 7) = 0;
+          *(local_window_ptr + 8) = 0;
+        }
+        else if (j == 0) // Left border of the image
+        {
+          // First row
+          *(local_window_ptr    ) = 0;
+          *(local_window_ptr + 1) = grayImage.at<uchar>(i - 1, j    );
+          *(local_window_ptr + 2) = grayImage.at<uchar>(i - 1, j + 1);
+          // Second row
+          *(local_window_ptr + 3) = 0;
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = grayImage.at<uchar>(i    , j + 1);
+          // Third row
+          *(local_window_ptr + 6) = 0;
+          *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
+          *(local_window_ptr + 8) = grayImage.at<uchar>(i + 1, j + 1);
+        }
+        else if (j == grayImage.cols - 1) // Right border of the image
+        {
+          // First row
+          *(local_window_ptr    ) = grayImage.at<uchar>(i - 1, j - 1);
+          *(local_window_ptr + 1) = grayImage.at<uchar>(i - 1, j    );
+          *(local_window_ptr + 2) = 0;
+          // Second row
+          *(local_window_ptr + 3) = grayImage.at<uchar>(i    , j - 1);
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = 0;
+          // Third row
+          *(local_window_ptr + 6) = grayImage.at<uchar>(i + 1, j - 1);
+          *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
+          *(local_window_ptr + 8) = 0;
+        }
+        else // Rest of the image
+        {
+          // First row
+          *(local_window_ptr    ) = grayImage.at<uchar>(i - 1, j - 1);
+          *(local_window_ptr + 1) = grayImage.at<uchar>(i - 1, j    );
+          *(local_window_ptr + 2) = grayImage.at<uchar>(i - 1, j + 1);
+          // Second row
+          *(local_window_ptr + 3) = grayImage.at<uchar>(i    , j - 1);
+          *(local_window_ptr + 4) = grayImage.at<uchar>(i    , j    );
+          *(local_window_ptr + 5) = grayImage.at<uchar>(i    , j + 1);
+          // Third row
+          *(local_window_ptr + 6) = grayImage.at<uchar>(i + 1, j - 1);
+          *(local_window_ptr + 7) = grayImage.at<uchar>(i + 1, j    );
+          *(local_window_ptr + 8) = grayImage.at<uchar>(i + 1, j + 1);
+        }
+        
+        write_ptr = reinterpret_cast<unsigned char*>(local_window_ptr);
+        sobel_initiator->write(write_ptr, 0, 9 * sizeof(int));
         dbgprint("OUTSIDE");
         wait(sc_time(100, SC_NS));
         dbgprint("OUTSIDE");
-        int* data_returned = new int;
-        initiator->read(data_returned, 0, 2*4);
-        // dbgprint("OUTSIDE");
+        sobel_initiator->read(read_ptr, 0, 2 * sizeof(int));
+        data_returned = reinterpret_cast<int*>(read_ptr);
         dbgprint("Data_returned: %0d\n", *data_returned);
         dbgprint("Data_returned: %0d\n", *(data_returned+1));
         
@@ -199,110 +281,52 @@ SC_MODULE(Tb_top)
 
         dbgprint("Data_returned2: %0d\n", localGradientX);
         dbgprint("Data_returned2: %0d\n", localGradientY);
-
         
-        //initiator->write(&localWindow[0][0]+8, 1);
-        //wait(delay);
-        //wait(delay);
-#else
-        address = SOBEL_INPUT_0;
-        initiator->write(localWindow, 8);
-        //wait(delay);
-        
-        address = SOBEL_INPUT_1;
-        initiator->write(localWindow+8, 1);
-        //wait(delay);
-        
-        address = SOBEL_OUTPUT;
-        initiator->read(1);
-        //wait(delay);
-        
-        for (int m = 0; m < 16; m++)
-        {
-          localGradientX[m] = data.read()[m];
-        }
-        for (int m = 0; m < 16; m++)
-        {
-          localGradientY[m] = data.read()[m + 16];
-        }
-        
-        localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
-#endif // EDGE_DETECTOR_AT_EN
-        dbgprint("HERE01");
         localGradientX = *data_returned;
         localGradientY = *(data_returned+1);
-        dbgprint("HERE01");
-      
-        localResult = (int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
-#ifdef TEST_NORMALIZE_MAGNITUDE
-        tmpValues[i][j] = localResult;
-        if (localResult > maxTmpValue) {
-          maxTmpValue = localResult;
+        
+        if (localGradientX > 255) {
+          detectedImageX.at<uchar>(i, j) = 255;
+        } 
+        else if (localGradientX < 0) {
+          detectedImageX.at<uchar>(i, j) = (unsigned char)(-localGradientX);
         }
-#else
+        else {
+          detectedImageX.at<uchar>(i, j) = (unsigned char)localGradientX; 
+        }
+        if (localGradientY > 255) {
+          detectedImageY.at<uchar>(i, j) = 255;
+        }
+        else if (localGradientY < 0) {
+          detectedImageY.at<uchar>(i, j) = (unsigned char)(-localGradientY); 
+        }
+        else {
+          detectedImageY.at<uchar>(i, j) = (unsigned char)localGradientY;
+        }
+      
+        localResult = (unsigned char)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
+        
         if (localResult > 255) {
           detectedImage.at<uchar>(i, j) = 255;
         }
         else {
           detectedImage.at<uchar>(i, j) = localResult;
         }
-#endif // TEST_NORMALIZE_MAGNITUDE
         
-        if (localGradientX > 255) {
-          detectedImageX.at<uchar>(i, j) = 255;
-        } 
-        else if (localGradientX < 0) {
-          detectedImageX.at<uchar>(i, j) = (-localGradientX);
-        }
-        else {
-          detectedImageX.at<uchar>(i, j) = localGradientX; 
-        }
-        if (localGradientY > 255) {
-          detectedImageY.at<uchar>(i, j) = 255;
-        }
-        else if (localGradientY < 0) {
-          detectedImageY.at<uchar>(i, j) = (-localGradientY); 
-        }
-        else {
-          detectedImageY.at<uchar>(i, j) = localGradientY;
-        }
-
-#if defined(EDGE_DETECTOR_LT_EN) || defined(EDGE_DETECTOR_AT_EN)
         current_number_of_pixels++;
         if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
           dbgprint("At time %s Image processing completed at %0d", sc_time_stamp().to_string().c_str(), next_target_of_completion);
           next_target_of_completion += 10.0;
         }
-#endif // EDGE_DETECTOR_LT_EN || EDGE_DETECTOR_AT_EN
       }
     }
-
-#ifdef TEST_NORMALIZE_MAGNITUDE
-    for (int i = 0; i < detectedImage.rows; i++) {
-      for (int j = 0; j < detectedImage.cols; j++) {
-        detectedImage.at<uchar>(i, j) = (char)((int)(255.0 * (((float)(tmpValues[i][j])) / ((float)(maxTmpValue)))));
-      }
-    }
-#endif // TEST_NORMALIZE_MAGNITUDE
-
-    //imshow("Original Image", greyImage);
-    //waitKey(0);
-  
-    //imshow("Gradient X", detectedImageX);
+    
+    imwrite("grayImage.jpg", grayImage);
     imwrite("detectedImageX.jpg", detectedImageX);
-    //waitKey(0);
-  
-    //imshow("Gradient Y", detectedImageY);
     imwrite("detectedImageY.jpg", detectedImageY);
-    //waitKey(0);
-  
-    //imshow("Gradient Total", detectedImage);
     imwrite("detectedImage.jpg", detectedImage);
-    //waitKey(0);
   }
 };
-
-
 
 int sc_main(int, char*[])
 {
@@ -362,4 +386,5 @@ int sc_main(int, char*[])
 
   return 0;
 }
-#endif
+#endif // TB_EDGE_DETECTOR_TLM_CPP
+#endif // USING_TLM_TB_EN

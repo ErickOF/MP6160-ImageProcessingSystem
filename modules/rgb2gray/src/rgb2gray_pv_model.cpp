@@ -16,7 +16,7 @@ void Rgb2Gray::compute_gray_value()
   this->gray_value = 0.299 * this->r + 0.587 * this->g + 0.114 * this->b;
 }
 
-char Rgb2Gray::obtain_gray_value()
+unsigned char Rgb2Gray::obtain_gray_value()
 {
   compute_gray_value();
 

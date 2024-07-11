@@ -12,6 +12,7 @@ using namespace std;
 #include "tlm_utils/peq_with_cb_and_phase.h"
 
 #include "common_func.hpp"
+#include "img_generic_extension.hpp"
 
 //For an internal response phase
 DECLARE_EXTENDED_PHASE(internal_processing_ph);
@@ -36,8 +37,8 @@ struct img_target: sc_module
     tlm_utils::peq_with_cb_and_phase<img_target> m_peq;
 
     //Delay
-    sc_time response_delay = sc_time(10, SC_NS);
-    sc_time receive_delay = sc_time(10,SC_NS);
+    sc_time response_delay;
+    sc_time receive_delay;
 
     //Constructor
     SC_CTOR(img_target)   
@@ -69,15 +70,18 @@ struct img_target: sc_module
     {
         tlm::tlm_sync_enum status;
         sc_time delay;
+        img_generic_extension* img_ext;
 
         switch (phase) {
             //Case 1: Target is receiving the first transaction of communication -> BEGIN_REQ
             case tlm::BEGIN_REQ: {
-                dbgprint("%s BEGIN_REQ RECEIVED TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
                 //Check for errors here
 
                 // Increment the transaction reference count
                 trans.acquire();
+                trans.get_extension(img_ext);
+                
+                dbgmodprint("BEGIN_REQ RECEIVED TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
                 
                 //Queue a response
                 tlm::tlm_phase int_phase = internal_processing_ph;
@@ -92,7 +96,7 @@ struct img_target: sc_module
             }
             default: {
                 if (phase == internal_processing_ph){
-                    dbgprint("INTERNAL PHASE: PROCESSING TRANSACTION");
+                    dbgmodprint("INTERNAL PHASE: PROCESSING TRANSACTION");
                     process_transaction(trans);
                 }
                 break;
@@ -105,23 +109,25 @@ struct img_target: sc_module
     {
         tlm::tlm_sync_enum status;
         tlm::tlm_phase response_phase;
+        img_generic_extension* img_ext;
 
         response_phase = tlm::BEGIN_RESP;
         status = socket->nb_transport_bw(trans, response_phase, response_delay);
-        dbgprint("HERE");
+        dbgmodprint("HERE");
         
         //Check Initiator response
         switch(status) {
             case tlm::TLM_ACCEPTED: {
-                dbgprint("%s TLM_ACCEPTED RECEIVED TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
                 // Target only care about acknowledge of the succesful response
                 trans.release();
+                trans.get_extension(img_ext);
+                dbgmodprint("TLM_ACCEPTED RECEIVED TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
                 break;
             }
 
             //Not implementing Updated and Completed Status
             default: {
-                dbgprint("%s:\t [ERROR] Invalid status received at target", name());
+                dbgmodprint("[ERROR] Invalid status received at target");
                 break;
             }
         }
@@ -141,8 +147,7 @@ struct img_target: sc_module
         //Status and Phase
         tlm::tlm_sync_enum status;
         tlm::tlm_phase phase;
-
-        dbgprint("%s Processing transaction: %0d", name(), 0);
+        img_generic_extension* img_ext;
 
         //get variables from transaction
         tlm::tlm_command cmd      = trans.get_command();   
@@ -151,18 +156,21 @@ struct img_target: sc_module
         unsigned int     len      = trans.get_data_length();   
         unsigned char*   byte_en  = trans.get_byte_enable_ptr();   
         unsigned int     width    = trans.get_streaming_width();
+        trans.get_extension(img_ext);
+        
+        dbgmodprint("Processing transaction: %0d", img_ext->transaction_number);
 
         //Process transaction
         switch(cmd) {
             case tlm::TLM_READ_COMMAND: {
                 unsigned char* response_data_ptr;
-                response_data_ptr = (unsigned char*)malloc(2 * sizeof(int));
+                response_data_ptr = (unsigned char*)malloc(len);
                 this->do_when_read_transaction(response_data_ptr);
                 //Add read according to length
                 //-----------DEBUG-----------
-                dbgprint("[DEBUG] Reading: ");
+                dbgmodprint("[DEBUG] Reading: ");
                 for (int i = 0; i < len/sizeof(int); ++i){
-                  dbgprint("%02x", *(reinterpret_cast<int*>(response_data_ptr)+i));
+                  dbgmodprint("%02x", *(reinterpret_cast<int*>(response_data_ptr)+i));
                 }
                 printf("\n");
                 //-----------DEBUG-----------
@@ -172,22 +180,28 @@ struct img_target: sc_module
             case tlm::TLM_WRITE_COMMAND: {
                 this->do_when_write_transaction(data_ptr);
                 //-----------DEBUG-----------
-                dbgprint("[DEBUG] Writing: ");
+                dbgmodprint("[DEBUG] Writing: ");
                 for (int i = 0; i < len/sizeof(int); ++i){
-                  dbgprint("%02x", *(reinterpret_cast<int*>(data_ptr)+i));
+                  dbgmodprint("%02x", *(reinterpret_cast<int*>(data_ptr)+i));
                 }
                 printf("\n");
                 //-----------DEBUG-----------
                 break;
             }
             default: {
-                dbgprint("ERROR Command %0d is NOT valid", cmd);
+                dbgmodprint("ERROR Command %0d is NOT valid", cmd);
             }
         }
 
         //Send response
-        dbgprint("%s BEGIN_RESP SENT TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
+        dbgmodprint("BEGIN_RESP SENT TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
         send_response(trans);
     }
+    
+  void set_delays(sc_time resp_delay, sc_time rec_delay)
+  {
+    this->response_delay = resp_delay;
+    this->receive_delay = rec_delay;
+  }
 };
 #endif

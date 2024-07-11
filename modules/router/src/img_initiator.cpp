@@ -17,6 +17,7 @@ using namespace std;
 #include "tlm_utils/peq_with_cb_and_phase.h"
 
 #include "common_func.hpp"
+#include "img_generic_extension.hpp"
 
 //const char* tlm_enum_names[] = {"TLM_ACCEPTED", "TLM_UPDATED", "TLM_COMPLETED"}; 
 
@@ -33,6 +34,7 @@ struct img_initiator: sc_module
   unsigned int address;
   unsigned char* data;
   unsigned int data_length; 
+  unsigned int transaction_number;
 
   //Pointer to transaction in progress
   tlm::tlm_generic_payload* pending_transaction; 
@@ -44,8 +46,8 @@ struct img_initiator: sc_module
   sc_event transaction_received_e;
 
   //Delay
-  sc_time write_delay = sc_time(10, SC_NS);
-  sc_time read_delay = sc_time(10,SC_NS);
+  sc_time write_delay;
+  sc_time read_delay;
   
   //Constructor
   SC_CTOR(img_initiator)   
@@ -56,53 +58,59 @@ struct img_initiator: sc_module
   }
 
   //Method to send_reading transaction and wait for response
-  void read (int*& data, unsigned int address, unsigned int data_length){
+  void read (unsigned char*& data, unsigned int address, unsigned int data_length){
 
     //Create transaction and allocate it
     tlm::tlm_generic_payload* transaction = memory_manager.allocate();
+    img_generic_extension* img_ext = new img_generic_extension;
+    img_ext->transaction_number = this->transaction_number++;
     
     //Set transaction fields
     transaction->set_command(tlm::TLM_READ_COMMAND);
     transaction->set_address(address);
-    transaction->set_data_ptr(reinterpret_cast<unsigned char*>(data));
+    transaction->set_data_ptr(data);
     transaction->set_data_length(data_length); //In Bytes
     transaction->set_streaming_width(data_length);
     transaction->set_byte_enable_ptr(0);
     transaction->set_dmi_allowed(false); //Mandatory Initial Value
     transaction->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE); //Mandatory Initial Value
+    transaction->set_extension(img_ext);
 
     //Send transaction
     this->send_transaction(transaction);
 
-    data = reinterpret_cast<int*>(this->data);
+    data = this->data;
     //-----------DEBUG-----------
-    dbgprint("Reading at Initiator: ");
+    dbgmodprint("Reading at Initiator: ");
     for (int i = 0; i < this->pending_transaction->get_data_length()/sizeof(int); ++i){
-      dbgprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
+      dbgmodprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
     }
     printf("\n");
     //-----------DEBUG-----------
   }
 
-  void write (int*& data, unsigned int address, unsigned int data_length){
+  void write (unsigned char*& data, unsigned int address, unsigned int data_length){
 
     //Create transaction and allocate it
     tlm::tlm_generic_payload* transaction = memory_manager.allocate();
+    img_generic_extension* img_ext = new img_generic_extension;
+    img_ext->transaction_number = this->transaction_number++;
 
     //Set transaction fields
     transaction->set_command(tlm::TLM_WRITE_COMMAND);
     transaction->set_address(address);
-    transaction->set_data_ptr(reinterpret_cast<unsigned char*>(data));
+    transaction->set_data_ptr(data);
     transaction->set_data_length(data_length); //In Bytes
     transaction->set_streaming_width(data_length);
     transaction->set_byte_enable_ptr(0);
     transaction->set_dmi_allowed(false); //Mandatory Initial Value
     transaction->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE); //Mandatory Initial Value
+    transaction->set_extension(img_ext);
 
     //-----------DEBUG-----------
-    dbgprint("Writing: ");
+    dbgmodprint("Writing: ");
     for (int i = 0; i < data_length/sizeof(int); ++i){
-      dbgprint("%02x", *(data+i));
+      dbgmodprint("%02x", *(reinterpret_cast<int*>(data)+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -116,11 +124,13 @@ struct img_initiator: sc_module
     //Transaction Management Variables
     tlm::tlm_phase phase;
     tlm::tlm_sync_enum status;
+    img_generic_extension* img_ext;
 
     //Begin Request
     phase = tlm::BEGIN_REQ;
     transaction->acquire();
-    dbgprint("%s BEGIN_REQ SENT TRANS ID %0d at time %s", name(), 0, sc_time_stamp().to_string().c_str());
+    transaction->get_extension(img_ext);
+    dbgmodprint("BEGIN_REQ SENT TRANS ID %0d at time %s", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
     pending_transaction = transaction;
     status = socket->nb_transport_fw(*transaction, phase, this->write_delay);  // Non-blocking transport call   
 
@@ -128,7 +138,7 @@ struct img_initiator: sc_module
     switch (status) {   
         //Case 1: Transaction was accepted
         case tlm::TLM_ACCEPTED: {
-          dbgprint("%s:\t %s received -> Transaction ID %d at time %s", name(), "TLM_ACCEPTED", 0, sc_time_stamp().to_string().c_str());
+          dbgmodprint("%s received -> Transaction ID %d at time %s", "TLM_ACCEPTED", img_ext->transaction_number, sc_time_stamp().to_string().c_str());
           check_transaction(*transaction);
           transaction->release();
           pending_transaction = 0;
@@ -138,7 +148,7 @@ struct img_initiator: sc_module
 
         //Not implementing Updated and Completed Status
         default: {
-          dbgprint("%s:\t [ERROR] Invalid status received at initiator", name());
+          dbgmodprint("[ERROR] Invalid status received at initiator -> Transaction ID %d", img_ext->transaction_number);
           break;
         }
     }
@@ -146,9 +156,9 @@ struct img_initiator: sc_module
     //Wait for response transaction
     wait(transaction_received_e);
     //-----------DEBUG-----------
-    dbgprint("[DEBUG1] Reading at Initiator: ");
+    dbgmodprint("[DEBUG1] Reading at Initiator: ");
     for (int i = 0; i < this->data_length/sizeof(int); ++i){
-      dbgprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
+      dbgmodprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -163,7 +173,7 @@ struct img_initiator: sc_module
   { 
     //Call event queue
     m_peq.notify(trans, phase, delay);
-    dbgprint("HERE");
+    dbgmodprint("HERE");
     return tlm::TLM_ACCEPTED;
   }
 
@@ -171,12 +181,12 @@ struct img_initiator: sc_module
   void peq_cb(tlm::tlm_generic_payload& trans, const tlm::tlm_phase& phase)
   {
 
-    //dbgprint("%s:\t %s received -> Transaction ID %d from address %x at time %s\n", name(), phase, this->id_extension->transaction_id, trans.get_address(), sc_time_stamp());
+    //dbgmodprint("%s received -> Transaction ID %d from address %x at time %s\n", phase, this->id_extension->transaction_id, trans.get_address(), sc_time_stamp());
     //cout << name() << " " <<hex << trans.get_address() << " BEGIN_RESP RECEIVED at " << sc_time_stamp() << endl;
     switch (phase) {
       case tlm::BEGIN_RESP: {
 
-        dbgprint("HERE3");
+        dbgmodprint("HERE3");
 
         trans.acquire();
         this->data_length = trans.get_data_length();
@@ -189,24 +199,24 @@ struct img_initiator: sc_module
         //Initiator dont care about confirming resp transaction. So nothing else to do.
 
         //-----------DEBUG-----------
-        dbgprint("[DEBUG] Reading at Initiator: ");
+        dbgmodprint("[DEBUG] Reading at Initiator: ");
         for (int i = 0; i < trans.get_data_length()/sizeof(int); ++i){
-          dbgprint("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
+          dbgmodprint("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
         }
         printf("\n");
         //-----------DEBUG-----------
 
-        dbgprint("HERE3");
+        dbgmodprint("HERE3");
 
         transaction_received_e.notify();
         //-----------DEBUG-----------
-        dbgprint("[DEBUG] Reading at Initiator: ");
+        dbgmodprint("[DEBUG] Reading at Initiator: ");
         for (int i = 0; i < this->data_length/sizeof(int); ++i){
-          dbgprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
+          dbgmodprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
         }
         printf("\n");
         //-----------DEBUG-----------
-        dbgprint("HERE10");
+        dbgmodprint("HERE10");
         break;
       }
       default: {
@@ -227,6 +237,17 @@ struct img_initiator: sc_module
 
     // Allow the memory manager to free the transaction object
     //trans.release();
+  }
+  
+  void start_img_initiators()
+  {
+    transaction_number = 0;
+  }
+  
+  void set_delays(sc_time w_delay, sc_time r_delay)
+  {
+    this->write_delay = w_delay;
+    this->read_delay = r_delay;
   }
 } ; 
 
