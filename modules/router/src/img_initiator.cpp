@@ -31,13 +31,8 @@ struct img_initiator: sc_module
   mm memory_manager;
 
   //Address for this Initiator
-  unsigned int address;
-  unsigned char* data;
   unsigned int data_length; 
   unsigned int transaction_number;
-
-  //Pointer to transaction in progress
-  tlm::tlm_generic_payload* pending_transaction; 
 
   //Payload event queue with callback and phase
   tlm_utils::peq_with_cb_and_phase<img_initiator> m_peq;
@@ -51,7 +46,7 @@ struct img_initiator: sc_module
   
   //Constructor
   SC_CTOR(img_initiator)   
-  : socket("socket"), pending_transaction(0), m_peq(this, &img_initiator::peq_cb) // Construct and name socket   
+  : socket("socket"), m_peq(this, &img_initiator::peq_cb) // Construct and name socket   
   {   
     // Register callbacks for incoming interface method calls
     socket.register_nb_transport_bw(this, &img_initiator::nb_transport_bw);
@@ -79,11 +74,11 @@ struct img_initiator: sc_module
     //Send transaction
     this->send_transaction(transaction);
 
-    data = this->data;
+    data = transaction->get_data_ptr();
     //-----------DEBUG-----------
     dbgmodprint("Reading at Initiator: ");
-    for (int i = 0; i < this->pending_transaction->get_data_length()/sizeof(int); ++i){
-      dbgmodprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
+    for (int i = 0; i < transaction->get_data_length()/sizeof(int); ++i){
+      dbgmodprint("%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -110,7 +105,7 @@ struct img_initiator: sc_module
     //-----------DEBUG-----------
     dbgmodprint("Writing: ");
     for (int i = 0; i < data_length/sizeof(int); ++i){
-      dbgmodprint("%02x", *(reinterpret_cast<int*>(data)+i));
+      dbgmodprint("%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -133,7 +128,6 @@ struct img_initiator: sc_module
     transaction->get_extension(img_ext);
     cur_command = transaction->get_command();
     dbgmodprint("BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
-    pending_transaction = transaction;
     status = socket->nb_transport_fw(*transaction, phase, ((cur_command == tlm::TLM_WRITE_COMMAND) ? this->write_delay : this->read_delay));  // Non-blocking transport call   
 
     // Check request status returned by target
@@ -143,7 +137,6 @@ struct img_initiator: sc_module
           dbgmodprint("%s received -> Transaction ID %d", "TLM_ACCEPTED", img_ext->transaction_number);
           check_transaction(*transaction);
           transaction->release();
-          pending_transaction = 0;
           //Initiator only cares about sending the transaction, doesnt need to wait for response (non-blocking)
           break;
         }
@@ -159,8 +152,8 @@ struct img_initiator: sc_module
     wait(transaction_received_e);
     //-----------DEBUG-----------
     dbgmodprint("[DEBUG1] Reading at Initiator: ");
-    for (int i = 0; i < this->data_length/sizeof(int); ++i){
-      dbgmodprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
+    for (int i = 0; i < transaction->get_data_length()/sizeof(int); ++i){
+      dbgmodprint("%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
     }
     printf("\n");
     //-----------DEBUG-----------
@@ -191,11 +184,7 @@ struct img_initiator: sc_module
         dbgmodprint("HERE3");
 
         trans.acquire();
-        this->data_length = trans.get_data_length();
-        this->data = new unsigned char[this->data_length];
-        memcpy(this->data, trans.get_data_ptr(), this->data_length);
 
-        this->pending_transaction = &trans; //Set response transaction to return
         check_transaction(trans);
 
         //Initiator dont care about confirming resp transaction. So nothing else to do.
@@ -213,8 +202,8 @@ struct img_initiator: sc_module
         transaction_received_e.notify();
         //-----------DEBUG-----------
         dbgmodprint("[DEBUG] Reading at Initiator: ");
-        for (int i = 0; i < this->data_length/sizeof(int); ++i){
-          dbgmodprint("%02x", *(reinterpret_cast<int*>(this->data)+i));
+        for (int i = 0; i < trans.get_data_length()/sizeof(int); ++i){
+          dbgmodprint("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
         }
         printf("\n");
         //-----------DEBUG-----------
