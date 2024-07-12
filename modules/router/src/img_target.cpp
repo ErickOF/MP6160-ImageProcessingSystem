@@ -25,11 +25,6 @@ struct img_target: sc_module
     // TLM2.0 Socket  
     tlm_utils::simple_target_socket<img_target> socket;
 
-    //Internal fields
-    unsigned char* data_ptr;
-    unsigned int data_length;
-    unsigned int address;
-
     //Pointer to transaction in progress
     tlm::tlm_generic_payload* response_transaction; 
 
