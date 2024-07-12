@@ -39,27 +39,21 @@ using namespace std;
 SC_MODULE(Tb_top)
 {
   img_initiator *sobel_initiator;
-  img_initiator *gray_initiator;
   sobel_edge_detector_tlm *edge_detector_DUT;
-  rgb2gray_tlm *rgb2gray_DUT;
+  Rgb2Gray *rgb2gray_DUT;
   
   SC_CTOR(Tb_top)
   {
     sobel_initiator = new img_initiator("sobel_initiator");
-    gray_initiator = new img_initiator("gray_initiator");
     edge_detector_DUT = new sobel_edge_detector_tlm("edge_detector_DUT");
-    rgb2gray_DUT = new rgb2gray_tlm("rgb2gray_DUT");
+    rgb2gray_DUT = new Rgb2Gray("rgb2gray_DUT");
     
     sobel_initiator->start_img_initiators();
     sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     edge_detector_DUT->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
-    gray_initiator->start_img_initiators();
-    gray_initiator->set_delays(sc_time(0, SC_NS), sc_time(0, SC_NS));
-    rgb2gray_DUT->set_delays(sc_time(0, SC_NS), sc_time(0, SC_NS));
     
     // Bind initiator socket to target socket
     sobel_initiator->socket.bind(edge_detector_DUT->socket);
-    gray_initiator->socket.bind(rgb2gray_DUT->socket);
     
     SC_THREAD(thread_process);
   }
@@ -97,24 +91,15 @@ SC_MODULE(Tb_top)
     {
       for (int j = 0; j < colorImage.cols; j++)
       {
-        unsigned char* rgb_pixel = new unsigned char[3];
-        unsigned char* data_returned;
         localR = colorImage.at<cv::Vec3b>(i, j)[2];
         localG = colorImage.at<cv::Vec3b>(i, j)[1];
         localB = colorImage.at<cv::Vec3b>(i, j)[0];
-        *(rgb_pixel + 0) = localR;
-        *(rgb_pixel + 1) = localG;
-        *(rgb_pixel + 2) = localB;
+        rgb2gray_DUT->set_rgb_pixel(localR, localG, localB);
+        localResult = (unsigned short int)rgb2gray_DUT->obtain_gray_value();
         
-        dbgprint("Before doing a write in TB");
-        gray_initiator->write(rgb_pixel, 0, 3 * sizeof(char));
-        dbgprint("After doing a write in TB");
-        dbgprint("Before doing a read in TB");
-        gray_initiator->read(data_returned, 0, sizeof(char));
-        dbgprint("After doing a read in TB");
-        dbgprint("Data_returned: %0d", *data_returned);
-        
-        grayImage.at<uchar>(i, j) = *data_returned;
+        dbgprint("Data_returned: %0d", localResult);
+
+        grayImage.at<uchar>(i, j) = (unsigned char)localResult;
         
         current_number_of_pixels++;
         if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
