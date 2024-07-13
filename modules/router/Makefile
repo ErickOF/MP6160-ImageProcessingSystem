@@ -47,6 +47,11 @@ ifdef USING_TLM_TB_EN
 	LFLAGS += -DUSING_TLM_TB_EN
 endif # USING_TLM_TB_EN
 
+ifdef IPS_FILTER_LT_EN
+	CFLAGS += -DIPS_FILTER_LT_EN
+	LFLAGS += -DIPS_FILTER_LT_EN
+endif # IPS_FILTER_LT_EN
+
 .PHONY: print-all
 print-all:
 		@echo "Incdir is $(INCDIR)"
