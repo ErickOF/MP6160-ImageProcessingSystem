@@ -62,6 +62,11 @@ ifdef USING_TLM_ROUTER_TB_EN
 	LFLAGS += -DUSING_TLM_ROUTER_TB_EN
 endif # USING_TLM_TB_EN
 
+ifdef IPS_JPG_PV_EN
+	CFLAGS += -DIPS_JPG_PV_EN
+	LFLAGS += -DIPS_JPG_PV_EN
+endif # IPS_JPG_PV_EN
+
 .PHONY: print-all
 print-all:
 		@echo "Incdir is $(INCDIR)"
