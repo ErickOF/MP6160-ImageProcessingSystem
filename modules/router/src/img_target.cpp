@@ -35,12 +35,17 @@ struct img_target: sc_module
     sc_time response_delay;
     sc_time receive_delay;
 
+    //SC_EVENT
+    sc_event send_response_e;
+
     //Constructor
     SC_CTOR(img_target)   
     : socket("socket"), response_transaction(0), m_peq(this, &img_target::peq_cb) // Construct and name socket   
     {   
         // Register callbacks for incoming interface method calls
         socket.register_nb_transport_fw(this, &img_target::nb_transport_fw);
+
+        SC_THREAD(send_response);
     }
 
     tlm::tlm_sync_enum nb_transport_fw(tlm::tlm_generic_payload& trans,
@@ -99,34 +104,35 @@ struct img_target: sc_module
         }
     }
 
-    //Resposne function
-    void send_response(tlm::tlm_generic_payload& trans)
+    //Response function
+    void send_response()
     {
-        tlm::tlm_sync_enum status;
-        tlm::tlm_phase response_phase;
-        img_generic_extension* img_ext;
+        while(true){
+            wait(send_response_e);
+            tlm::tlm_sync_enum status;
+            tlm::tlm_phase response_phase;
+            img_generic_extension* img_ext;
 
-        response_phase = tlm::BEGIN_RESP;
-        status = socket->nb_transport_bw(trans, response_phase, response_delay);
-        dbgmodprint("HERE");
-        
-        //Check Initiator response
-        switch(status) {
-            case tlm::TLM_ACCEPTED: {
-                // Target only care about acknowledge of the succesful response
-                trans.release();
-                trans.get_extension(img_ext);
-                dbgmodprint("TLM_ACCEPTED RECEIVED TRANS ID %0d", img_ext->transaction_number);
-                break;
-            }
+            response_phase = tlm::BEGIN_RESP;
+            status = socket->nb_transport_bw(*response_transaction, response_phase, response_delay);
+            
+            //Check Initiator response
+            switch(status) {
+                case tlm::TLM_ACCEPTED: {
+                    // Target only care about acknowledge of the succesful response
+                    (*response_transaction).release();
+                    (*response_transaction).get_extension(img_ext);
+                    dbgmodprint("TLM_ACCEPTED RECEIVED TRANS ID %0d", img_ext->transaction_number);
+                    break;
+                }
 
-            //Not implementing Updated and Completed Status
-            default: {
-                dbgmodprint("[ERROR] Invalid status received at target");
-                break;
+                //Not implementing Updated and Completed Status
+                default: {
+                    dbgmodprint("[ERROR] Invalid status received at target");
+                    break;
+                }
             }
         }
-
     }
 
     virtual void do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address){
@@ -190,7 +196,9 @@ struct img_target: sc_module
 
         //Send response
         dbgmodprint("BEGIN_RESP SENT TRANS ID %0d", img_ext->transaction_number);
-        send_response(trans);
+        response_transaction = &trans;
+        //send_response(trans);
+        send_response_e.notify();
     }
     
   void set_delays(sc_time resp_delay, sc_time rec_delay)
