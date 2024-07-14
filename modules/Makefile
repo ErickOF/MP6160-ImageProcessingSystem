@@ -25,9 +25,10 @@ ifdef USING_TLM_TB_EN
 EDGE_DIR=../edge-detector
 GRAY_DIR=../rgb2gray
 FILTER_DIR=../filter
+UNIFICATION_DIR=../unification
 
-SRCDIRS=$(SRCDIR) $(EDGE_DIR)/src $(GRAY_DIR)/src $(FILTER_DIR)/src
-INCDIR+=-I$(EDGE_DIR)/include -I$(GRAY_DIR)/include -I$(FILTER_DIR)/include
+SRCDIRS=$(SRCDIR) $(EDGE_DIR)/src $(GRAY_DIR)/src $(FILTER_DIR)/src $(UNIFICATION_DIR)/src
+INCDIR+=-I$(EDGE_DIR)/include -I$(GRAY_DIR)/include -I$(FILTER_DIR)/include -I$(UNIFICATION_DIR)/include
 endif # USING_TLM_TB_EN
 
 ifdef INCLUDE_OPENCV

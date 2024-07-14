@@ -52,6 +52,11 @@ ifdef IPS_FILTER_LT_EN
 	LFLAGS += -DIPS_FILTER_LT_EN
 endif # IPS_FILTER_LT_EN
 
+ifdef IMG_UNIFICATE_PV_EN
+	CFLAGS += -DIMG_UNIFICATE_PV_EN
+	LFLAGS += -DIMG_UNIFICATE_PV_EN
+endif # UNIFICATE_PV_EN
+
 .PHONY: print-all
 print-all:
 		@echo "Incdir is $(INCDIR)"

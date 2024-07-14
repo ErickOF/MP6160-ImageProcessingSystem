@@ -23,7 +23,7 @@ void memory_tlm::do_when_read_transaction(unsigned char*& data, unsigned int dat
   
   for (int i = 0; i < max_data_length; i++)
   {
-    local_data[i] = *(mem_array + address + i);
+    local_data[i] = *(mem_array + address - MEM_START + i);
   }
   for (int i = max_data_length; i < 8; i++)
   {
