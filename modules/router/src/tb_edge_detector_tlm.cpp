@@ -47,7 +47,7 @@ SC_MODULE(Tb_top)
   
   img_router<3> *router;
   //img_initiator *sobel_initiator;
-  //img_initiator *memory_initiator;
+  //img_initiator *tb_initiator;
   //img_initiator *filter_initiator;
   img_initiator *tb_initiator;
   sobel_edge_detector_tlm *edge_detector_DUT;
@@ -64,7 +64,7 @@ SC_MODULE(Tb_top)
     rgb2gray_DUT = new Rgb2Gray("rgb2gray_DUT");
     tb_initiator = new img_initiator("tb_initiator");
     //sobel_initiator = new img_initiator("sobel_initiator");
-    //memory_initiator = new img_initiator("memory_initiator");
+    //tb_initiator = new img_initiator("tb_initiator");
     //filter_initiator = new img_initiator("filter_initiator");
     memory_DUT = new memory_tlm("memory_DUT");
     filter_DUT = new ips_filter_tlm("filter_DUT");
@@ -74,8 +74,8 @@ SC_MODULE(Tb_top)
     router->set_delays(sc_time(20, SC_NS), sc_time(20, SC_NS));
     // sobel_initiator->start_img_initiators();
     // sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
-    // memory_initiator->start_img_initiators();
-    // memory_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    // tb_initiator->start_img_initiators();
+    // tb_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     // filter_initiator->start_img_initiators();
     // filter_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     tb_initiator->start_img_initiators();
@@ -547,7 +547,7 @@ SC_MODULE(Tb_top)
           local_read = new unsigned char[8];
         
           dbgprint("Before doing a read in TB");
-          memory_initiator->read(read_ptr, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          tb_initiator->read(read_ptr, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgprint("After doing a read in TB");
           memcpy(local_read, read_ptr, 8 * sizeof(char));
         }
@@ -580,7 +580,7 @@ SC_MODULE(Tb_top)
         local_results = reinterpret_cast<unsigned char*>(compression_results + (local_group_count * 8 * sizeof(char)));
         dbgprint("Before doing a write in TB");
         sanity_check_address(IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
-        memory_initiator->write(local_results, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), 8 * sizeof(char));
+        tb_initiator->write(local_results, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), 8 * sizeof(char));
         dbgprint("After doing a write in TB");
         local_count = 0;
         local_group_count++;
