@@ -10,6 +10,12 @@ case $1 in
   "compile")
     make RGB2GRAY_PV_EN=1 IPS_FILTER_LT_EN=1 EDGE_DETECTOR_AT_EN=1 IMG_UNIFICATE_PV_EN=1 USING_TLM_TB_EN=1 compile
     ;;
+  "router_tb")
+    make RGB2GRAY_PV_EN=1 EDGE_DETECTOR_AT_EN=1 USING_TLM_ROUTER_TB_EN=1 USING_TLM_TB_EN=1 all > output.log
+    ;;
+  "router_tb")
+    make RGB2GRAY_PV_EN=1 EDGE_DETECTOR_AT_EN=1 USING_TLM_ROUTER_TB_EN=1 USING_TLM_TB_EN=1 all > output.log
+    ;;
   *)
     make RGB2GRAY_PV_EN=1 IPS_FILTER_LT_EN=1 EDGE_DETECTOR_AT_EN=1 IMG_UNIFICATE_PV_EN=1 USING_TLM_TB_EN=1 all
     ;;
