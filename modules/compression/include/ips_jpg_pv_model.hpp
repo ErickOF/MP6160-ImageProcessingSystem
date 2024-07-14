@@ -81,8 +81,26 @@ SC_MODULE (jpg_output) {
 		image[i]=image[i]-128;
 	}
 	int number_of_blocks = image_rows*image_cols/(BLOCK_ROWS*BLOCK_COLS);
+	printf("number_of_block %0d ROWS %0d COLS %0d\n", number_of_blocks, BLOCK_ROWS, BLOCK_COLS);
+#ifndef USING_TLM_TB_EN
 	int block_output[number_of_blocks][BLOCK_ROWS*BLOCK_COLS] = {0};
 	int block_output_size[number_of_blocks] = {0};
+#else
+  int** block_output = new int*[number_of_blocks];
+  int* block_output_size = new int[number_of_blocks];
+  for (int i = 0; i < number_of_blocks; i++)
+  {
+    block_output[i] = new int[BLOCK_ROWS * BLOCK_COLS];
+  }
+  for (int i = 0; i < number_of_blocks; i++)
+  {
+    block_output_size[i] = 0;
+    for (int j = 0; j < BLOCK_ROWS * BLOCK_COLS; j++)
+    {
+      block_output[i][j] = 0;
+    }
+  }
+#endif // USING_TLM_TB_EN
 	int block_counter = 0;
 	*output_size = 0;
 	for(int row=0; row<image_rows; row+=BLOCK_ROWS)	{
@@ -105,6 +123,14 @@ SC_MODULE (jpg_output) {
 	  image[output_counter]=eob;
 	  output_counter++;
 	}
+#ifdef USING_TLM_TB_EN
+  for (int i = 0; i < number_of_blocks; i++)
+  {
+    delete[] block_output[i];
+  }
+  delete[] block_output;
+  delete[] block_output_size;
+#endif // USING_TLM_TB_EN
   }  
   
   void dct(int row_offset, int col_offset) {

@@ -34,10 +34,11 @@ using namespace std;
 #include "ips_filter_tlm.hpp"
 #include "sobel_edge_detector_tlm.hpp"
 #include "unification_pv_model.hpp"
+#include "ips_jpg_pv_model.hpp"
 #include "img_initiator.cpp"
 
-#if !defined(RGB2GRAY_PV_EN) || !defined(EDGE_DETECTOR_AT_EN)
-#error "Not all the required macros (RGB2GRAY_PV_EN and EDGE_DETECTOR_LT_EN) are defined is defined."
+#if !defined(RGB2GRAY_PV_EN) || !defined(IPS_FILTER_LT_EN) || !defined(EDGE_DETECTOR_AT_EN) || !defined(IMG_UNIFICATE_PV_EN) || !defined(IPS_JPG_PV_EN)
+#error "Not all the required macros (RGB2GRAY_PV_EN, IPS_FILTER_LT_EN, EDGE_DETECTOR_AT_EN, IMG_UNIFICATE_PV_EN and IPS_JPG_PV_EN) are defined."
 #endif
 
 SC_MODULE(Tb_top)
@@ -50,6 +51,7 @@ SC_MODULE(Tb_top)
   img_initiator *filter_initiator;
   ips_filter_tlm *filter_DUT;
   img_unification_module* unification_DUT;
+  jpg_output *jpg_comp_DUT;
   
   SC_CTOR(Tb_top)
   {
@@ -61,6 +63,7 @@ SC_MODULE(Tb_top)
     filter_initiator = new img_initiator("filter_initiator");
     filter_DUT = new ips_filter_tlm("filter_DUT");
     unification_DUT = new img_unification_module("unification_DUT");
+    jpg_comp_DUT = new jpg_output("jpg_comp_DUT", IMAG_ROWS, IMAG_COLS);
     
     sobel_initiator->start_img_initiators();
     sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
@@ -95,6 +98,11 @@ SC_MODULE(Tb_top)
     int total_number_of_pixels;
     int current_number_of_pixels = 0;
     float next_target_of_completion = 10.0;
+    
+    int local_group_count;
+    int compression_output_size = 0;
+    
+    signed char* compression_results;
     
     colorImage = imread("../../tools/datagen/src/imgs/car.jpg", IMREAD_UNCHANGED);
   
@@ -170,7 +178,7 @@ SC_MODULE(Tb_top)
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
-      int local_group_count = 0;
+      local_group_count = 0;
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* read_ptr;
@@ -233,7 +241,7 @@ SC_MODULE(Tb_top)
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
-      int local_group_count = 0;
+      local_group_count = 0;
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* local_window_ptr = new unsigned char[9];
@@ -314,7 +322,7 @@ SC_MODULE(Tb_top)
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
-      int local_group_count = 0;
+      local_group_count = 0;
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* local_window_ptr = new unsigned char[16];
@@ -398,6 +406,8 @@ SC_MODULE(Tb_top)
       }
     }
     
+    dbgprint("Finished calculating sobel gradients of the image");
+    
     // Sanity check that the image was written in memory as expected
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -434,9 +444,13 @@ SC_MODULE(Tb_top)
       }
     }
     
+    local_count = 0;
+    current_number_of_pixels = 0;
+    next_target_of_completion = 10.0;
+    
     for (int i = 0; i < IMAG_ROWS; i++)
     {
-      int local_group_count = 0;
+      local_group_count = 0;
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* read_ptr;
@@ -495,6 +509,8 @@ SC_MODULE(Tb_top)
       }
     }
     
+    dbgprint("Finished with the unification of the magnitude of the gradients of the image");
+    
     // Sanity check that the image was written in memory as expected
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -505,6 +521,64 @@ SC_MODULE(Tb_top)
         detectedImageAfterMem.at<uchar>(i, j) = *read_ptr;
       }
     }
+    
+    local_count = 0;
+    current_number_of_pixels = 0;
+    next_target_of_completion = 10.0;
+    
+    for (int i = 0; i < IMAG_ROWS; i++)
+    {
+      local_group_count = 0;
+      for (int j = 0; j < IMAG_COLS; j++)
+      {
+        if (local_count == 0)
+        {
+          unsigned char* read_ptr;
+          local_read = new unsigned char[8];
+        
+          dbgprint("Before doing a read in TB");
+          memory_initiator->read(read_ptr, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          dbgprint("After doing a read in TB");
+          memcpy(local_read, read_ptr, 8 * sizeof(char));
+        }
+        
+        jpg_comp_DUT->input_pixel((int)*(local_read + local_count), i, j);
+        
+        if (local_count == 8)
+        {
+          local_count = 0;
+          local_group_count++;
+        }
+      }
+    }
+    
+    jpg_comp_DUT->jpeg_compression(&compression_output_size);
+    
+    local_count = 0;
+    local_group_count = 0;
+    compression_results = new signed char[compression_output_size];
+    for (int i = 0; i < compression_output_size; i++)
+    {
+      jpg_comp_DUT->output_byte(compression_results, i);
+      
+      dbgprint("Data_returned compression_result: %0d", *(compression_results + i));
+      
+      local_count++;
+      
+      if ((local_count == 8))
+      {
+        local_results = reinterpret_cast<unsigned char*>(compression_results + (local_group_count * 8 * sizeof(char)));
+        dbgprint("Before doing a write in TB");
+        sanity_check_address(IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
+        memory_initiator->write(local_results, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), 8 * sizeof(char));
+        dbgprint("After doing a write in TB");
+        local_count = 0;
+        local_group_count++;
+      }
+      
+    }
+    
+    dbgprint("Finished with the compression of the image");
     
     imwrite("grayImagePrevMem.jpg", grayImagePrevMem);
     imwrite("grayImageAfterMem.jpg", grayImageAfterMem);

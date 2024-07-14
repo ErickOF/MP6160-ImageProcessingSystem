@@ -165,7 +165,7 @@ struct img_target: sc_module
         switch(cmd) {
             case tlm::TLM_READ_COMMAND: {
                 unsigned char* response_data_ptr;
-                response_data_ptr = (unsigned char*)malloc(len);
+                response_data_ptr = new unsigned char[len];
                 this->do_when_read_transaction(response_data_ptr, len, addr);
                 //Add read according to length
                 //-----------DEBUG-----------
