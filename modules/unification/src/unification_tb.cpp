@@ -4,6 +4,7 @@
 //Description: Simple TB for pixel unification modules
 //--------------------------------------------------------
 
+#ifndef USING_TLM_TB_EN
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -87,3 +88,5 @@ int sc_main(int, char*[]) {
   return 0;// Terminate simulation
 
  }
+ 
+#endif // #ifdef USING_TLM_TB_EN
