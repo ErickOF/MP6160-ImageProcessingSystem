@@ -162,7 +162,6 @@ struct img_initiator: sc_module
   { 
     //Call event queue
     m_peq.notify(trans, phase, delay);
-    cout<<"HERE"<<endl;
     return tlm::TLM_ACCEPTED;
   }
 
@@ -174,8 +173,6 @@ struct img_initiator: sc_module
     //cout << name() << " " <<hex << trans.get_address() << " BEGIN_RESP RECEIVED at " << sc_time_stamp() << endl;
     switch (phase) {
       case tlm::BEGIN_RESP: {
-
-        cout<<"HERE3"<<endl;
 
         trans.acquire();
         this->data_length = trans.get_data_length();
@@ -195,8 +192,6 @@ struct img_initiator: sc_module
         printf("\n");
         //-----------DEBUG-----------
 
-        cout<<"HERE3"<<endl;
-
         transaction_received_e.notify();
         //-----------DEBUG-----------
         printf("[DEBUG] Reading at Initiator: ");
@@ -205,7 +200,6 @@ struct img_initiator: sc_module
         }
         printf("\n");
         //-----------DEBUG-----------
-        cout<<"HERE10"<<endl;
         break;
       }
       default: {

@@ -226,10 +226,8 @@ SC_MODULE(Tb_top)
         
         localResult = (int)sqrt((float)(pow((int)localGradientX, 2)) + (float)(pow((int)localGradientY, 2)));
 #endif // EDGE_DETECTOR_AT_EN
-        cout << "HERE01" << endl;
         localGradientX = *data_returned;
         localGradientY = *(data_returned+1);
-        cout << "HERE01" << endl;
       
         localResult = (int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
 #ifdef TEST_NORMALIZE_MAGNITUDE
