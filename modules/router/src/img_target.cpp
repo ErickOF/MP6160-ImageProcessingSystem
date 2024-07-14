@@ -38,6 +38,10 @@ struct img_target: sc_module
     //SC_EVENT
     sc_event send_response_e;
 
+
+    //DEBUG
+    unsigned int transaction_in_progress_id = 0;
+
     //Constructor
     SC_CTOR(img_target)   
     : socket("socket"), response_transaction(0), m_peq(this, &img_target::peq_cb) // Construct and name socket   
@@ -160,6 +164,7 @@ struct img_target: sc_module
         trans.get_extension(img_ext);
         
         dbgmodprint("Processing transaction: %0d", img_ext->transaction_number);
+        this->transaction_in_progress_id = img_ext->transaction_number;
 
         //Process transaction
         switch(cmd) {

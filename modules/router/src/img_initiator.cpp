@@ -43,6 +43,10 @@ struct img_initiator: sc_module
   //Delay
   sc_time write_delay;
   sc_time read_delay;
+
+  //DEBUG
+  unsigned int transaction_sent_id = 0;
+  unsigned int transaction_received_id = 0;
   
   //Constructor
   SC_CTOR(img_initiator)   
@@ -127,6 +131,9 @@ struct img_initiator: sc_module
     phase = tlm::BEGIN_REQ;
     transaction->get_extension(img_ext);
     cur_command = transaction->get_command();
+
+    this->transaction_sent_id = img_ext->transaction_number;
+
     dbgmodprint("BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
     status = socket->nb_transport_fw(*transaction, phase, ((cur_command == tlm::TLM_WRITE_COMMAND) ? this->write_delay : this->read_delay));  // Non-blocking transport call   
 
@@ -151,6 +158,7 @@ struct img_initiator: sc_module
     //Wait for response transaction
     // if (transaction->get_command() == tlm::TLM_READ_COMMAND) {
     wait(transaction_received_e);
+    this->transaction_received_id = img_ext->transaction_number;
     // }
     //-----------DEBUG-----------
     dbgmodprint("[DEBUG1] Reading at Initiator: ");
