@@ -7,10 +7,6 @@ void ethernetEncoder::set_attributes()
 
 void ethernetEncoder::initialize()
 {
-    current_level = 0;
-    next_level = 0;
-    bit_count = 0;
-
     // Initialize 4B/5B encoding map
     encoding_map = {
         {"0000", "11110"}, {"0001", "01001"}, {"0010", "10100"},
@@ -24,38 +20,47 @@ void ethernetEncoder::initialize()
 
 void ethernetEncoder::processing()
 {
-    // 4B/5B Encoding
     std::string input = data_in.read().to_string();
-    if (encoding_map.find(input) != encoding_map.end())
-    {
-        code_out = encoding_map[input].c_str();
-    }
-    else
-    {
-        SC_REPORT_ERROR("ethernetEncoder", "Invalid input for encoding");
-        return;
-    }
 
-    // MLT-3 Encoding
-    if (code_out[bit_count] == '1')
+    if (bitCount == 4) // Process new input only when bitCount is 4 (rightmost bit)
     {
-        if (current_level == 0)
+        std::cout << "Processing sample: " << sampleCount << ", received input: " << input << std::endl;
+
+        // 4B/5B Encoding
+        if (encoding_map.find(input) != encoding_map.end())
         {
-            next_level = (bit_count % 2 == 0) ? 1 : -1;
+            lastCodeOut = encoding_map[input];
         }
         else
         {
-            next_level = 0;
+            SC_REPORT_ERROR("ethernetEncoder", "Invalid input for encoding");
+            return;
         }
-        current_level = next_level;
     }
-    bit_count = (bit_count + 1) % 5;
-    mlt3_out.write(current_level);
+
+    // MLT-3 Encoding
+    if (lastCodeOut[bitCount] == '1')
+    {
+        if (currentLevel == 0)
+        {
+            currentLevel = nextLevel;
+            nextLevel = (currentLevel == 1) ? -1 : 1;
+        }
+        else
+        {
+            currentLevel = 0;
+        }
+    }
+
+    lastMlt3Out = currentLevel;
+    mlt3_out.write(currentLevel);
+    bitCount = (bitCount == 0) ? 4 : bitCount - 1; // Decrement bitCount from 4 to 0
 
     // Debugging output
-    std::cout << "data_in: " << input << ", code_out: " << code_out << ", mlt3_out: " << current_level << std::endl;
+    std::cout << "Sample: " << sampleCount << ", data_in: " << input 
+              << ", code_out: " << lastCodeOut << ", mlt3_out: " << lastMlt3Out << std::endl;
 
+    sampleCount++;
     // Set the next trigger
     next_trigger(10, SC_NS);
 }
-
