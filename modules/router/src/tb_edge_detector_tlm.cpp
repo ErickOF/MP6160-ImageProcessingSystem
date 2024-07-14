@@ -149,16 +149,23 @@ SC_MODULE(Tb_top)
       }
     }
     
-    Mat grayImage(IMAG_ROWS, IMAG_COLS, CV_8UC1);
-    Mat filteredImage(IMAG_ROWS, IMAG_COLS, CV_8UC1);
-    Mat detectedImageX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
-    Mat detectedImageY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
-    Mat detectedImage(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat grayImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat filteredImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat detectedImagePrevMemX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat detectedImagePrevMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat detectedImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    
+    Mat grayImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat filteredImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat detectedImageAfterMemX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat detectedImageAfterMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+    Mat detectedImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     
     total_number_of_pixels = IMAG_ROWS * IMAG_COLS;
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
+      int local_group_count = 0;
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* read_ptr;
@@ -173,7 +180,7 @@ SC_MODULE(Tb_top)
         
         dbgprint("Data_returned: %0d", localResult);
 
-        grayImage.at<uchar>(i, j) = (unsigned char)localResult;
+        grayImagePrevMem.at<uchar>(i, j) = (unsigned char)localResult;
         
         if (local_count == 0)
         {
@@ -187,9 +194,10 @@ SC_MODULE(Tb_top)
         if (local_count == 8)
         {
           dbgprint("Before doing a write in TB");
-          memory_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + j), 8 * sizeof(char));
+          memory_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgprint("After doing a write in TB");
           local_count = 0;
+          local_group_count++;
         }
         
         current_number_of_pixels++;
@@ -201,6 +209,17 @@ SC_MODULE(Tb_top)
     }
     
     dbgprint("Finished gray scale conversion");
+    
+    // Sanity check that the image was written in memory as expected
+    for (int i = 0; i < IMAG_ROWS; i++)
+    {
+      for (int j = 0; j < IMAG_COLS; j++)
+      {
+        unsigned char* read_ptr;
+        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_INPROCESS_A + ((i * IMAG_COLS) + j));
+        grayImageAfterMem.at<uchar>(i, j) = *read_ptr;
+      }
+    }
     
     local_count = 0;
     current_number_of_pixels = 0;
@@ -232,10 +251,10 @@ SC_MODULE(Tb_top)
         data_returned = *data_returned_ptr;
         
         if (data_returned > 255.0) {
-          filteredImage.at<uchar>(i, j) = 255;
+          filteredImagePrevMem.at<uchar>(i, j) = 255;
         }
         else {
-          filteredImage.at<uchar>(i, j) = (unsigned char)data_returned; 
+          filteredImagePrevMem.at<uchar>(i, j) = (unsigned char)data_returned; 
         }
         
         if (local_count == 0)
@@ -244,7 +263,6 @@ SC_MODULE(Tb_top)
         }
         
         if (data_returned > 255.0) {
-          filteredImage.at<uchar>(i, j) = 255;
           *(local_results + local_count) = 255;
         }
         else {
@@ -256,9 +274,10 @@ SC_MODULE(Tb_top)
         if (local_count == 8)
         {
           dbgprint("Before doing a write in TB");
-          memory_initiator->write(local_results, IMG_COMPRESSED + ((i * IMAG_COLS) + j), 8 * sizeof(char));
+          memory_initiator->write(local_results, IMG_COMPRESSED + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgprint("After doing a write in TB");
           local_count = 0;
+          local_group_count++;
         }
         
         current_number_of_pixels++;
@@ -270,6 +289,17 @@ SC_MODULE(Tb_top)
     }
     
     dbgprint("Finished filtering the image");
+    
+    // Sanity check that the image was written in memory as expected
+    for (int i = 0; i < IMAG_ROWS; i++)
+    {
+      for (int j = 0; j < IMAG_COLS; j++)
+      {
+        unsigned char* read_ptr;
+        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_COMPRESSED + ((i * IMAG_COLS) + j));
+        filteredImageAfterMem.at<uchar>(i, j) = *read_ptr;
+      }
+    }
     
     local_count = 0;
     current_number_of_pixels = 0;
@@ -310,32 +340,32 @@ SC_MODULE(Tb_top)
         localGradientY = *(data_returned_ptr+1);
         
         if ((localGradientX > 255) || (localGradientX < -255)) {
-          detectedImageX.at<uchar>(i, j) = 255;
+          detectedImagePrevMemX.at<uchar>(i, j) = 255;
         } 
         else if (localGradientX < 0) {
-          detectedImageX.at<uchar>(i, j) = (unsigned char)(-localGradientX);
+          detectedImagePrevMemX.at<uchar>(i, j) = (unsigned char)(-localGradientX);
         }
         else {
-          detectedImageX.at<uchar>(i, j) = (unsigned char)localGradientX; 
+          detectedImagePrevMemX.at<uchar>(i, j) = (unsigned char)localGradientX; 
         }
         if ((localGradientY > 255) || (localGradientY < -255)) {
-          detectedImageY.at<uchar>(i, j) = 255;
+          detectedImagePrevMemY.at<uchar>(i, j) = 255;
         }
         else if (localGradientY < 0) {
-          detectedImageY.at<uchar>(i, j) = (unsigned char)(-localGradientY); 
+          detectedImagePrevMemY.at<uchar>(i, j) = (unsigned char)(-localGradientY); 
         }
         else {
-          detectedImageY.at<uchar>(i, j) = (unsigned char)localGradientY;
+          detectedImagePrevMemY.at<uchar>(i, j) = (unsigned char)localGradientY;
         }
       
         localResult = (unsigned short int)sqrt((float)(pow(localGradientX, 2)) + (float)(pow(localGradientY, 2)));
         if (localResult > 255)
         {
-          detectedImage.at<uchar>(i, j) = 255;
+          detectedImagePrevMem.at<uchar>(i, j) = 255;
         }
         else
         {
-          detectedImage.at<uchar>(i, j) = (unsigned char)localResult;
+          detectedImagePrevMem.at<uchar>(i, j) = (unsigned char)localResult;
         }
         
         if (local_count == 0)
@@ -351,11 +381,11 @@ SC_MODULE(Tb_top)
         {
           write_ptr = local_results;
           dbgprint("Before doing a write in TB");
-          memory_initiator->write(write_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          memory_initiator->write(write_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgprint("After doing a write in TB");
           write_ptr = (local_results + 8);
           dbgprint("Before doing a write in TB");
-          memory_initiator->write(write_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          memory_initiator->write(write_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgprint("After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -369,11 +399,52 @@ SC_MODULE(Tb_top)
       }
     }
     
-    imwrite("grayImage.jpg", grayImage);
-    imwrite("filteredImage.jpg", filteredImage);
-    imwrite("detectedImageX.jpg", detectedImageX);
-    imwrite("detectedImageY.jpg", detectedImageY);
-    imwrite("detectedImage.jpg", detectedImage);
+    // Sanity check that the image was written in memory as expected
+    for (int i = 0; i < IMAG_ROWS; i++)
+    {
+      for (int j = 0; j < IMAG_COLS; j++)
+      {
+        unsigned char* read_ptr;
+        short int* data_returned_ptr;
+        
+        memory_DUT->backdoor_read(read_ptr, sizeof(short int), IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (j * sizeof(short int))));
+        data_returned_ptr = reinterpret_cast<short int*>(read_ptr);
+        localGradientX = *data_returned_ptr;
+        if ((localGradientX > 255) || (localGradientX < -255)) {
+          detectedImageAfterMemX.at<uchar>(i, j) = 255;
+        } 
+        else if (localGradientX < 0) {
+          detectedImageAfterMemX.at<uchar>(i, j) = (unsigned char)(-localGradientX);
+        }
+        else {
+          detectedImageAfterMemX.at<uchar>(i, j) = (unsigned char)localGradientX; 
+        }
+        
+        memory_DUT->backdoor_read(read_ptr, sizeof(short int), IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (j * sizeof(short int))));
+        data_returned_ptr = reinterpret_cast<short int*>(read_ptr);
+        localGradientY = *data_returned_ptr;
+        if ((localGradientY > 255) || (localGradientY < -255)) {
+          detectedImageAfterMemY.at<uchar>(i, j) = 255;
+        } 
+        else if (localGradientY < 0) {
+          detectedImageAfterMemY.at<uchar>(i, j) = (unsigned char)(-localGradientY);
+        }
+        else {
+          detectedImageAfterMemY.at<uchar>(i, j) = (unsigned char)localGradientY; 
+        }
+      }
+    }
+    
+    imwrite("grayImagePrevMem.jpg", grayImagePrevMem);
+    imwrite("grayImageAfterMem.jpg", grayImageAfterMem);
+    imwrite("filteredImagePrevMem.jpg", filteredImagePrevMem);
+    imwrite("filteredImageAfterMem.jpg", filteredImageAfterMem);
+    imwrite("detectedImagePrevMemX.jpg", detectedImagePrevMemX);
+    imwrite("detectedImageAfterMemX.jpg", detectedImageAfterMemX);
+    imwrite("detectedImagePrevMemY.jpg", detectedImagePrevMemY);
+    imwrite("detectedImageAfterMemY.jpg", detectedImageAfterMemY);
+    imwrite("detectedImagePrevMem.jpg", detectedImagePrevMem);
+    imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);
   }
   
   void extract_window(int i, int j, unsigned int initial_address, unsigned char*& local_window_ptr)

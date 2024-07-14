@@ -59,4 +59,10 @@ void memory_tlm::backdoor_write(unsigned char*&data, unsigned int data_length, s
   memcpy((mem_array + address - MEM_START), data, data_length);
 }
 
+void memory_tlm::backdoor_read(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address)
+{
+  data = new unsigned char[data_length];
+  memcpy(data, (mem_array + address - MEM_START), data_length);
+}
+
 #endif // MEMORY_TLM_CPP
