@@ -15,18 +15,19 @@ int sc_main(int argc, char* argv[])
     encoder.mlt3_out(mlt3_out_signal);
 
     // Trace file setup
-    sca_util::sca_trace_file* tf = sca_util::sca_create_vcd_trace_file("ethernetEncoder");
+    sca_util::sca_trace_file *traceFile = sca_util::sca_create_vcd_trace_file("ethernetEncoder");
 
-    if (tf) {
-        sca_util::sca_trace(tf, data_in_signal, "data_in");
-        sca_util::sca_trace(tf, mlt3_out_signal, "mlt3_out");
-        // tf->set_time_unit(1.0, sc_core::SC_NS); // This line can be omitted
+    if (traceFile)
+    {
+        sca_util::sca_trace(traceFile, data_in_signal, "data_in");
+        sca_util::sca_trace(traceFile, mlt3_out_signal, "mlt3_out");
     }
 
-    sc_start(100, SC_NS);
+    sc_start(500, SC_NS); // Run the simulation for 500 ns
 
-    if (tf) {
-        sca_util::sca_close_vcd_trace_file(tf);
+    if (traceFile)
+    {
+        sca_util::sca_close_vcd_trace_file(traceFile);
     }
 
     return 0;
