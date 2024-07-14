@@ -57,6 +57,7 @@ struct img_initiator: sc_module
 
     //Create transaction and allocate it
     tlm::tlm_generic_payload* transaction = memory_manager.allocate();
+    transaction->acquire();
     img_generic_extension* img_ext = new img_generic_extension;
     img_ext->transaction_number = this->transaction_number++;
     
@@ -124,7 +125,6 @@ struct img_initiator: sc_module
 
     //Begin Request
     phase = tlm::BEGIN_REQ;
-    transaction->acquire();
     transaction->get_extension(img_ext);
     cur_command = transaction->get_command();
     dbgmodprint("BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
@@ -136,7 +136,7 @@ struct img_initiator: sc_module
         case tlm::TLM_ACCEPTED: {
           dbgmodprint("%s received -> Transaction ID %d", "TLM_ACCEPTED", img_ext->transaction_number);
           check_transaction(*transaction);
-          transaction->release();
+          //transaction->release();
           //Initiator only cares about sending the transaction, doesnt need to wait for response (non-blocking)
           break;
         }
@@ -149,7 +149,9 @@ struct img_initiator: sc_module
     }
 
     //Wait for response transaction
-    wait(transaction_received_e);
+    if (transaction->get_command() == tlm::TLM_READ_COMMAND) {
+      wait(transaction_received_e);
+    }
     //-----------DEBUG-----------
     dbgmodprint("[DEBUG1] Reading at Initiator: ");
     for (int i = 0; i < transaction->get_data_length()/sizeof(int); ++i){
@@ -168,7 +170,6 @@ struct img_initiator: sc_module
   { 
     //Call event queue
     m_peq.notify(trans, phase, delay);
-    dbgmodprint("HERE");
     return tlm::TLM_ACCEPTED;
   }
 
@@ -180,10 +181,6 @@ struct img_initiator: sc_module
     //cout << name() << " " <<hex << trans.get_address() << " BEGIN_RESP RECEIVED at " << sc_time_stamp() << endl;
     switch (phase) {
       case tlm::BEGIN_RESP: {
-
-        dbgmodprint("HERE3");
-
-        trans.acquire();
 
         check_transaction(trans);
 
@@ -197,8 +194,6 @@ struct img_initiator: sc_module
         printf("\n");
         //-----------DEBUG-----------
 
-        dbgmodprint("HERE3");
-
         transaction_received_e.notify();
         //-----------DEBUG-----------
         dbgmodprint("[DEBUG] Reading at Initiator: ");
@@ -207,7 +202,6 @@ struct img_initiator: sc_module
         }
         printf("\n");
         //-----------DEBUG-----------
-        dbgmodprint("HERE10");
         break;
       }
       default: {
