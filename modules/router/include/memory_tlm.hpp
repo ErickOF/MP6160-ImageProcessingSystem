@@ -25,6 +25,7 @@ struct memory_tlm : public img_target
     virtual void do_when_write_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address);
     
     void backdoor_write(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address);
+    void backdoor_read(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address);
     
     unsigned char* mem_array;
     
