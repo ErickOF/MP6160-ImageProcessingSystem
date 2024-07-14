@@ -1,0 +1,46 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Tue Jul 23 09:49:40 2024
+[*]
+[dumpfile] "/mnt/c/Users/Erick/Documents/Git/MP6160-ImageProcessingSystem/modules/ams/ips_ams.vcd"
+[dumpfile_mtime] "Tue Jul 23 09:49:40 2024"
+[dumpfile_size] 135676078
+[savefile] "/mnt/c/Users/Erick/Documents/Git/MP6160-ImageProcessingSystem/modules/ams/a.gtkw"
+[timestart] 1118089100
+[size] 1908 999
+[pos] -1 -1
+*-16.066919 1118333188 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 214
+[signals_width] 224
+[sst_expanded] 1
+[sst_vpaned_height] 563
+@28
+SystemC_AMS.clk
+@24
+SystemC_AMS.v_count
+SystemC_AMS.h_count
+@28
+SystemC_AMS.vsync
+SystemC_AMS.hsync
+@22
+SystemC_AMS.tx_blue
+SystemC_AMS.tx_green
+SystemC_AMS.tx_red
+@24
+SystemC_AMS.ana_blue
+SystemC_AMS.ana_green
+SystemC_AMS.ana_red
+@22
+SystemC_AMS.rx_blue
+SystemC_AMS.rx_green
+SystemC_AMS.rx_red
+SystemC_AMS.to_mem_blue
+SystemC_AMS.to_mem_green
+SystemC_AMS.to_mem_red
+SystemC_AMS.address
+@28
+SystemC_AMS.we
+@22
+SystemC_AMS.rdata
+[pattern_trace] 1
+[pattern_trace] 0
