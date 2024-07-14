@@ -106,7 +106,6 @@ struct img_target: sc_module
 
         response_phase = tlm::BEGIN_RESP;
         status = socket->nb_transport_bw(trans, response_phase, response_delay);
-        cout << "HERE" << endl;
         
         //Check Initiator response
         switch(status) {
