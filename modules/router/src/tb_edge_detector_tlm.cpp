@@ -827,6 +827,15 @@ int sc_main(int, char*[])
   Tb_top top("top");
   
   // Dump the desired signals
+  //Transaction tracking
+  sc_trace(wf, top.tb_initiator->transaction_sent_id, "tb_initiator_sent_trans_id");
+  sc_trace(wf, top.tb_initiator->transaction_received_id, "tb_initiator_received_trans_id");
+  sc_trace(wf, top.filter_DUT->transaction_in_progress_id, "filter_DUT_trans_id");
+  sc_trace(wf, top.edge_detector_DUT->transaction_in_progress_id, "edge_detector_DUT_trans_id");
+  sc_trace(wf, top.memory_DUT->transaction_in_progress_id, "memory_DUT_trans_id");
+  sc_trace(wf, top.router->transaction_in_bw_path_id, "router_bw_path_trans_id");
+  sc_trace(wf, top.router->transaction_in_fw_path_id, "router_fw_path_trans_id");
+
   sc_trace(wf, top.filter_DUT->img_window[0], "filter_window(0)(0)");
   sc_trace(wf, top.filter_DUT->img_window[1], "filter_window(0)(1)");
   sc_trace(wf, top.filter_DUT->img_window[2], "filter_window(0)(2)");

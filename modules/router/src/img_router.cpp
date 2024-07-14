@@ -73,6 +73,10 @@ struct img_router: sc_module
   //TLM Items queue
   sc_fifo<tlm_item> fw_fifo;
   sc_fifo<tlm_item> bw_fifo;
+
+  //DEBUG
+  unsigned int transaction_in_fw_path_id = 0;
+  unsigned int transaction_in_bw_path_id = 0;
   
   //Constructor
   SC_CTOR(img_router)   
@@ -144,7 +148,7 @@ struct img_router: sc_module
         wait(bw_fifo.data_read_event());
     }
     bw_fifo.nb_write(item);
-    //wait(bw_fifo.data_written_event());
+    wait(bw_fifo.data_written_event());
     dbgmodprint("[BW_FIFO] Pushed transaction #%0d", img_ext->transaction_number);
     return tlm::TLM_ACCEPTED;
   }
@@ -225,6 +229,7 @@ struct img_router: sc_module
     tlm::tlm_phase local_phase = phase;
 
     sc_dt::uint64 address = trans.get_address();
+    this->transaction_in_bw_path_id = img_ext->transaction_number;
 
     dbgmodprint("Received transaction #%0d with address %08X in backward path. Redirecting transaction to CPU", img_ext->transaction_number, address);
     target_socket->nb_transport_bw(trans, local_phase, this->bw_delay);
@@ -237,6 +242,7 @@ struct img_router: sc_module
     tlm::tlm_phase local_phase = phase;
 
     sc_dt::uint64 address = trans.get_address();
+    this->transaction_in_fw_path_id = img_ext->transaction_number;
 
     unsigned int initiator_id = decode_address(address);
     dbgmodprint("Received transaction #%0d with address %08X in forward path. Redirecting transaction through initiator %d", img_ext->transaction_number, address, initiator_id);
