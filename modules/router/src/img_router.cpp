@@ -115,12 +115,7 @@ struct img_router: sc_module
         }
 
         // To/From Memory Valid addresses
-        case IMG_INPUT: 
-        case IMG_INPROCESS_A:
-        case IMG_INPROCESS_B:
-        case IMG_INPROCESS_C:
-        case IMG_INPROCESS_D:
-        case IMG_COMPRESSED: {
+        case MEM_START ... MEM_FINISH : {
             dbgmodprint("Decoded address %08X corresponds to Memory.", address);
             return IMG_MEMORY_INITIATOR_ID;
         }

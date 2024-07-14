@@ -149,9 +149,9 @@ struct img_initiator: sc_module
     }
 
     //Wait for response transaction
-    if (transaction->get_command() == tlm::TLM_READ_COMMAND) {
-      wait(transaction_received_e);
-    }
+    // if (transaction->get_command() == tlm::TLM_READ_COMMAND) {
+    wait(transaction_received_e);
+    // }
     //-----------DEBUG-----------
     dbgmodprint("[DEBUG1] Reading at Initiator: ");
     for (int i = 0; i < transaction->get_data_length()/sizeof(int); ++i){
