@@ -1,3 +1,4 @@
+#ifndef USING_TLM_ROUTER_TB_EN
 #ifdef USING_TLM_TB_EN
 #ifndef TB_EDGE_DETECTOR_TLM_CPP
 #define TB_EDGE_DETECTOR_TLM_CPP
@@ -796,3 +797,4 @@ int sc_main(int, char*[])
 }
 #endif // TB_EDGE_DETECTOR_TLM_CPP
 #endif // USING_TLM_TB_EN
+#endif // USING_TLM_ROUTER_TB_EN
