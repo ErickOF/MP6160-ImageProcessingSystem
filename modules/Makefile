@@ -12,14 +12,14 @@ endif
 # Target
 LD=g++
 LFLAGS=-Wall -I. -lm -g
-LIBS=-lsystemc -lm
+LIBS=-lsystemc -lsystemc-ams -lm
 
 # Source directories
 SRCDIR=src
 OBJDIR=obj
 BINDIR=./
-INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2
-LIBDIR=-L. -L$(SYSTEMC)/lib-linux64
+INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2 -I/usr/local/sytemc-3.0.0/include/
+LIBDIR=-L. -L$(SYSTEMC)/lib-linux64 -L/usr/local/sytemc-3.0.0/lib-linux64/
 
 ifdef INCLUDE_OPENCV
 # Target
