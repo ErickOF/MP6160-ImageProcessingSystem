@@ -36,6 +36,7 @@ using namespace std;
 #include "unification_pv_model.hpp"
 #include "ips_jpg_pv_model.hpp"
 #include "img_initiator.cpp"
+#include "img_router.cpp"
 
 #if !defined(RGB2GRAY_PV_EN) || !defined(IPS_FILTER_LT_EN) || !defined(EDGE_DETECTOR_AT_EN) || !defined(IMG_UNIFICATE_PV_EN) || !defined(IPS_JPG_PV_EN)
 #error "Not all the required macros (RGB2GRAY_PV_EN, IPS_FILTER_LT_EN, EDGE_DETECTOR_AT_EN, IMG_UNIFICATE_PV_EN and IPS_JPG_PV_EN) are defined."
@@ -43,42 +44,51 @@ using namespace std;
 
 SC_MODULE(Tb_top)
 {
-  img_initiator *sobel_initiator;
+  
+  img_router<3> *router;
+  //img_initiator *sobel_initiator;
+  //img_initiator *memory_initiator;
+  //img_initiator *filter_initiator;
+  img_initiator *tb_initiator;
   sobel_edge_detector_tlm *edge_detector_DUT;
   Rgb2Gray *rgb2gray_DUT;
-  img_initiator *memory_initiator;
   memory_tlm *memory_DUT;
-  img_initiator *filter_initiator;
   ips_filter_tlm *filter_DUT;
   img_unification_module* unification_DUT;
   jpg_output *jpg_comp_DUT;
   
   SC_CTOR(Tb_top)
   {
-    sobel_initiator = new img_initiator("sobel_initiator");
+    router = new img_router<3>("router");
     edge_detector_DUT = new sobel_edge_detector_tlm("edge_detector_DUT");
     rgb2gray_DUT = new Rgb2Gray("rgb2gray_DUT");
-    memory_initiator = new img_initiator("memory_initiator");
+    tb_initiator = new img_initiator("tb_initiator");
+    //sobel_initiator = new img_initiator("sobel_initiator");
+    //memory_initiator = new img_initiator("memory_initiator");
+    //filter_initiator = new img_initiator("filter_initiator");
     memory_DUT = new memory_tlm("memory_DUT");
-    filter_initiator = new img_initiator("filter_initiator");
     filter_DUT = new ips_filter_tlm("filter_DUT");
     unification_DUT = new img_unification_module("unification_DUT");
     jpg_comp_DUT = new jpg_output("jpg_comp_DUT", IMAG_ROWS, IMAG_COLS);
     
-    sobel_initiator->start_img_initiators();
-    sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    router->set_delays(sc_time(20, SC_NS), sc_time(20, SC_NS));
+    // sobel_initiator->start_img_initiators();
+    // sobel_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    // memory_initiator->start_img_initiators();
+    // memory_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    // filter_initiator->start_img_initiators();
+    // filter_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
+    tb_initiator->start_img_initiators();
+    tb_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     edge_detector_DUT->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
-    memory_initiator->start_img_initiators();
-    memory_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     memory_DUT->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
-    filter_initiator->start_img_initiators();
-    filter_initiator->set_delays(sc_time(10, SC_NS), sc_time(10, SC_NS));
     filter_DUT->set_delays(sc_time(10, SC_NS), sc_time(3, SC_NS));
     
     // Bind initiator socket to target socket
-    sobel_initiator->socket.bind(edge_detector_DUT->socket);
-    memory_initiator->socket.bind(memory_DUT->socket);
-    filter_initiator->socket.bind(filter_DUT->socket);
+    router->initiator_socket[0]->bind(filter_DUT->socket);
+    router->initiator_socket[1]->bind(edge_detector_DUT->socket);
+    router->initiator_socket[2]->bind(memory_DUT->socket);
+    tb_initiator->socket.bind(router->target_socket);
     
     SC_THREAD(thread_process);
   }
@@ -183,7 +193,7 @@ SC_MODULE(Tb_top)
       {
         unsigned char* read_ptr;
         dbgprint("Before doing a read in TB");
-        memory_initiator->read(read_ptr, IMG_INPUT + ((i * IMAG_COLS * 3) + (j * 3)), 3 * sizeof(char));
+        tb_initiator->read(read_ptr, IMG_INPUT + ((i * IMAG_COLS * 3) + (j * 3)), 3 * sizeof(char));
         dbgprint("After doing a read in TB");
         localR = *(read_ptr    );
         localG = *(read_ptr + 1);
@@ -208,7 +218,7 @@ SC_MODULE(Tb_top)
         {
           dbgprint("Before doing a write in TB");
           sanity_check_address(IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), IMG_INPROCESS_A, IMG_INPROCESS_A + IMG_INPROCESS_A_SZ);
-          memory_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          tb_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgprint("After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -254,10 +264,10 @@ SC_MODULE(Tb_top)
         
         write_ptr = local_window_ptr;
         dbgprint("Before doing a write in TB");
-        filter_initiator->write(write_ptr, IMG_FILTER_KERNEL, 9 * sizeof(char));
+        tb_initiator->write(write_ptr, IMG_FILTER_KERNEL, 9 * sizeof(char));
         dbgprint("After doing a write in TB");
         dbgprint("Before doing a read in TB");
-        filter_initiator->read(read_ptr, IMG_FILTER_KERNEL, sizeof(IPS_OUT_TYPE_TB));
+        tb_initiator->read(read_ptr, IMG_FILTER_KERNEL, sizeof(IPS_OUT_TYPE_TB));
         dbgprint("After doing a read in TB");
         data_returned_ptr = reinterpret_cast<IPS_OUT_TYPE_TB*>(read_ptr);
         dbgprint("Data_returned filtered_result: %f", *data_returned_ptr);
@@ -289,7 +299,7 @@ SC_MODULE(Tb_top)
         {
           dbgprint("Before doing a write in TB");
           sanity_check_address(IMG_COMPRESSED + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
-          memory_initiator->write(local_results, IMG_COMPRESSED + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          tb_initiator->write(local_results, IMG_COMPRESSED + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgprint("After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -338,14 +348,14 @@ SC_MODULE(Tb_top)
         
         write_ptr = local_window_ptr;
         dbgprint("Before doing a write in TB");
-        sobel_initiator->write(write_ptr, SOBEL_INPUT_0, 8 * sizeof(char));
+        tb_initiator->write(write_ptr, SOBEL_INPUT_0, 8 * sizeof(char));
         dbgprint("After doing a write in TB");
         write_ptr = (local_window_ptr + 8);
         dbgprint("Before doing a write in TB");
-        sobel_initiator->write(write_ptr, SOBEL_INPUT_1, 8 * sizeof(char));
+        tb_initiator->write(write_ptr, SOBEL_INPUT_1, 8 * sizeof(char));
         dbgprint("After doing a write in TB");
         dbgprint("Before doing a read in TB");
-        sobel_initiator->read(read_ptr, SOBEL_OUTPUT, 8 * sizeof(char));
+        tb_initiator->read(read_ptr, SOBEL_OUTPUT, 8 * sizeof(char));
         dbgprint("After doing a read in TB");
         data_returned_ptr = reinterpret_cast<short int*>(read_ptr);
         dbgprint("Data_returned localGradientX: %0d", *data_returned_ptr);
@@ -387,12 +397,12 @@ SC_MODULE(Tb_top)
           write_ptr = local_results;
           dbgprint("Before doing a write in TB");
           sanity_check_address(IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), IMG_INPROCESS_B, IMG_INPROCESS_B + IMG_INPROCESS_B_SZ);
-          memory_initiator->write(write_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          tb_initiator->write(write_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgprint("After doing a write in TB");
           write_ptr = (local_results + 8);
           dbgprint("Before doing a write in TB");
           sanity_check_address(IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), IMG_INPROCESS_C, IMG_INPROCESS_C + IMG_INPROCESS_C_SZ);
-          memory_initiator->write(write_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          tb_initiator->write(write_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgprint("After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -462,11 +472,11 @@ SC_MODULE(Tb_top)
           local_read = new unsigned char[16];
         
           dbgprint("Before doing a read in TB");
-          memory_initiator->read(read_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          tb_initiator->read(read_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgprint("After doing a read in TB");
           memcpy((local_read                          ), read_ptr, 4 * sizeof(short int));
           dbgprint("Before doing a read in TB");
-          memory_initiator->read(read_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          tb_initiator->read(read_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgprint("After doing a read in TB");
           memcpy((local_read + (4 * sizeof(short int))), read_ptr, 4 * sizeof(short int));
         }
@@ -495,7 +505,7 @@ SC_MODULE(Tb_top)
         {
           dbgprint("Before doing a write in TB");
           sanity_check_address(IMG_INPROCESS_A + ((i * IMAG_COLS) + j), IMG_INPROCESS_A, IMG_INPROCESS_A + IMG_INPROCESS_A_SZ);
-          memory_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 4 * sizeof(char))), 4 * sizeof(char));
+          tb_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 4 * sizeof(char))), 4 * sizeof(char));
           dbgprint("After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -603,14 +613,14 @@ SC_MODULE(Tb_top)
       *(local_window_ptr + 2) = 0;
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address, 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address, 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = 0;
       *(local_window_ptr + 4) = *(read_ptr    );
       *(local_window_ptr + 5) = *(read_ptr + 1);
       // Third row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address  + IMAG_COLS, 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address  + IMAG_COLS, 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 6) = 0;
       *(local_window_ptr + 7) = *(read_ptr    );
@@ -624,14 +634,14 @@ SC_MODULE(Tb_top)
       *(local_window_ptr + 2) = 0;
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (IMAG_COLS - 2), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (IMAG_COLS - 2), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = *(read_ptr    );
       *(local_window_ptr + 4) = *(read_ptr + 1);
       *(local_window_ptr + 5) = 0;
       // Third row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (IMAG_COLS + (IMAG_COLS - 2)), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (IMAG_COLS + (IMAG_COLS - 2)), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 6) = *(read_ptr    );
       *(local_window_ptr + 7) = *(read_ptr + 1);
@@ -645,14 +655,14 @@ SC_MODULE(Tb_top)
       *(local_window_ptr + 2) = 0;
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (j - 1), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (j - 1), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = *(read_ptr    );
       *(local_window_ptr + 4) = *(read_ptr + 1);
       *(local_window_ptr + 5) = *(read_ptr + 2);
       // Third row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (IMAG_COLS + (j - 1)), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (IMAG_COLS + (j - 1)), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 6) = *(read_ptr    );
       *(local_window_ptr + 7) = *(read_ptr + 1);
@@ -662,14 +672,14 @@ SC_MODULE(Tb_top)
     {
       // First row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + ((IMAG_ROWS - 2) * IMAG_COLS), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + ((IMAG_ROWS - 2) * IMAG_COLS), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr    ) = 0;
       *(local_window_ptr + 1) = *(read_ptr    );
       *(local_window_ptr + 2) = *(read_ptr + 1);
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + ((IMAG_ROWS - 1) * IMAG_COLS), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + ((IMAG_ROWS - 1) * IMAG_COLS), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = 0;
       *(local_window_ptr + 4) = *(read_ptr    );
@@ -683,14 +693,14 @@ SC_MODULE(Tb_top)
     {
       // First row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 2) * IMAG_COLS) + (IMAG_COLS - 2)), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 2) * IMAG_COLS) + (IMAG_COLS - 2)), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr    ) = *(read_ptr    );
       *(local_window_ptr + 1) = *(read_ptr + 1);
       *(local_window_ptr + 2) = 0;
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 1) * IMAG_COLS) + (IMAG_COLS - 2)), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 1) * IMAG_COLS) + (IMAG_COLS - 2)), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = *(read_ptr    );
       *(local_window_ptr + 4) = *(read_ptr + 1);
@@ -704,14 +714,14 @@ SC_MODULE(Tb_top)
     {
       // First row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 2) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 2) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr    ) = *(read_ptr    );
       *(local_window_ptr + 1) = *(read_ptr + 1);
       *(local_window_ptr + 2) = *(read_ptr + 2);
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((IMAG_ROWS - 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = *(read_ptr    );
       *(local_window_ptr + 4) = *(read_ptr + 1);
@@ -725,21 +735,21 @@ SC_MODULE(Tb_top)
     {
       // First row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + ((i - 1) * IMAG_COLS), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + ((i - 1) * IMAG_COLS), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr    ) = 0;
       *(local_window_ptr + 1) = *(read_ptr    );
       *(local_window_ptr + 2) = *(read_ptr + 1);
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (i * IMAG_COLS), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (i * IMAG_COLS), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = 0;
       *(local_window_ptr + 4) = *(read_ptr    );
       *(local_window_ptr + 5) = *(read_ptr + 1);
       // Third row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + ((i + 1) * IMAG_COLS), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + ((i + 1) * IMAG_COLS), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 6) = 0;
       *(local_window_ptr + 7) = *(read_ptr    );
@@ -749,21 +759,21 @@ SC_MODULE(Tb_top)
     {
       // First row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((i - 1) * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((i - 1) * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr    ) = *(read_ptr    );
       *(local_window_ptr + 1) = *(read_ptr + 1);
       *(local_window_ptr + 2) = 0;
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + ((i * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + ((i * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = *(read_ptr    );
       *(local_window_ptr + 4) = *(read_ptr + 1);
       *(local_window_ptr + 5) = 0;
       // Third row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((i + 1) * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((i + 1) * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 6) = *(read_ptr    );
       *(local_window_ptr + 7) = *(read_ptr + 1);
@@ -773,21 +783,21 @@ SC_MODULE(Tb_top)
     {
       // First row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((i - 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((i - 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr    ) = *(read_ptr    );
       *(local_window_ptr + 1) = *(read_ptr + 1);
       *(local_window_ptr + 2) = *(read_ptr + 2);
       // Second row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + ((i * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + ((i * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 3) = *(read_ptr    );
       *(local_window_ptr + 4) = *(read_ptr + 1);
       *(local_window_ptr + 5) = *(read_ptr + 2);
       // Third row
       dbgprint("Before doing a read in TB");
-      memory_initiator->read(read_ptr, initial_address + (((i + 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+      tb_initiator->read(read_ptr, initial_address + (((i + 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
       dbgprint("After doing a read in TB");
       *(local_window_ptr + 6) = *(read_ptr    );
       *(local_window_ptr + 7) = *(read_ptr + 1);
