@@ -114,7 +114,7 @@ SC_MODULE(Tb_top)
     
     signed char* compression_results;
     
-    colorImage = imread("../../tools/datagen/src/imgs/car.jpg", IMREAD_UNCHANGED);
+    colorImage = imread("../../tools/datagen/src/imgs/car_rgb_noisy_image.jpg", IMREAD_UNCHANGED);
   
     if (colorImage.empty())
     { 

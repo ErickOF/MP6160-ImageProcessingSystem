@@ -8,6 +8,19 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+import cv2
+import numpy as np
+
+def add_gaussian_noise(
+        image_path: str,
+        mean: float = 0,
+        stddev: float = 0.5
+    ) -> np.ndarray:
+    # Read the image
+    image: np.ndarray = cv2.imread(image_path)
+    noise = np.random.normal(mean, stddev, image.shape).astype(np.uint8)
+    noisy_image = cv2.add(image, noise)
+    return noisy_image
 
 def apply_sobel_filter(
         image_path: str,
@@ -101,7 +114,7 @@ def apply_sobel_filter(
     plt.imshow(sobel_combined_uint8, cmap='gray')
     plt.axis('off')
 
-    plt.show()
+    # plt.show()
 
     return (gray_img, noisy_img, sobel_x_uint8, sobel_y_uint8,
             sobel_combined_uint8)
@@ -110,6 +123,8 @@ def apply_sobel_filter(
 if __name__ == '__main__':
     salt_probability: float = 0.1
     pepper_probability: float = 0.1
+    gaussian_mean: float = 0
+    gaussian_stddev: float = 0.5
     img_name: str = 'car'
     img_ext: str = 'jpg'
     img_path: str = f'src/imgs/{img_name}.{img_ext}'
@@ -130,3 +145,7 @@ if __name__ == '__main__':
         f'src/imgs/{img_name}_sobel_combined_result.{img_ext}',
         sobel_combined
     )
+    
+    noisy_rgb = add_gaussian_noise(img_path, gaussian_mean, gaussian_stddev)
+    
+    cv2.imwrite(f'src/imgs/{img_name}_rgb_noisy_image.{img_ext}', noisy_rgb)

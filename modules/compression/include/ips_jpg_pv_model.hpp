@@ -81,7 +81,6 @@ SC_MODULE (jpg_output) {
 		image[i]=image[i]-128;
 	}
 	int number_of_blocks = image_rows*image_cols/(BLOCK_ROWS*BLOCK_COLS);
-	printf("number_of_block %0d ROWS %0d COLS %0d\n", number_of_blocks, BLOCK_ROWS, BLOCK_COLS);
 #ifndef USING_TLM_TB_EN
 	int block_output[number_of_blocks][BLOCK_ROWS*BLOCK_COLS] = {0};
 	int block_output_size[number_of_blocks] = {0};
