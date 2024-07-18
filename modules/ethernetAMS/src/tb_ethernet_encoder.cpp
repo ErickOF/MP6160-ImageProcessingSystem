@@ -1,9 +1,12 @@
+#ifndef TB_ETHERNET_ENCODER_CPP
+#define TB_ETHERNET_ENCODER_CPP
+
 #include <systemc-ams.h>
 #include <systemc.h>
 #include "ethernetEncoder.h"
 #include "packetGenerator.h"
 
-int sc_main(int argc, char* argv[])
+int sc_main()
 {
     sca_tdf::sca_signal<bool> valid;
     sca_tdf::sca_signal<double> mlt3_out_signal;
@@ -30,11 +33,14 @@ int sc_main(int argc, char* argv[])
     sca_tdf::sca_signal<sc_dt::sc_int<4>> n2_sigBitCount;
     sca_tdf::sca_signal<sc_dt::sc_int<4>> sigBitCount;
 
+    sca_tdf::sca_signal<sc_dt::sc_int<32>> remaining_bytes_to_send;
 
-    unsigned char data[8];
+    sca_core::sca_time sample_time(10, SC_NS);
 
-    ethernetEncoder encoder("encoder");
-    packetGenerator pkt_gen("pkt_gen");
+    unsigned char data[16];
+
+    ethernetEncoder encoder("encoder", sample_time);
+    packetGenerator pkt_gen("pkt_gen", sample_time);
 
     encoder.data_in(data_out);
     encoder.mlt3_out(mlt3_out_signal);
@@ -63,6 +69,8 @@ int sc_main(int argc, char* argv[])
     pkt_gen.n2_sigBitCount_(n2_sigBitCount);
     pkt_gen.sigBitCount(sigBitCount);
 
+    pkt_gen.remaining_bytes_to_send(remaining_bytes_to_send);
+
     // Trace file setup
     sca_util::sca_trace_file *traceFile = sca_util::sca_create_vcd_trace_file("ethernetEncoder");
 
@@ -85,15 +93,29 @@ int sc_main(int argc, char* argv[])
         sca_util::sca_trace(traceFile, tmp_data_out_valid, "pkt_gen_tmp_data_out_valid");
         sca_util::sca_trace(traceFile, data_to_send, "pkt_gen_data_to_send");
         sca_util::sca_trace(traceFile, data_valid_to_send, "pkt_gen_data_valid_to_send");
+        sca_util::sca_trace(traceFile, remaining_bytes_to_send, "pkt_gen_remaining_bytes_to_send");
     }
 
     sc_start(45, SC_NS);
     data[0] = 113;
     data[1] = 255;
     data[2] = 204;
-    pkt_gen.fill_data(data, 3);
+    data[3] = 85;
+    data[4] = 173;
+    data[5] = 37;
+    data[6] = 142;
+    data[7] = 69;
+    data[8] = 91;
+    data[9] = 178;
+    data[10] = 220;
+    data[11] = 33;
+    data[12] = 77;
+    data[13] = 111;
+    data[14] = 146;
+    data[15] = 194;
+    pkt_gen.fill_data(data, 13);
 
-    sc_start(1455, SC_NS); // Run the simulation for 500 ns
+    sc_start(3455, SC_NS); // Run the simulation for 500 ns
 
     if (traceFile)
     {
@@ -102,3 +124,5 @@ int sc_main(int argc, char* argv[])
 
     return 0;
 }
+
+#endif // TB_ETHERNET_ENCODER_CPP
