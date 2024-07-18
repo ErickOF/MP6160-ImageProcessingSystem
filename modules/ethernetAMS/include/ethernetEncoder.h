@@ -15,7 +15,7 @@ public:
     sc_dt::sc_bv<5> code_out;  // Internal signal for 5-bit code
     int currentLevel = 0;
     int nextLevel = 1;
-    int bitCount = 4;
+    int bitCount = 0;
     int sampleCount = 0;
     int lastMlt3Out = 0;
     std::string lastCodeOut = "";

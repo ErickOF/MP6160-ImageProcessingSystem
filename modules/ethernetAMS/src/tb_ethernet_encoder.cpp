@@ -5,13 +5,15 @@
 #include <systemc.h>
 #include "ethernetEncoder.h"
 #include "packetGenerator.h"
+#include "ethernetDecoder.h"
 
-int sc_main()
+int sc_main(int argc, char* argv[])
 {
     sca_tdf::sca_signal<bool> valid;
     sca_tdf::sca_signal<double> mlt3_out_signal;
 
     sca_tdf::sca_signal<bool> data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out_signal;
     sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out;
 
     sca_tdf::sca_signal<bool> tmp_data_out_valid;
@@ -40,10 +42,13 @@ int sc_main()
     unsigned char data[16];
 
     ethernetEncoder encoder("encoder", sample_time);
+    ethernetDecoder decoder("decoder");
     packetGenerator pkt_gen("pkt_gen", sample_time);
 
     encoder.data_in(data_out);
     encoder.mlt3_out(mlt3_out_signal);
+    decoder.mlt3_in(mlt3_out_signal);
+    decoder.data_out(data_out_signal);
     encoder.valid(data_out_valid);
 
     pkt_gen.data_out_valid(data_out_valid);
@@ -77,6 +82,7 @@ int sc_main()
     if (traceFile)
     {
         sca_util::sca_trace(traceFile, mlt3_out_signal, "mlt3_out");
+        sca_util::sca_trace(traceFile, data_out_signal, "data_out_signal");
         sca_util::sca_trace(traceFile, data_out_valid, "data_out_valid");
         sca_util::sca_trace(traceFile, data_out, "data_out");
         sca_util::sca_trace(traceFile, data_in, "pkt_gen_data_in");
@@ -116,6 +122,10 @@ int sc_main()
     pkt_gen.fill_data(data, 13);
 
     sc_start(3455, SC_NS); // Run the simulation for 500 ns
+
+    pkt_gen.fill_data(data, 8);
+
+    sc_start(3500, SC_NS); // Run the simulation for 500 ns
 
     if (traceFile)
     {

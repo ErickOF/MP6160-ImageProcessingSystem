@@ -34,7 +34,7 @@ void ethernetEncoder::processing()
 
     std::string input = data_in.read().to_string();
 
-    if (bitCount == 4) // Process new input only when bitCount is 4 (rightmost bit)
+    if (bitCount == 0) // Process new input only when bitCount is 4 (rightmost bit)
     {
         std::cout << "Processing sample: " << sampleCount << ", received input: " << input << std::endl;
 
@@ -66,7 +66,7 @@ void ethernetEncoder::processing()
 
     lastMlt3Out = currentLevel;
     next_mlt3_out = currentLevel;  // Store the computed value for the next cycle
-    bitCount = (bitCount == 0) ? 4 : bitCount - 1; // Decrement bitCount from 4 to 0
+    bitCount = (bitCount == 4) ? 0 : bitCount + 1; // Decrement bitCount from 4 to 0
 
     // Debugging output
     std::cout << "Sample: " << sampleCount << ", data_in: " << input 
