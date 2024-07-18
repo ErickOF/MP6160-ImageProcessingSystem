@@ -2,7 +2,8 @@
 
 void ethernetEncoder::set_attributes()
 {
-    set_timestep(10, sc_core::SC_NS); // Set a sample period of 10 ns
+    // Set a timestep for the TDF module
+    set_timestep(sca_core::sca_time(10, SC_NS));  // Example timestep
 }
 
 void ethernetEncoder::initialize()
@@ -20,6 +21,14 @@ void ethernetEncoder::initialize()
 
 void ethernetEncoder::processing()
 {
+    // Update mlt3_out with the value calculated in the previous cycle
+    mlt3_out.write(next_mlt3_out);
+
+    if (!valid.read())  // Check the valid and clock edge signals before processing
+    {
+        return;
+    }
+
     std::string input = data_in.read().to_string();
 
     if (bitCount == 4) // Process new input only when bitCount is 4 (rightmost bit)
@@ -53,14 +62,12 @@ void ethernetEncoder::processing()
     }
 
     lastMlt3Out = currentLevel;
-    mlt3_out.write(currentLevel);
+    next_mlt3_out = currentLevel;  // Store the computed value for the next cycle
     bitCount = (bitCount == 0) ? 4 : bitCount - 1; // Decrement bitCount from 4 to 0
 
     // Debugging output
     std::cout << "Sample: " << sampleCount << ", data_in: " << input 
-              << ", code_out: " << lastCodeOut << ", mlt3_out: " << lastMlt3Out << std::endl;
+              << ", code_out: " << lastCodeOut << ", mlt3_out: " << next_mlt3_out << std::endl;
 
     sampleCount++;
-    // Set the next trigger
-    next_trigger(10, SC_NS);
 }
