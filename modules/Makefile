@@ -1,5 +1,6 @@
 SYSTEMC?=$(SYSTEMC_HOME)
 TARGET?=test
+SYSTEMC_AMS?=$(SYSTEMC_AMS_HOME)
 
 # Compiler
 CC=g++
@@ -18,8 +19,8 @@ LIBS=-lsystemc -lm
 SRCDIR=src
 OBJDIR=obj
 BINDIR=./
-INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2 -I/usr/local/sytemc-3.0.0/include/
-LIBDIR=-L. -L$(SYSTEMC)/lib-linux64 -L/usr/local/sytemc-3.0.0/lib-linux64/
+INCDIR=-I. -I./include -I$(SYSTEMC)/include -Ibasic_protocol -I$(SYSTEMC)/include/tlm_core/tlm_2 -I$(SYSTEMC_AMS)/include/
+LIBDIR=-L. -L$(SYSTEMC)/lib-linux64 -L$(SYSTEMC_AMS)/lib-linux64/
 
 ifdef USING_TLM_TB_EN
 EDGE_DIR=../edge-detector
