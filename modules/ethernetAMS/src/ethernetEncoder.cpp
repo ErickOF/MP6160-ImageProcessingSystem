@@ -1,9 +1,12 @@
+#ifndef ETHERNET_ENCODER_CPP
+#define ETHERNET_ENCODER_CPP
+
 #include "ethernetEncoder.h"
 
 void ethernetEncoder::set_attributes()
 {
     // Set a timestep for the TDF module
-    set_timestep(sca_core::sca_time(10, SC_NS));  // Example timestep
+    set_timestep(sample_time);
 }
 
 void ethernetEncoder::initialize()
@@ -71,3 +74,5 @@ void ethernetEncoder::processing()
 
     sampleCount++;
 }
+
+#endif // ETHERNET_ENCODER_CPP

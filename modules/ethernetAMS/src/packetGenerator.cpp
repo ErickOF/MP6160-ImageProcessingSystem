@@ -1,8 +1,31 @@
+#ifndef PACKET_GENERATOR_CPP
+#define PACKET_GENERATOR_CPP
+
 #include <systemc-ams.h>
 #include <systemc.h>
 #include "packetGenerator.h"
 
+void packetGenerator::set_attributes()
+{
+    // Set a timestep for the TDF module
+    set_timestep(sample_time);
+}
+
 void packetGenerator::fill_data(unsigned char* data, int packet_length)
+{
+  local_data = new unsigned char[packet_length];
+  memcpy(local_data, data, packet_length * sizeof(char));
+
+  actual_data_length = packet_length;
+  bytes_sent = 0;
+
+  // Insert first the preamble
+  create_pack_of_data(preamble_data, 8);
+
+  preamble_in_process = true;
+}
+
+void packetGenerator::create_pack_of_data(unsigned char* data, int packet_length)
 {
   int actual_length = (packet_length * 2 > N) ? N : packet_length * 2;
   unsigned char tmp_data;
@@ -20,22 +43,11 @@ void packetGenerator::fill_data(unsigned char* data, int packet_length)
     tmp_data_valid[i] = 1;
   }
 
-  data_in = tmp_data_in;
-  data_in_valid = tmp_data_valid;
-
-  // Insert first the preamble
-  for (int i = 0; i < 15; i++)
-  {
-    std::cout << "@" << sc_time_stamp() << " Inside fill_data(): i " << i << std::endl;
-    data_to_send.range(i * 4 + 3, i * 4) = "1010";
-  }
-  data_to_send.range(63, 60) = "1011";
-  data_valid_to_send = "1111111111111111";
+  data_to_send = tmp_data_in;
+  data_valid_to_send = tmp_data_valid;
 
   n2_data_valid = data_valid_to_send;
   n1_data_valid = n2_data_valid;
-
-  preamble_in_process = true;
 }
 
 void packetGenerator::processing()
@@ -47,41 +59,35 @@ void packetGenerator::processing()
 
   if ((tmp_data_valid_to_send.or_reduce() == 0) && (preamble_in_process == true))
   {
-    unsigned char length = 0;
-    sc_dt::sc_bv<8> local_length = 0;
+    sc_dt::sc_bv<32> local_length = 0;
 
     preamble_in_process = false;
-    data_length_in_process = true;
 
-    for (int i = 0; i < N; i++)
-    {
-      if (data_in_valid[i] == 1)
-      {
-        length++;
-      }
-    }
-    local_length = length / 2;
+    local_length = (unsigned int)actual_data_length;
 
     data_to_send = 0;
-    data_to_send.range(7, 0) = local_length;
-    data_valid_to_send = "11";
+    data_to_send.range(31, 0) = local_length;
+    data_valid_to_send = "11111111";
     tmp_data_to_send = data_to_send;
     tmp_data_valid_to_send = data_valid_to_send;
 
     n2_data_valid = data_valid_to_send;
     n1_data_valid = n2_data_valid;
   }
-  else if ((tmp_data_valid_to_send.or_reduce() == 0) && (data_length_in_process == true))
+  else if ((tmp_data_valid_to_send.or_reduce() == 0) && (actual_data_length > 0))
   {
-    data_length_in_process = false;
-
-    data_to_send = data_in;
-    data_valid_to_send = data_in_valid;
-    tmp_data_to_send = data_to_send;
-    tmp_data_valid_to_send = data_valid_to_send;
-
-    n2_data_valid = data_valid_to_send;
-    n1_data_valid = n2_data_valid;
+    if (actual_data_length > 8)
+    {
+      create_pack_of_data((local_data + bytes_sent), 8);
+      actual_data_length -= 8;
+      bytes_sent += 8;
+    }
+    else
+    {
+      create_pack_of_data((local_data + bytes_sent), actual_data_length);
+      actual_data_length = 0;
+      delete[] local_data;
+    }
   }
 
   n1_data_out = n2_data_out;
@@ -174,4 +180,8 @@ void packetGenerator::processing()
 
   data_to_send_.write(data_to_send);
   data_valid_to_send_.write(data_valid_to_send);
+
+  remaining_bytes_to_send.write(actual_data_length);
 }
+
+#endif // PACKET_GENERATOR_CPP

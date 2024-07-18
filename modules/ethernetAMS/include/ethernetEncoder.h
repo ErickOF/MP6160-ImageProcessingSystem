@@ -24,12 +24,14 @@ public:
 
     std::map<std::string, std::string> encoding_map;
 
+    sca_core::sca_time sample_time;
+
     void set_attributes();
     void initialize();
     void processing();
 
-    SCA_CTOR(ethernetEncoder)
-    : data_in("data_in"), mlt3_out("mlt3_out"), valid("valid")
+    ethernetEncoder(sc_core::sc_module_name name, sca_core::sca_time sample_time)
+    : sca_tdf::sca_module(name), data_in("data_in"), mlt3_out("mlt3_out"), valid("valid"), sample_time(sample_time)
     {
     }
 };
