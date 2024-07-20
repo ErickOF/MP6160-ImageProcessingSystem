@@ -3,18 +3,17 @@
 #ifndef IMG_INITIATOR_CPP
 #define IMG_INITIATOR_CPP
 
-// #include "tlm_transaction.cpp"
-#include "transaction_memory_manager.cpp"
+#include "transaction_memory_manager.hpp"
 
-#include "systemc.h"
+#include <systemc.h>
 using namespace sc_core;
 using namespace sc_dt;
 using namespace std;
 
-#include "tlm.h"
-#include "tlm_utils/simple_initiator_socket.h"
-#include "tlm_utils/simple_target_socket.h"
-#include "tlm_utils/peq_with_cb_and_phase.h"
+#include <tlm.h>
+#include <tlm_utils/simple_initiator_socket.h>
+#include <tlm_utils/simple_target_socket.h>
+#include <tlm_utils/peq_with_cb_and_phase.h>
 
 //const char* tlm_enum_names[] = {"TLM_ACCEPTED", "TLM_UPDATED", "TLM_COMPLETED"}; 
 

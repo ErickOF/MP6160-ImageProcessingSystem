@@ -1,7 +1,7 @@
-#ifndef IMPORTANTDEFINES_H
-#define IMPORTANTDEFINES_H
+#ifndef IMPORTANT_DEFINES_HPP
+#define IMPORTANT_DEFINES_HPP
 
-#include "AddressMap.h"
+#include "address_map.hpp"
 
 #define IMAG_ROWS 480
 #define IMAG_COLS 640
@@ -16,4 +16,4 @@
 #define IPS_OUT_TYPE_TB float
 #endif // IPS_OUT_TYPE_TB
 
-#endif IMPORTANTDEFINES_H
+#endif // IMPORTANT_DEFINES_HPP

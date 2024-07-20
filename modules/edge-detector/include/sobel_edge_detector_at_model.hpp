@@ -3,7 +3,7 @@
 #define SOBEL_EDGE_DETECTOR_HPP
 
 #include <systemc.h>
-#include "AddressMap.h"
+#include "address_map.hpp"
 
 SC_MODULE(Edge_Detector)
 {

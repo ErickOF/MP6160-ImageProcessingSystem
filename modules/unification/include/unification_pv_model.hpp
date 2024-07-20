@@ -9,8 +9,8 @@
 #ifndef IMG_UNIFICATE_HPP
 #define IMG_UNIFICATE_HPP
 
-#include "systemc.h"
-#include "math.h"
+#include <systemc.h>
+#include <math.h>
 
 SC_MODULE (img_unification_module) {
 

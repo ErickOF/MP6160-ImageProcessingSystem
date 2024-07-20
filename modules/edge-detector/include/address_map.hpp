@@ -1,5 +1,5 @@
-#ifndef ADDRESSMAP_H
-#define ADDRESSMAP_H
+#ifndef ADDRESS_MAP_HPP
+#define ADDRESS_MAP_HPP
 
 #define IMG_FILTER_KERNEL  0x00000003u
 #define SOBEL_INPUT_0      0x00000027u
@@ -20,4 +20,4 @@
 #define MEM_START          IMG_INPUT
 #define MEM_FINISH         IMG_COMPRESSED + IMG_COMPRESSED_SZ
 
-#endif // ADDRESSMAP_H
+#endif // ADDRESS_MAP_HPP

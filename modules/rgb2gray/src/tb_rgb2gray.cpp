@@ -72,4 +72,4 @@ int sc_main(int, char*[])
 
   return 0;
 }
-#endif USING_TLM_TB_EN
+#endif // USING_TLM_TB_EN

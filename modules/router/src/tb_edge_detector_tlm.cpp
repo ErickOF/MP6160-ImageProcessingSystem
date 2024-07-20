@@ -21,13 +21,13 @@ using namespace sc_core;
 using namespace sc_dt;
 using namespace std;
 
-#include "tlm.h"
-#include "tlm_utils/simple_initiator_socket.h"
-#include "tlm_utils/simple_target_socket.h"
-#include "tlm_utils/peq_with_cb_and_phase.h"
+#include <tlm.h>
+#include <tlm_utils/simple_initiator_socket.h>
+#include <tlm_utils/simple_target_socket.h>
+#include <tlm_utils/peq_with_cb_and_phase.h>
 
 #include "common_func.hpp"
-#include "ImportantDefines.h"
+#include "important_defines.hpp"
 
 #include "memory_tlm.hpp"
 #include "rgb2gray_pv_model.hpp"
@@ -35,8 +35,8 @@ using namespace std;
 #include "sobel_edge_detector_tlm.hpp"
 #include "unification_pv_model.hpp"
 #include "ips_jpg_pv_model.hpp"
-#include "img_initiator.cpp"
-#include "img_router.cpp"
+#include "img_initiator.hpp"
+#include "img_router.hpp"
 
 #if !defined(RGB2GRAY_PV_EN) || !defined(IPS_FILTER_LT_EN) || !defined(EDGE_DETECTOR_AT_EN) || !defined(IMG_UNIFICATE_PV_EN) || !defined(IPS_JPG_PV_EN)
 #error "Not all the required macros (RGB2GRAY_PV_EN, IPS_FILTER_LT_EN, EDGE_DETECTOR_AT_EN, IMG_UNIFICATE_PV_EN and IPS_JPG_PV_EN) are defined."

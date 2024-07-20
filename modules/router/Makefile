@@ -86,4 +86,4 @@ run:
 
 # Show waveform
 waveform:
-	@gtkwave edge_detector.vcd
+	@gtkwave router.vcd
