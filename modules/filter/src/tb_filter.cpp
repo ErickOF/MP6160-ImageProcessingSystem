@@ -1,3 +1,4 @@
+#ifndef USING_TLM_TB_EN
 #define int64  systemc_int64
 #define uint64 systemc_uint64
 #include <systemc.h>
@@ -28,7 +29,7 @@
 #define IPS_OUT_TYPE_TB float
 #endif // IPS_OUT_TYPE_TB
 #ifndef IPS_IMG_PATH_TB
-#define IPS_IMG_PATH_TB "../../tools/datagen/src/imgs/car_noisy_image.png"
+#define IPS_IMG_PATH_TB "../../tools/datagen/src/imgs/car_grayscale_image.jpg"
 #endif // IPS_IMG_PATH_TB
 
 #ifndef IPS_FILTER_PV_EN
@@ -210,7 +211,7 @@ void run_one_window()
   SC_REPORT_INFO("TEST_MODE_ONE_WINDOW_DEFAULT", "Running test");
   #endif // TEST_MODE_ONE_WINDOW_RANDOM
   SC_REPORT_INFO("Initialize window", "Window value");
-#endif
+#endif // IPS_DEBUG_EN
 
   // Variables
   IPS_IN_TYPE_TB* img_window;
@@ -335,3 +336,5 @@ int sc_main(int, char*[])
 #endif // IPS_DUMP_EN
   return 0;
 }
+
+#endif // USING_TLM_TB_EN

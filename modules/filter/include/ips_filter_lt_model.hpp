@@ -8,6 +8,9 @@
 #endif // IPS_DUMP_EN
 #include <systemc.h>
 
+#ifdef USING_TLM_TB_EN
+#include "ips_filter_defines.hpp"
+#endif // USING_TLM_TB_EN
 
 /**
  * @brief Filter module.
