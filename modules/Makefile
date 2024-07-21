@@ -3,7 +3,7 @@ TARGET?=test
 
 # Compiler
 CC=g++
-CFLAGS=-Wall -I. -O3 -g -Wextra -Wunused-function
+CFLAGS=-Wall -Wextra -fsanitize=address -fsanitize=undefined -I. -O3 -g
 
 ifdef USE_CPP17
 CFLAGS+=-std=c++17
@@ -11,7 +11,7 @@ endif # USE_CPP17
 
 # Target
 LD=g++
-LFLAGS=-Wall -I. -lm -g
+LFLAGS=-Wall -fsanitize=address -fsanitize=undefined -I. -lm -g
 LIBS=-lsystemc -lm
 
 # Source directories
@@ -69,6 +69,15 @@ else
 $(OBJECTS): $(OBJDIR)/%.o : %.cpp
 		@$(CC) $(CFLAGS) $(INCDIR) -c $< -o $@
 endif # USING_TLM_TB_EN
+
+valgrind:
+	valgrind --leak-check=full -s ./$(TARGET)
+
+drmemory:
+	drmemory -- ./$(TARGET)
+
+heaptrack:
+	heaptrack ./$(TARGET)
 
 .PHONY: clean
 clean:

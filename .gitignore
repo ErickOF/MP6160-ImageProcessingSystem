@@ -232,3 +232,5 @@ tools/datagen/src/imgs/*_sobel_*
 # Ignore VCD files
 *.vcd
 test
+*.zst
+.vscode
