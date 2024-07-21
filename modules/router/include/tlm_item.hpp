@@ -15,18 +15,39 @@ struct tlm_item
   tlm::tlm_generic_payload *transaction;
   tlm::tlm_phase phase;
   sc_time delay;
-  tlm_item(tlm::tlm_generic_payload *transaction = 0, tlm::tlm_phase phase = tlm::BEGIN_REQ, sc_time delay = sc_time(0, SC_NS)) {}
+
+  tlm_item() : transaction(nullptr)
+  {
+  }
+
+  tlm_item(tlm::tlm_generic_payload *transaction, tlm::tlm_phase phase, sc_time delay)
+  {
+    this->transaction = transaction;
+    this->phase = phase;
+    this->delay = delay;
+  }
+
   tlm_item &operator=(const tlm_item &rhs)
   {
-    transaction = rhs.transaction;
-    phase = rhs.phase;
-    delay = rhs.delay;
+    if (this != &rhs)
+    {
+      this->transaction = rhs.transaction;
+      this->phase = rhs.phase;
+      this->delay = rhs.delay;
+    }
+
     return *this;
+  }
+
+  tlm_item(const tlm_item &other) : transaction(other.transaction)
+  {
+    this->phase = other.phase;
+    this->delay = other.delay;
   }
 
   bool operator==(const tlm_item &rhs)
   {
-    return transaction == rhs.transaction && phase == rhs.phase && delay == rhs.delay;
+    return this->transaction == rhs.transaction && this->phase == rhs.phase && this->delay == rhs.delay;
   }
 
   friend std::ostream &operator<<(std::ostream &os, const tlm_item &val)

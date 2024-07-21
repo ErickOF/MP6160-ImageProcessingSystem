@@ -23,7 +23,6 @@ tlm::tlm_sync_enum img_target::nb_transport_fw(
 
 void img_target::peq_cb(tlm::tlm_generic_payload &trans, const tlm::tlm_phase &phase)
 {
-    tlm::tlm_sync_enum status;
     sc_time delay;
     img_generic_extension *img_ext;
 
@@ -101,7 +100,6 @@ void img_target::send_response()
 void img_target::process_transaction(tlm::tlm_generic_payload &trans)
 {
     // Status and Phase
-    tlm::tlm_sync_enum status;
     tlm::tlm_phase phase;
     img_generic_extension *img_ext;
 
@@ -128,11 +126,14 @@ void img_target::process_transaction(tlm::tlm_generic_payload &trans)
             // Add read according to length
             //-----------DEBUG-----------
             dbgmodprint("[DEBUG] Reading: ");
-            for (int i = 0; i < len / sizeof(int); ++i)
+
+            for (long unsigned int i = 0; i < len / sizeof(int); ++i)
             {
                 dbgmodprint("%02x", *(reinterpret_cast<int *>(response_data_ptr) + i));
             }
+
             printf("\n");
+
             //-----------DEBUG-----------
             trans.set_data_ptr(response_data_ptr);
             break;
@@ -142,11 +143,14 @@ void img_target::process_transaction(tlm::tlm_generic_payload &trans)
             this->do_when_write_transaction(data_ptr, len, addr);
             //-----------DEBUG-----------
             dbgmodprint("[DEBUG] Writing: ");
-            for (int i = 0; i < len / sizeof(int); ++i)
+
+            for (long unsigned int i = 0; i < len / sizeof(int); ++i)
             {
                 dbgmodprint("%02x", *(reinterpret_cast<int *>(data_ptr) + i));
             }
+
             printf("\n");
+
             //-----------DEBUG-----------
             break;
         }

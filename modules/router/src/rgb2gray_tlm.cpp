@@ -24,17 +24,15 @@ void rgb2gray_tlm::do_when_read_transaction(unsigned char*& data, unsigned int d
 
 void rgb2gray_tlm::do_when_write_transaction(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address){
   unsigned char rgb_values[3];
-  
-  unsigned char *i = data;
-  
   int j = 0;
-  
+
   for (unsigned char *i = data; (i - data) < 3; i++)
   {
     rgb_values[j] = *i;
-    dbgimgtarmodprint("VAL: %0d -> %0u", i - data, *i);
+    dbgimgtarmodprint("VAL: %0ld -> %0u", i - data, *i);
     j++;
   }
+
   this->set_rgb_pixel(rgb_values[0], rgb_values[1], rgb_values[2]);
 }
 

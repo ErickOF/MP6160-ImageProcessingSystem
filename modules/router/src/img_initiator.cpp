@@ -30,7 +30,7 @@ void img_initiator::read(unsigned char *&data, unsigned int address, unsigned in
   //-----------DEBUG-----------
   dbgmodprint("Reading at Initiator: ");
 
-  for (int i = 0; i < transaction->get_data_length() / sizeof(int); ++i)
+  for (long unsigned int i = 0; i < transaction->get_data_length() / sizeof(int); ++i)
   {
     dbgmodprint("%02x", *(reinterpret_cast<int *>(transaction->get_data_ptr()) + i));
   }
@@ -61,7 +61,7 @@ void img_initiator::write(unsigned char *&data, unsigned int address, unsigned i
   //-----------DEBUG-----------
   dbgmodprint("Writing: ");
 
-  for (int i = 0; i < data_length / sizeof(int); ++i)
+  for (long unsigned int i = 0; i < data_length / sizeof(int); ++i)
   {
     dbgmodprint("%02x", *(reinterpret_cast<int *>(transaction->get_data_ptr()) + i));
   }
@@ -121,7 +121,7 @@ void img_initiator::send_transaction(tlm::tlm_generic_payload *&transaction)
   //-----------DEBUG-----------
   dbgmodprint("[DEBUG1] Reading at Initiator: ");
 
-  for (int i = 0; i < transaction->get_data_length() / sizeof(int); ++i)
+  for (long unsigned int i = 0; i < transaction->get_data_length() / sizeof(int); ++i)
   {
     dbgmodprint("%02x", *(reinterpret_cast<int *>(transaction->get_data_ptr()) + i));
   }
@@ -157,7 +157,7 @@ void img_initiator::peq_cb(tlm::tlm_generic_payload &trans, const tlm::tlm_phase
       //-----------DEBUG-----------
       dbgmodprint("[DEBUG] Reading at Initiator: ");
 
-      for (int i = 0; i < trans.get_data_length() / sizeof(int); ++i)
+      for (long unsigned int i = 0; i < trans.get_data_length() / sizeof(int); ++i)
       {
         dbgmodprint("%02x", *(reinterpret_cast<int *>(trans.get_data_ptr()) + i));
       }
@@ -169,7 +169,7 @@ void img_initiator::peq_cb(tlm::tlm_generic_payload &trans, const tlm::tlm_phase
       //-----------DEBUG-----------
       dbgmodprint("[DEBUG] Reading at Initiator: ");
 
-      for (int i = 0; i < trans.get_data_length() / sizeof(int); ++i)
+      for (long unsigned int i = 0; i < trans.get_data_length() / sizeof(int); ++i)
       {
         dbgmodprint("%02x", *(reinterpret_cast<int *>(trans.get_data_ptr()) + i));
       }
