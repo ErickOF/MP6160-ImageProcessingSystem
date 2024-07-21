@@ -39,17 +39,17 @@ int img_unification_module::norm(int a, int b) {
   //L1 Norm
   #ifdef USE_L1_NORM
   norm_result = abs(a) + abs(b);
-  #endif
+  #endif // USE_L1_NORM
 
   //L2 Norm
   #ifdef USE_L2_NORM
   norm_result = sqrt(pow(a, 2) + pow(b, 2));
-  #endif
+  #endif // USE_L2_NORM
   
   //INFINITY Norm
   #ifdef USE_INF_NORM
   norm_result = (a > b ? a : b);
-  #endif
+  #endif // USE_INF_NORM
   
   return norm_result;
 }

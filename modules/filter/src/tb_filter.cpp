@@ -211,7 +211,7 @@ void run_one_window()
   SC_REPORT_INFO("TEST_MODE_ONE_WINDOW_DEFAULT", "Running test");
   #endif // TEST_MODE_ONE_WINDOW_RANDOM
   SC_REPORT_INFO("Initialize window", "Window value");
-#endif
+#endif // IPS_DEBUG_EN
 
   // Variables
   IPS_IN_TYPE_TB* img_window;

@@ -7,7 +7,7 @@ CFLAGS=-Wall -I. -O3 -g -Wextra -Wunused-function
 
 ifdef USE_CPP17
 CFLAGS+=-std=c++17
-endif
+endif # USE_CPP17
 
 # Target
 LD=g++

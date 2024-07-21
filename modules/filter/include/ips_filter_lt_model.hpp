@@ -10,7 +10,7 @@
 
 #ifdef USING_TLM_TB_EN
 #include "ips_filter_defines.hpp"
-#endif
+#endif // USING_TLM_TB_EN
 
 /**
  * @brief Filter module.

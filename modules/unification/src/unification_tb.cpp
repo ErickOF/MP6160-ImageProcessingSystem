@@ -15,7 +15,7 @@
 
 #ifdef IMG_UNIFICATE_PV_EN
 #include "unification_pv_model.hpp"
-#endif
+#endif // IMG_UNIFICATE_PV_EN
 
 int sc_main(int, char*[]) {
   unsigned char pixel_x, pixel_y;

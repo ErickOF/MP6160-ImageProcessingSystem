@@ -61,4 +61,4 @@ void sobel_edge_detector_tlm::write()
   wr_t.notify(0, SC_NS);
 }
 
-#endif
+#endif // SOBEL_EDGE_DETECTOR_TLM_CPP

@@ -27,4 +27,4 @@ struct sobel_edge_detector_tlm : public Edge_Detector, public img_target
     void read() override;
     void write() override;
 };
-#endif
+#endif // SOBEL_EDGE_DETECTOR_TLM_HPP

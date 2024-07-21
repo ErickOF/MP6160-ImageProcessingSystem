@@ -7,7 +7,7 @@ gp_t *mm::allocate()
 {
 #ifdef DEBUG
   cout << "----------------------------- Called allocate(), #trans = " << ++count << endl;
-#endif
+#endif // DEBUG
   gp_t *ptr;
 
   if (free_list)
