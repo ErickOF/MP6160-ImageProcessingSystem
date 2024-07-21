@@ -8,18 +8,30 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-import cv2
-import numpy as np
-
 def add_gaussian_noise(
         image_path: str,
         mean: float = 0,
         stddev: float = 0.5
     ) -> np.ndarray:
+    """Applies gaussian noise to an image.
+
+    Args:
+        image_path (str): Path to the input image.
+        mean (float, optional): Mean of the gaussian noise. Defaults to 0.
+        stddev (float, optional): Starndar deviation of the gaussian noise.
+            Defaults to 0.5.
+
+    Returns:
+        np.ndarray: Image with gaussian noise of mean "mean" and standard
+            deviation "stddev".
+    """
     # Read the image
     image: np.ndarray = cv2.imread(image_path)
+
+    # Apply the noise
     noise = np.random.normal(mean, stddev, image.shape).astype(np.uint8)
     noisy_image = cv2.add(image, noise)
+
     return noisy_image
 
 def apply_sobel_filter(
@@ -114,7 +126,7 @@ def apply_sobel_filter(
     plt.imshow(sobel_combined_uint8, cmap='gray')
     plt.axis('off')
 
-    # plt.show()
+    plt.show()
 
     return (gray_img, noisy_img, sobel_x_uint8, sobel_y_uint8,
             sobel_combined_uint8)
@@ -127,7 +139,10 @@ if __name__ == '__main__':
     gaussian_stddev: float = 0.5
     img_name: str = 'car'
     img_ext: str = 'jpg'
+
+    # Don't touch from this line
     img_path: str = f'src/imgs/{img_name}.{img_ext}'
+
     gray, noisy, sobel_x, sobel_y, sobel_combined = \
         apply_sobel_filter(img_path, salt_probability, pepper_probability)
 
