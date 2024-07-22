@@ -43,15 +43,21 @@ protected:
 public:
   // Input clock
   sc_core::sc_in<bool> clk;
+  // Input pixel
+  sc_core::sc_in<sc_uint<N> > red;
+  sc_core::sc_in<sc_uint<N> > green;
+  sc_core::sc_in<sc_uint<N> > blue;
   // Output horizontal synch
   sc_core::sc_out<bool> o_hsync;
   // Output vertical synch
   sc_core::sc_out<bool> o_vsync;
-#ifdef IPS_DEBUG_EN
-  // For debug
-  sc_core::sc_out<int> o_h_count;
-  sc_core::sc_out<int> o_v_count;
-#endif // IPS_DEBUG_EN
+  // Counter outputs
+  sc_core::sc_out<unsigned int> o_h_count;
+  sc_core::sc_out<unsigned int> o_v_count;
+  // Output pixel
+  sc_core::sc_out<sc_uint<N> > o_red;
+  sc_core::sc_out<sc_uint<N> > o_green;
+  sc_core::sc_out<sc_uint<N> > o_blue;
 
   SC_CTOR(vga) : o_hsync("o_hsync"), o_vsync("o_vsync")
   {
@@ -126,10 +132,11 @@ public:
         }
       }
 
-#ifdef IPS_DEBUG_EN
       this->o_v_count.write(this->v_count);
       this->o_h_count.write(this->h_count);
-#endif // IPS_DEBUG_EN
+      this->o_red.write(this->red.read());
+      this->o_green.write(this->green.read());
+      this->o_blue.write(this->blue.read());
     }
   }
 };
