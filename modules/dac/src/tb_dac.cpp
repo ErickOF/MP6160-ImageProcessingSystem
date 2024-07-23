@@ -3,6 +3,8 @@
 #include "seq_item_dac.hpp"
 
 #define N 8
+#define VOLTAGE_MIN 0
+#define VOLTAGE_MAX 3300
 
 
 int sc_main(int, char*[])
@@ -15,7 +17,7 @@ int sc_main(int, char*[])
   sca_tdf::sca_signal<double> s_ana_out;
 
   // DUT
-  dac<N> ips_dac("ips_dac");
+  dac<N, VOLTAGE_MIN, VOLTAGE_MAX, VUnit::mv> ips_dac("ips_dac");
   ips_dac.in(s_dig);
   ips_dac.out(s_ana_out);
 
@@ -32,7 +34,7 @@ int sc_main(int, char*[])
   std::cout << "@" << sc_time_stamp() << std::endl;
 
   // Run test
-  sc_start(MAX_SEQ_ITEMS * 0.1, SC_US);
+  sc_start(MAX_SEQ_ITEMS * 30, SC_NS);
 
   // End time
   std::cout << "@" << sc_time_stamp() << std::endl;

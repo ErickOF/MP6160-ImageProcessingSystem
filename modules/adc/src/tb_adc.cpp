@@ -3,6 +3,8 @@
 #include "seq_item_adc.hpp"
 
 #define N 8
+#define VOLTAGE_MIN 0
+#define VOLTAGE_MAX 3300
 
 
 int sc_main(int, char*[])
@@ -15,12 +17,12 @@ int sc_main(int, char*[])
   sca_tdf::sca_signal<sc_dt::sc_uint<N> > s_dig_out;
 
   // DUT
-  adc<N> ips_adc("ips_adc");
+  adc<N, VOLTAGE_MIN, VOLTAGE_MAX, VUnit::mv> ips_adc("ips_adc");
   ips_adc.in(s_ana);
   ips_adc.out(s_dig_out);
 
   // Sequence item generator for ADC
-  seq_item_adc<N> ips_seq_item_adc("ips_seq_item_adc");
+  seq_item_adc<N, VOLTAGE_MIN, VOLTAGE_MAX, VUnit::mv> ips_seq_item_adc("ips_seq_item_adc");
   ips_seq_item_adc.o_ana(s_ana);
 
   // Dump waveform
@@ -32,7 +34,7 @@ int sc_main(int, char*[])
   std::cout << "@" << sc_time_stamp() << std::endl;
 
   // Run test
-  sc_start(MAX_SEQ_ITEMS * 0.1, SC_US);
+  sc_start(MAX_SEQ_ITEMS * 13, SC_NS);
 
   // End time
   std::cout << "@" << sc_time_stamp() << std::endl;

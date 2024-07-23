@@ -27,7 +27,7 @@ protected:
   const double MAX_DIG = static_cast<double>((1 << BITS) - 1);
 public:
   // Input digital code
-  sca_tdf::sca_in<sc_dt::sc_uint<BITS> > in;
+  sca_tdf::sca_de::sca_in<sc_dt::sc_uint<BITS> > in;
   // Output analog voltage
   sca_tdf::sca_out<double> out;
 
@@ -37,8 +37,13 @@ public:
    */
   SCA_CTOR(dac) : in("in"), out("out")
   {
+  }
+
+  void set_attributes()
+  {
     // Propagation time from input to output
-    set_timestep(sca_core::sca_time(0.1, sc_core::SC_US));
+    set_timestep(sca_core::sca_time(1, sc_core::SC_NS));
+    this->out.set_delay(17);
   }
 
   /**
