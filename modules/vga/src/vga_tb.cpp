@@ -30,6 +30,8 @@
 #define TOTAL_VERTICAL (H_ACTIVE + H_FP + H_SYNC_PULSE + H_BP)
 #define TOTAL_HORIZONTAL (V_ACTIVE + V_FP + V_SYNC_PULSE + V_BP)
 #define TOTAL_PIXELES (TOTAL_VERTICAL * TOTAL_HORIZONTAL)
+// Number of bits for ADC, DAC and VGA
+#define BITS 8
 
 
 int sc_main(int, char*[])
@@ -97,6 +99,7 @@ int sc_main(int, char*[])
 
   // VGA module instanciation and connections
   vga<
+    BITS,
     H_ACTIVE, H_FP, H_SYNC_PULSE, H_BP,
     V_ACTIVE, V_FP, V_SYNC_PULSE, V_BP
   > ips_vga("ips_vga");

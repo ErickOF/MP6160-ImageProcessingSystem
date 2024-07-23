@@ -24,6 +24,7 @@
  *  the next display period
  */
 template <
+  unsigned int N = 8,
   unsigned int H_ACTIVE = 640,
   unsigned int H_FP = 16,
   unsigned int H_SYNC_PULSE = 96,
@@ -89,21 +90,19 @@ public:
       {
         this->o_hsync.write(IPS_VGA_ACTIVE);
       }
-      // End of H-sync pulse
       else if (this->h_count == (H_SYNC_PULSE + H_BP))
       {
         this->o_hsync.write(IPS_VGA_ACTIVE);
       }
-      // H front porch
       else if (this->h_count == (H_SYNC_PULSE + H_BP + H_ACTIVE))
       {
-        this->o_hsync.write(IPS_VGA_INACTIVE);
+        this->o_hsync.write(IPS_VGA_ACTIVE);
       }
       // End of HSYNC
       else if (this->h_count == (H_SYNC_PULSE + H_BP + H_ACTIVE + H_FP))
       {
         // Restart H counter
-        this->o_hsync.write(IPS_VGA_ACTIVE);
+        this->o_hsync.write(IPS_VGA_INACTIVE);
         this->h_count = 0;
 
         // Increment H counter
@@ -112,7 +111,7 @@ public:
         // VSYNC pulse
         if (this->v_count == V_SYNC_PULSE)
         {
-          this->o_vsync.write(IPS_VGA_INACTIVE);
+          this->o_vsync.write(IPS_VGA_ACTIVE);
         }
         // End of V-sync pulse
         else if (this->v_count == (V_SYNC_PULSE + V_BP))
@@ -122,12 +121,12 @@ public:
         // V front porch
         else if (this->v_count == (V_SYNC_PULSE + V_BP + V_ACTIVE))
         {
-          this->o_vsync.write(IPS_VGA_INACTIVE);
+          this->o_vsync.write(IPS_VGA_ACTIVE);
         }
         // End of VSYNC
         else if (this->v_count == (V_SYNC_PULSE + V_BP + V_ACTIVE + V_FP))
         {
-          this->o_vsync.write(IPS_VGA_ACTIVE);
+          this->o_vsync.write(IPS_VGA_INACTIVE);
           this->v_count = 0;
         }
       }
