@@ -2,6 +2,9 @@
 #define IPS_VGA_MODEL_HPP
 
 #include <systemc.h>
+#ifdef IPS_AMS
+#include <systemc-ams.h>
+#endif // IPS_AMS
 
 #define IPS_VGA_ACTIVE true
 #define IPS_VGA_INACTIVE false
@@ -9,7 +12,7 @@
 /**
  * @brief VGA representation class
  * 
- * @tparam CLK_FREQ - clock frequency in HHz of the VGA
+ * @tparam N - the number of output bits of the digital pixel
  * @tparam H_ACTIVE - output horizontal active video pixels
  * @tparam H_FP - wait after the display period before the sync
  *  horizontal pulse
@@ -42,15 +45,16 @@ protected:
   // Vertical count
   int v_count;
 public:
+#ifndef IPS_AMS
   // Input clock
   sc_core::sc_in<bool> clk;
   // Input pixel
   sc_core::sc_in<sc_uint<N> > red;
   sc_core::sc_in<sc_uint<N> > green;
   sc_core::sc_in<sc_uint<N> > blue;
-  // Output horizontal synch
+  // Output horizontal sync
   sc_core::sc_out<bool> o_hsync;
-  // Output vertical synch
+  // Output vertical sync
   sc_core::sc_out<bool> o_vsync;
   // Counter outputs
   sc_core::sc_out<unsigned int> o_h_count;
@@ -59,7 +63,25 @@ public:
   sc_core::sc_out<sc_uint<N> > o_red;
   sc_core::sc_out<sc_uint<N> > o_green;
   sc_core::sc_out<sc_uint<N> > o_blue;
-
+#else
+  // Input clock
+  sc_core::sc_in<bool> clk;
+  // Input pixel
+  sca_tdf::sca_in<sc_dt::sc_uint<N> > red;
+  sca_tdf::sca_in<sc_dt::sc_uint<N> > green;
+  sca_tdf::sca_in<sc_dt::sc_uint<N> > blue;
+  // Output horizontal sync
+  sca_tdf::sca_out<bool> o_hsync;
+  // Output vertical sync
+  sca_tdf::sca_out<bool> o_vsync;
+  // Counter outputs
+  sca_tdf::sca_out<unsigned int> o_h_count;
+  sca_tdf::sca_out<unsigned int> o_v_count;
+  // Output pixel
+  sca_tdf::sca_out<sc_dt::sc_uint<N> > o_red;
+  sca_tdf::sca_out<sc_dt::sc_uint<N> > o_green;
+  sca_tdf::sca_out<sc_dt::sc_uint<N> > o_blue;
+#endif // IPS_AMS
   SC_CTOR(vga) : o_hsync("o_hsync"), o_vsync("o_vsync")
   {
     this->h_count = 0;

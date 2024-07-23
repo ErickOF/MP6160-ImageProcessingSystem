@@ -196,12 +196,14 @@ int sc_main(int, char*[])
   sc_close_vcd_trace_file(wf);
 #endif // IPS_DUMP_EN
 
+#ifdef IPS_IMSHOW
   // Show the images in their respective windows
   cv::imshow("TX image", tx_img);
   cv::imshow("RX image", rx_img);
 
   // Wait for a key press indefinitely to keep the windows open
   cv::waitKey(0);
+#endif // IPS_IMSHOW
 
   return 0;
 }
