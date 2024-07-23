@@ -37,7 +37,7 @@ public:
    */
   SCA_CTOR(adc) : in("in"), out("out") {
     // Propagation time from input to output
-    set_timestep(sca_core::sca_time(0.1, sc_core::SC_US));
+    set_timestep(sca_core::sca_time(13, sc_core::SC_NS));
   }
 
   /**
