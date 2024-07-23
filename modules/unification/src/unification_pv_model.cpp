@@ -16,7 +16,7 @@
 //#define USE_INF_NORM
 //-------------------------------------------
 
-void img_unification_module::unificate_pixel(unsigned char x_pixel, unsigned char y_pixel, unsigned char * unificated_pixel) {
+void img_unification_module::unificate_pixel(int x_pixel, int y_pixel, unsigned char * unificated_pixel) {
   //Get the Norm
   *unificated_pixel = (unsigned char) this->norm(x_pixel, y_pixel);
 }
@@ -25,8 +25,8 @@ void img_unification_module::unificate_img(unsigned char *x_img, unsigned char *
   //Iterate over image
   for(unsigned char *x = x_img, *y = y_img, *u = unificated_img; x < x_img + img_size && y < y_img + img_size && u < unificated_img + img_size; x+=channels, y+=channels, u+=channels){
     unsigned char pixel_magnitude;
-    unsigned char pixel_x = int(*x);
-    unsigned char pixel_y = int(*y);
+    int pixel_x = int(*x);
+    int pixel_y = int(*y);
       
     this->unificate_pixel(pixel_x, pixel_y, &pixel_magnitude);
     *u = pixel_magnitude;
@@ -39,17 +39,17 @@ int img_unification_module::norm(int a, int b) {
   //L1 Norm
   #ifdef USE_L1_NORM
   norm_result = abs(a) + abs(b);
-  #endif
+  #endif // USE_L1_NORM
 
   //L2 Norm
   #ifdef USE_L2_NORM
   norm_result = sqrt(pow(a, 2) + pow(b, 2));
-  #endif
+  #endif // USE_L2_NORM
   
   //INFINITY Norm
   #ifdef USE_INF_NORM
   norm_result = (a > b ? a : b);
-  #endif
+  #endif // USE_INF_NORM
   
   return norm_result;
 }

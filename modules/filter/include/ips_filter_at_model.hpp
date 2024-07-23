@@ -93,7 +93,7 @@ void Filter<IN, OUT, N>::exec_filter()
     wait(this->event);
 
     // Default value for the result depending on the output datatype
-    result_tmp = (OUT) 0;
+    result_tmp = static_cast<OUT >(0);
 
     // Getting the image window to filter
     IN* img_window_tmp = this->img_window.read();
@@ -101,7 +101,7 @@ void Filter<IN, OUT, N>::exec_filter()
     // Perform the convolution
     for (i = 0; i < N; ++i)
       for (j = 0; j < N; ++j)
-        result_tmp += this->kernel[i * N + j] * ((OUT) img_window_tmp[i * N + j]);
+        result_tmp += this->kernel[i * N + j] * static_cast<OUT >(img_window_tmp[i * N + j]);
 
     this->result.write(result_tmp);
   }
@@ -128,7 +128,7 @@ void Filter<IN, OUT, N>::init()
 {
   // Init a kernel of N x N with default value of 1 / (N * N)
   this->kernel = new OUT[N * N];
-  std::fill_n(this->kernel, N * N, ((OUT) 1) / ((OUT) N * N));
+  std::fill_n(this->kernel, N * N, static_cast<OUT >(1) / static_cast<OUT >(N * N));
 
 #ifdef IPS_DEBUG_EN
   // Print the initialized kernel

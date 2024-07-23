@@ -8,6 +8,9 @@
 #endif // IPS_DUMP_EN
 #include <systemc.h>
 
+#ifdef USING_TLM_TB_EN
+#include "ips_filter_defines.hpp"
+#endif // USING_TLM_TB_EN
 
 /**
  * @brief Filter module.
@@ -91,7 +94,7 @@ void Filter<IN, OUT, N>::exec_filter()
     wait(this->event);
 
     // Default value for the result depending on the output datatype
-    *(this->result_ptr) = (OUT) 0;
+    *(this->result_ptr) = static_cast<OUT >(0);
 
     // Perform the convolution
     for (i = 0; i < N; ++i)
@@ -118,7 +121,7 @@ void Filter<IN, OUT, N>::filter(IN* img_window, OUT* result)
   // Perform the convolution
   for (i = 0; i < N; ++i)
     for (j = 0; j < N; ++j)
-        this->img_window_tmp[i * N + j] = (OUT) img_window[i * N + j];
+        this->img_window_tmp[i * N + j] = static_cast<OUT >(img_window[i * N + j]);
 
   this->event.notify(DELAY_TIME, SC_NS);
 }
@@ -132,7 +135,7 @@ void Filter<IN, OUT, N>::init()
 {
   // Init a kernel of N x N with default value of 1 / (N * N)
   this->kernel = new OUT[N * N];
-  std::fill_n(this->kernel, N * N, ((OUT) 1) / ((OUT) N * N));
+  std::fill_n(this->kernel, N * N, static_cast<OUT >(1) / static_cast<OUT > (N * N));
   // Init image window of N x N with default value of 1 / (N * N)
   this->img_window_tmp = new OUT[N * N];
 #ifdef IPS_DEBUG_EN

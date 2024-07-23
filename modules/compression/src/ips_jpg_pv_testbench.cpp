@@ -1,3 +1,4 @@
+#ifndef USING_TLM_TB_EN
 #ifdef IPS_JPG_PV_EN
 #define int64  systemc_int64
 #define uint64 systemc_uint64
@@ -91,3 +92,4 @@ int sc_main(int, char*[]) {
 
 }
 #endif // IPS_JPG_PV_EN
+#endif // USING_TLM_TB_EN

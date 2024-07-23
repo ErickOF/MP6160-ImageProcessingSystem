@@ -9,8 +9,8 @@
 #ifndef IMG_UNIFICATE_HPP
 #define IMG_UNIFICATE_HPP
 
-#include "systemc.h"
-#include "math.h"
+#include <systemc.h>
+#include <math.h>
 
 SC_MODULE (img_unification_module) {
 
@@ -23,7 +23,7 @@ SC_MODULE (img_unification_module) {
   } // End of Constructor
 
   //------------Methods------------
-  void unificate_pixel(unsigned char x_pixel, unsigned char y_pixel, unsigned char * unificated_pixel);
+  void unificate_pixel(int x_pixel, int y_pixel, unsigned char * unificated_pixel);
   void unificate_img(unsigned char *x_img, unsigned char *y_img, unsigned char *unificated_img, int img_size, int channels);
   int norm(int a, int b);
 };
