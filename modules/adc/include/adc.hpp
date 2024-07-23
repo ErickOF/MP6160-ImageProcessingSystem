@@ -29,15 +29,21 @@ public:
   // Input analog voltage
   sca_tdf::sca_in<double> in;
   // Output digital code
-  sca_tdf::sca_out<sc_dt::sc_uint<BITS> > out;
+  sca_tdf::sca_de::sca_out<sc_dt::sc_uint<BITS> > out;
 
   /**
    * @brief Construct a new adc object
    * 
    */
-  SCA_CTOR(adc) : in("in"), out("out") {
+  SCA_CTOR(adc) : in("in"), out("out")
+  {
+  }
+
+  void set_attributes()
+  {
     // Propagation time from input to output
-    set_timestep(sca_core::sca_time(0.1, sc_core::SC_US));
+    set_timestep(sca_core::sca_time(1, sc_core::SC_NS));
+    this->out.set_delay(13);
   }
 
   /**
