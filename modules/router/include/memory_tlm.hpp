@@ -10,7 +10,7 @@ using namespace std;
 #include <tlm_utils/simple_target_socket.h>
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
-#include "img_target.hpp"
+#include "../src/img_target.cpp"
 
 //Extended Unification TLM
 struct memory_tlm : public img_target

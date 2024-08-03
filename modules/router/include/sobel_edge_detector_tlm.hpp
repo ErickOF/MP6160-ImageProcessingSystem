@@ -11,7 +11,7 @@ using namespace std;
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
 #include "sobel_edge_detector_at_model.hpp"
-#include "img_target.hpp"
+#include "../src/img_target.cpp"
 
 //Extended Unification TLM
 struct sobel_edge_detector_tlm : public Edge_Detector, public img_target

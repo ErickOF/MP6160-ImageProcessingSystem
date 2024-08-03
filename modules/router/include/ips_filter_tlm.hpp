@@ -11,7 +11,7 @@ using namespace std;
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
 #include "ips_filter_lt_model.hpp"
-#include "img_target.hpp"
+#include "../src/img_target.cpp"
 
 #include "important_defines.hpp"
 
