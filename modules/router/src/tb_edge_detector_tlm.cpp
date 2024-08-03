@@ -35,8 +35,8 @@ using namespace std;
 #include "sobel_edge_detector_tlm.hpp"
 #include "unification_pv_model.hpp"
 #include "ips_jpg_pv_model.hpp"
-#include "img_initiator.hpp"
-#include "img_router.hpp"
+#include "img_initiator.cpp"
+#include "img_router.cpp"
 
 #if !defined(RGB2GRAY_PV_EN) || !defined(IPS_FILTER_LT_EN) || !defined(EDGE_DETECTOR_AT_EN) || !defined(IMG_UNIFICATE_PV_EN) || !defined(IPS_JPG_PV_EN)
 #error "Not all the required macros (RGB2GRAY_PV_EN, IPS_FILTER_LT_EN, EDGE_DETECTOR_AT_EN, IMG_UNIFICATE_PV_EN and IPS_JPG_PV_EN) are defined."

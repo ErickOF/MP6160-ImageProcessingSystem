@@ -11,7 +11,7 @@ using namespace std;
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
 #include "rgb2gray_pv_model.hpp"
-#include "img_target.hpp"
+#include "../src/img_target.cpp"
 
 //Extended Unification TLM
 struct rgb2gray_tlm : public Rgb2Gray, public img_target
