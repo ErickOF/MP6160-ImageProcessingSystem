@@ -61,6 +61,10 @@ public:
 	// *********************************************
 	virtual unsigned int transport_dbg(tlm::tlm_generic_payload &trans);
 
+	//Backdoor access to memory
+	void backdoor_write(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address);
+	void backdoor_read(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address);
+
 private:
 
 	/**

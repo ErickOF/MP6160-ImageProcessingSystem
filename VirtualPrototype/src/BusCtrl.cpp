@@ -30,8 +30,6 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 
 	sc_dt::uint64 adr = trans.get_address() / 4;
 
-	
-
 	switch (adr) {
 	case TIMER_MEMORY_ADDRESS_HI / 4:
 	case TIMER_MEMORY_ADDRESS_LO / 4:
@@ -43,9 +41,28 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 		trace_socket->b_transport(trans, delay);
 		break;
 	[[likely]] default:
-		if (FILTER_MEMORY_ADDRESS_LO / 4 <= adr  && adr < FILTER_MEMORY_ADDRESS_HI / 4){
+		if ((IMG_FILTER_KERNEL_ADDRESS_LO / 4 <= adr  && adr < IMG_FILTER_KERNEL_ADDRESS_HI / 4) || 
+		    (IMG_FILTER_OUTPUT_ADDRESS_LO / 4 <= adr  && adr < IMG_FILTER_OUTPUT_ADDRESS_HI / 4))
+		{
 			std::cout << "Writing/Reading to Filter!" << std::endl;
 			filter_socket->b_transport(trans, delay);
+		}
+		else if ((SOBEL_INPUT_0_ADDRESS_LO / 4 <= adr && adr <= SOBEL_INPUT_0_ADDRESS_HI / 4) || 
+		         (SOBEL_INPUT_1_ADDRESS_LO / 4 <= adr && adr <= SOBEL_INPUT_1_ADDRESS_HI / 4) ||
+				 (SOBEL_OUTPUT_ADDRESS_LO / 4 <= adr && adr <= SOBEL_OUTPUT_ADDRESS_HI / 4))
+		{
+			std::cout << "Writing/Reading to Sobel!" << std::endl;
+			sobel_edge_detector_socket->b_transport(trans, delay);
+		}
+		else if ((IMG_INPUT_ADDRESS_LO / 4 <= adr && adr <= IMG_INPUT_ADDRESS_HI / 4))
+		{
+			std::cout << "Writing/Reading to Sobel!" << std::endl;
+			receiver_socket->b_transport(trans, delay);
+		}
+		else if ((IMG_OUTPUT_ADDRESS_LO / 4 <= adr && adr <= IMG_OUTPUT_ADDRESS_HI / 4))
+		{
+			std::cout << "Writing/Reading to Sobel!" << std::endl;
+			transmiter_socket->b_transport(trans, delay);
 		}
 		else {
 			memory_socket->b_transport(trans, delay);
