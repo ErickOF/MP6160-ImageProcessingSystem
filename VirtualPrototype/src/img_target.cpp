@@ -79,10 +79,10 @@ struct img_target: sc_module
         // Obliged to implement read and write commands
         if (cmd == tlm::TLM_READ_COMMAND) {
             this->do_when_read_transaction(ptr, len, adr);
-            dbgmodprint("Read at address %0x, data: %0x", address_offset, *ptr);
+            //dbgmodprint("Read at address %0x, data: %0x", address_offset, *ptr);
         }
         else if (cmd == tlm::TLM_WRITE_COMMAND) {
-            dbgmodprint("Write at address %0x, data: %0x", address_offset, *ptr);
+            //dbgmodprint("Write at address %0x, data: %0x", address_offset, *ptr);
             this->do_when_write_transaction(ptr, len, adr);
         }
 

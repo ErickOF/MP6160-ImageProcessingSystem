@@ -207,3 +207,20 @@ void Memory::readHexFile(std::string const& filename) {
 		SC_REPORT_ERROR("Memory", "Open file error");
 	}
 }
+
+void Memory::backdoor_write(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address)
+{
+  memcpy((mem + address), data, data_length);
+  for (int i = 0; i < 10; i++) {
+  	printf("Backdoor Writing: %0d\n", *(mem + address+i));
+  }
+}
+
+void Memory::backdoor_read(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address)
+{
+  data = new unsigned char[data_length];
+  memcpy(data, (mem + address), data_length);
+  for (int i = 0; i < 10; i++) {
+  	printf("Backdoor Reading: %0d\n", *(mem + address+i));
+  }
+}

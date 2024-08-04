@@ -23,8 +23,8 @@
 #include "Log.h"
 
 /**
- * Memory mapped Trace peripheral address
- */
+* Memory mapped Trace peripheral address
+*/
 #define TRACE_MEMORY_ADDRESS 0x40000000
 
 #define TIMER_MEMORY_ADDRESS_LO 0x40004000
@@ -72,10 +72,10 @@ public:
 	tlm_utils::simple_initiator_socket<BusCtrl> timer_socket;
 
 	//Our module's sockets
-	/**
-	 * @brief TLM initiator socket filter module
-	 */
 	tlm_utils::simple_initiator_socket<BusCtrl> filter_socket;
+	tlm_utils::simple_initiator_socket<BusCtrl> sobel_edge_detector_socket;
+	tlm_utils::simple_initiator_socket<BusCtrl> receiver_socket; //VGA AMS socket
+	tlm_utils::simple_initiator_socket<BusCtrl> transmiter_socket; //Ethernet AMS Socket
 
 	/**
 	 * @brief constructor

@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <chrono>
 
+#include "address_map.hpp"
 #include "CPU.h"
 #include "Memory.h"
 #include "BusCtrl.h"
@@ -23,8 +24,15 @@
 #include "Timer.h"
 #include "Debug.h"
 
+//For pre-loading images
+#define STB_IMAGE_IMPLEMENTATION
+#include "inc/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "inc/stb_image_write.h"
+
 //Our modules
 #include "ips_filter_tlm.hpp"
+#include "sobel_edge_detector_tlm.cpp"
 
 std::string filename;
 bool debug_session = false;
@@ -78,6 +86,8 @@ SC_MODULE(Simulator) {
 		if (debug_session) {
 			Debug debug(cpu, MainMemory);
 		}
+
+		pre_load_memory();
 	}
 
 	~Simulator() {
@@ -86,6 +96,35 @@ SC_MODULE(Simulator) {
 		delete Bus;
 		delete trace;
 		delete timer;
+	}
+
+	void pre_load_memory()
+	{
+		int width, height, channels, pixel_count;
+		unsigned char *noisy_img, *noisy_img2;
+
+		noisy_img = stbi_load("inputs/car_noisy_image.png", &width, &height, &channels, 0);
+		pixel_count = width * height * channels;
+		printf("Pixel Count %0d, Width: %0d, Height: %0d \n", pixel_count, width, height);
+		
+		noisy_img2 = new unsigned char [pixel_count];
+
+		MainMemory->backdoor_write(noisy_img, pixel_count, INPUT_IMG_MEMORY_LO);
+		//stbi_write_png("outputs/car_filtered_image.png", width, height, channels, noisy_img, width*channels);
+	}
+
+	void save_img_from_memory()
+	{
+		int width, height, channels, pixel_count;
+		unsigned char *img_ptr;
+
+		channels = 1;
+		width = 640;
+		height = 452;
+		pixel_count = width * height * channels;
+		MainMemory->backdoor_read(img_ptr, pixel_count, OUTPUT_IMG_MEMORY_LO);
+		
+		stbi_write_png("outputs/car_filtered_image.png", width, height, channels, img_ptr, width*channels);
 	}
 };
 
@@ -179,6 +218,10 @@ int sc_main(int argc, char *argv[]) {
 
 	std::cout << "Total elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 	std::cout << "Simulated " << int(std::round(instructions)) << " instr/sec" << std::endl;
+	
+	//Generate output image
+	top->save_img_from_memory();
+	
 	std::cout << "Press Enter to finish" << std::endl;
 	std::cin.ignore();
 

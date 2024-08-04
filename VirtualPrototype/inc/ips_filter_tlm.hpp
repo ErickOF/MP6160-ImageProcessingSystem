@@ -21,7 +21,7 @@ struct ips_filter_tlm : public Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTE
     
     SC_CTOR(ips_filter_tlm): Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>(Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>::name()), img_target(img_target::name()) {
 
-        set_mem_attributes(FILTER_MEMORY_ADDRESS_LO, FILTER_MEMORY_ADDRESS_LO);
+        set_mem_attributes(IMG_FILTER_KERNEL_ADDRESS_LO, IMG_FILTER_KERNEL_ADDRESS_LO);
     }
     
     //Override do_when_transaction functions
