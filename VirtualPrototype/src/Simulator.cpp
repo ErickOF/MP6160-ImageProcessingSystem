@@ -15,8 +15,6 @@
 #include <csignal>
 #include <unistd.h>
 #include <chrono>
-
-#include "address_map.hpp"
 #include "CPU.h"
 #include "Memory.h"
 #include "BusCtrl.h"
@@ -31,8 +29,11 @@
 #include "inc/stb_image_write.h"
 
 //Our modules
+#include "address_map.hpp"
 #include "ips_filter_tlm.hpp"
-#include "sobel_edge_detector_tlm.cpp"
+#include "sobel_edge_detector_tlm.hpp"
+#include "img_receiver_tlm.hpp"
+#include "img_transmiter_tlm.hpp"
 
 std::string filename;
 bool debug_session = false;
@@ -53,6 +54,9 @@ SC_MODULE(Simulator) {
 
 	//Our modules
   	ips_filter_tlm *filter_DUT;
+	sobel_edge_detector_tlm *sobel_edge_detector_DUT;
+	img_receiver_tlm *receiver_DUT;
+	img_transmiter_tlm *transmiter_DUT;
 	
 
 	SC_CTOR(Simulator) {
@@ -69,7 +73,9 @@ SC_MODULE(Simulator) {
 
 		//Our modules
     	filter_DUT = new ips_filter_tlm("filter_DUT");
-		
+		sobel_edge_detector_DUT = new sobel_edge_detector_tlm("sobel_edge_detector_DUT");
+		receiver_DUT = new img_receiver_tlm("receiver_DUT");
+		transmiter_DUT = new img_transmiter_tlm("transmiter_DUT");
 
 		cpu->instr_bus.bind(Bus->cpu_instr_socket);
 		cpu->mem_intf->data_bus.bind(Bus->cpu_data_socket);
@@ -81,13 +87,15 @@ SC_MODULE(Simulator) {
 		timer->irq_line.bind(cpu->irq_line_socket);
 
 		//Our modules
-		Bus->filter_socket.bind(filter_DUT->socket); 
+		Bus->filter_socket.bind(filter_DUT->socket);
+		Bus->sobel_edge_detector_socket.bind(sobel_edge_detector_DUT->socket);
+
+		Bus->receiver_socket.bind(receiver_DUT->socket);
+		Bus->transmiter_socket.bind(transmiter_DUT->socket);
 
 		if (debug_session) {
 			Debug debug(cpu, MainMemory);
 		}
-
-		pre_load_memory();
 	}
 
 	~Simulator() {
@@ -98,7 +106,7 @@ SC_MODULE(Simulator) {
 		delete timer;
 	}
 
-	void pre_load_memory()
+	void load_img_from_memory()
 	{
 		int width, height, channels, pixel_count;
 		unsigned char *noisy_img, *noisy_img2;
@@ -106,11 +114,8 @@ SC_MODULE(Simulator) {
 		noisy_img = stbi_load("inputs/car_noisy_image.png", &width, &height, &channels, 0);
 		pixel_count = width * height * channels;
 		printf("Pixel Count %0d, Width: %0d, Height: %0d \n", pixel_count, width, height);
-		
-		noisy_img2 = new unsigned char [pixel_count];
 
-		MainMemory->backdoor_write(noisy_img, pixel_count, INPUT_IMG_MEMORY_LO);
-		//stbi_write_png("outputs/car_filtered_image.png", width, height, channels, noisy_img, width*channels);
+		receiver_DUT->backdoor_write(noisy_img, pixel_count, IMG_INPUT_ADDRESS_LO);
 	}
 
 	void save_img_from_memory()
@@ -122,7 +127,7 @@ SC_MODULE(Simulator) {
 		width = 640;
 		height = 452;
 		pixel_count = width * height * channels;
-		MainMemory->backdoor_read(img_ptr, pixel_count, OUTPUT_IMG_MEMORY_LO);
+		transmiter_DUT->backdoor_read(img_ptr, pixel_count, IMG_OUTPUT_ADDRESS_LO);
 		
 		stbi_write_png("outputs/car_filtered_image.png", width, height, channels, img_ptr, width*channels);
 	}
@@ -208,6 +213,8 @@ int sc_main(int argc, char *argv[]) {
 	process_arguments(argc, argv);
 
 	top = new Simulator("top");
+
+	top->load_img_from_memory();
 
 	auto start = std::chrono::steady_clock::now();
 	sc_core::sc_start();

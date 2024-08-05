@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "BusCtrl.h"
+#include "address_map.hpp"
 
 SC_HAS_PROCESS(BusCtrl);
 BusCtrl::BusCtrl(sc_core::sc_module_name const name) :
@@ -29,6 +30,10 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 		sc_core::sc_time &delay) {
 
 	sc_dt::uint64 adr = trans.get_address() / 4;
+	printf("[DEBUG] Address is %0d\n", (int) trans.get_address());
+	printf("[DEBUG] Addr is %0d\n", (int) adr);
+	printf("[DEBUG] Target Address is %0d\n", IMG_INPUT_ADDRESS_LO);
+	printf("[DEBUG] Target Addr is %0d\n", IMG_INPUT_ADDRESS_LO / 4);
 
 	switch (adr) {
 	case TIMER_MEMORY_ADDRESS_HI / 4:
@@ -47,21 +52,21 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 			std::cout << "Writing/Reading to Filter!" << std::endl;
 			filter_socket->b_transport(trans, delay);
 		}
-		else if ((SOBEL_INPUT_0_ADDRESS_LO / 4 <= adr && adr <= SOBEL_INPUT_0_ADDRESS_HI / 4) || 
-		         (SOBEL_INPUT_1_ADDRESS_LO / 4 <= adr && adr <= SOBEL_INPUT_1_ADDRESS_HI / 4) ||
-				 (SOBEL_OUTPUT_ADDRESS_LO / 4 <= adr && adr <= SOBEL_OUTPUT_ADDRESS_HI / 4))
+		else if ((SOBEL_INPUT_0_ADDRESS_LO / 4 <= adr && adr < SOBEL_INPUT_0_ADDRESS_HI / 4) || 
+		         (SOBEL_INPUT_1_ADDRESS_LO / 4 <= adr && adr < SOBEL_INPUT_1_ADDRESS_HI / 4) ||
+				 (SOBEL_OUTPUT_ADDRESS_LO / 4 <= adr && adr < SOBEL_OUTPUT_ADDRESS_HI / 4))
 		{
 			std::cout << "Writing/Reading to Sobel!" << std::endl;
 			sobel_edge_detector_socket->b_transport(trans, delay);
 		}
-		else if ((IMG_INPUT_ADDRESS_LO / 4 <= adr && adr <= IMG_INPUT_ADDRESS_HI / 4))
+		else if ((IMG_INPUT_ADDRESS_LO / 4 <= adr && adr < IMG_INPUT_ADDRESS_HI / 4))
 		{
-			std::cout << "Writing/Reading to Sobel!" << std::endl;
+			std::cout << "Writing/Reading to Receiver!" << std::endl;
 			receiver_socket->b_transport(trans, delay);
 		}
-		else if ((IMG_OUTPUT_ADDRESS_LO / 4 <= adr && adr <= IMG_OUTPUT_ADDRESS_HI / 4))
+		else if ((IMG_OUTPUT_ADDRESS_LO / 4 <= adr && adr < IMG_OUTPUT_ADDRESS_HI / 4))
 		{
-			std::cout << "Writing/Reading to Sobel!" << std::endl;
+			std::cout << "Writing/Reading to Transmiter!" << std::endl;
 			transmiter_socket->b_transport(trans, delay);
 		}
 		else {
