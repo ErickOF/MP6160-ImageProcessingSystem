@@ -1,9 +1,8 @@
-#ifdef EDGE_DETECTOR_AT_EN
 #ifndef SOBEL_EDGE_DETECTOR_HPP
 #define SOBEL_EDGE_DETECTOR_HPP
+#define USING_TLM_TB_EN
 
 #include <systemc.h>
-#include "address_map.hpp"
 
 SC_MODULE(Edge_Detector)
 {
@@ -77,4 +76,3 @@ SC_MODULE(Edge_Detector)
 };
 
 #endif // SOBEL_EDGE_DETECTOR_HPP
-#endif // EDGE_DETECTOR_AT_EN

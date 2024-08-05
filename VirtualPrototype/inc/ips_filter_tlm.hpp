@@ -5,10 +5,6 @@ using namespace sc_core;
 using namespace sc_dt;
 using namespace std;
 
-#include <tlm.h>
-#include <tlm_utils/simple_initiator_socket.h>
-#include <tlm_utils/simple_target_socket.h>
-#include <tlm_utils/peq_with_cb_and_phase.h>
 
 #include "ips_filter_lt_model.hpp"
 #include "../src/img_target.cpp"
@@ -21,7 +17,7 @@ struct ips_filter_tlm : public Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTE
     
     SC_CTOR(ips_filter_tlm): Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>(Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>::name()), img_target(img_target::name()) {
 
-        set_mem_attributes(IMG_FILTER_KERNEL_ADDRESS_LO, IMG_FILTER_KERNEL_ADDRESS_LO);
+        set_mem_attributes(IMG_FILTER_KERNEL_ADDRESS_LO, IMG_FILTER_KERNEL_SIZE);
     }
     
     //Override do_when_transaction functions
