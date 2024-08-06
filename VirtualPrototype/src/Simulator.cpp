@@ -111,11 +111,14 @@ SC_MODULE(Simulator) {
 		int width, height, channels, pixel_count;
 		unsigned char *noisy_img, *noisy_img2;
 
-		noisy_img = stbi_load("inputs/car_noisy_image.png", &width, &height, &channels, 0);
+		noisy_img = stbi_load("inputs/car_sobel_x_result.png", &width, &height, &channels, 0);
 		pixel_count = width * height * channels;
 		printf("Pixel Count %0d, Width: %0d, Height: %0d \n", pixel_count, width, height);
-
 		receiver_DUT->backdoor_write(noisy_img, pixel_count, IMG_INPUT_ADDRESS_LO);
+
+		noisy_img = stbi_load("inputs/car_sobel_y_result.png", &width, &height, &channels, 0);
+		pixel_count = width * height * channels;
+		receiver_DUT->backdoor_write(noisy_img, pixel_count, IMG_INPUT_ADDRESS_LO + pixel_count);
 	}
 
 	void save_img_from_memory()
