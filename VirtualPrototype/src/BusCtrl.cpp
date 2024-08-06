@@ -30,10 +30,6 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 		sc_core::sc_time &delay) {
 
 	sc_dt::uint64 adr = trans.get_address() / 4;
-	printf("[DEBUG] Address is %0d\n", (int) trans.get_address());
-	printf("[DEBUG] Addr is %0d\n", (int) adr);
-	printf("[DEBUG] Target Address is %0d\n", IMG_INPUT_ADDRESS_LO);
-	printf("[DEBUG] Target Addr is %0d\n", IMG_INPUT_ADDRESS_LO / 4);
 
 	switch (adr) {
 	case TIMER_MEMORY_ADDRESS_HI / 4:
