@@ -569,6 +569,12 @@ SC_MODULE(Tb_top)
           local_count = 0;
           local_group_count++;
         }
+
+        current_number_of_pixels++;
+        if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
+          dbgprint("Image processing completed at %f", next_target_of_completion);
+          next_target_of_completion += 10.0;
+        }
       }
     }
     
@@ -576,7 +582,10 @@ SC_MODULE(Tb_top)
     
     local_count = 0;
     local_group_count = 0;
+    current_number_of_pixels = 0;
+    next_target_of_completion = 10.0;
     compression_results = new signed char[compression_output_size];
+    total_number_of_pixels = compression_output_size;
     for (int i = 0; i < compression_output_size; i++)
     {
       jpg_comp_DUT->output_byte(compression_results, i);
@@ -596,6 +605,24 @@ SC_MODULE(Tb_top)
         local_group_count++;
       }
       
+      current_number_of_pixels++;
+      if (((((float)(current_number_of_pixels)) / ((float)(total_number_of_pixels))) * 100.0) >= next_target_of_completion) {
+        dbgprint("Image processing completed at %f", next_target_of_completion);
+        next_target_of_completion += 10.0;
+      }
+    }
+
+    dbgprint("Finished with the compression algorithm of the image");
+
+    if (compression_output_size % 8 != 0)
+    {
+      local_results = reinterpret_cast<unsigned char*>(compression_results + (local_group_count * 8 * sizeof(char)));
+      dbgmodprint(use_prints, "Before doing a write in TB");
+      sanity_check_address(IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
+      tb_initiator->write(local_results, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), (compression_output_size % 8) * sizeof(char));
+      dbgmodprint(use_prints, "After doing a write in TB");
+      local_count = 0;
+      local_group_count++;
     }
     
     dbgprint("Finished with the compression of the image");
