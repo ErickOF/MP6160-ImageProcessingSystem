@@ -18,6 +18,10 @@ struct memory_tlm : public img_target
     
     memory_tlm(sc_module_name name) : img_target((std::string(name) + "_target").c_str()) {
       mem_array = new unsigned char[2764852];
+#ifdef DISABLE_MEM_DEBUG
+      this->use_prints = false;
+#endif //DISABLE_MEM_DEBUG
+      checkprintenableimgtar(use_prints);
     }
     
     //Override do_when_transaction functions

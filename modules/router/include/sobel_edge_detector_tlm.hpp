@@ -18,6 +18,10 @@ struct sobel_edge_detector_tlm : public Edge_Detector, public img_target
 {
 
     sobel_edge_detector_tlm(sc_module_name name) : Edge_Detector((std::string(name) + "_HW_block").c_str()), img_target((std::string(name) + "_target").c_str()) {
+#ifdef DISABLE_SOBEL_DEBUG
+        this->use_prints = false;
+#endif //DISABLE_SOBEL_DEBUG
+        checkprintenableimgtar(use_prints);
     }
 
     //Override do_when_transaction functions

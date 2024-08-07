@@ -20,6 +20,10 @@ struct ips_filter_tlm : public Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTE
 {
     
     ips_filter_tlm(sc_module_name name) : Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>((std::string(name) + "_HW_block").c_str()), img_target((std::string(name) + "_target").c_str()) {
+#ifdef DISABLE_FILTER_DEBUG
+        this->use_prints = false;
+#endif //DISABLE_FILTER_DEBUG
+        checkprintenableimgtar(use_prints);
     }
     
     //Override do_when_transaction functions

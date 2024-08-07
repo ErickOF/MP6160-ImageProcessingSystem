@@ -42,9 +42,11 @@ struct img_target: sc_module
     //DEBUG
     unsigned int transaction_in_progress_id = 0;
 
+    bool use_prints;
+
     //Constructor
     SC_CTOR(img_target)   
-    : socket("socket"), response_transaction(0), m_peq(this, &img_target::peq_cb) // Construct and name socket   
+    : socket("socket"), response_transaction(0), m_peq(this, &img_target::peq_cb), use_prints(true) // Construct and name socket   
     {   
         // Register callbacks for incoming interface method calls
         socket.register_nb_transport_fw(this, &img_target::nb_transport_fw);

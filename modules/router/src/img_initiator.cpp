@@ -47,10 +47,12 @@ struct img_initiator: sc_module
   // DEBUG
   unsigned int transaction_sent_id = 0;
   unsigned int transaction_received_id = 0;
+
+  bool use_prints;
   
   //Constructor
   SC_CTOR(img_initiator)   
-  : socket("socket"), m_peq(this, &img_initiator::peq_cb) // Construct and name socket   
+  : socket("socket"), m_peq(this, &img_initiator::peq_cb), use_prints(true) // Construct and name socket   
   {   
     // Register callbacks for incoming interface method calls
     socket.register_nb_transport_bw(this, &img_initiator::nb_transport_bw);

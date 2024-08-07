@@ -77,10 +77,12 @@ struct img_router: sc_module
   //DEBUG
   unsigned int transaction_in_fw_path_id = 0;
   unsigned int transaction_in_bw_path_id = 0;
+
+  bool use_prints;
   
   //Constructor
   SC_CTOR(img_router)   
-  : target_socket("socket"), bw_m_peq(this, &img_router::bw_peq_cb), fw_m_peq(this, &img_router::fw_peq_cb), fw_fifo(10), bw_fifo(2) // Construct and name socket   
+  : target_socket("socket"), bw_m_peq(this, &img_router::bw_peq_cb), fw_m_peq(this, &img_router::fw_peq_cb), fw_fifo(10), bw_fifo(2), use_prints(true) // Construct and name socket   
   {   
     // Register callbacks for incoming interface method calls
     target_socket.register_nb_transport_fw(this, &img_router::nb_transport_fw);
@@ -93,6 +95,11 @@ struct img_router: sc_module
 
     SC_THREAD(fw_thread);
     SC_THREAD(bw_thread);
+
+#ifdef DISABLE_ROUTER_DEBUG
+    this->use_prints = false;
+#endif //DISABLE_ROUTER_DEBUG
+    checkprintenable(use_prints);
   }
 
   //Address Decoding
