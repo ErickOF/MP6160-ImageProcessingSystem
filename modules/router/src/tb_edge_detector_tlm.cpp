@@ -563,6 +563,7 @@ SC_MODULE(Tb_top)
         }
         
         jpg_comp_DUT->input_pixel((int)*(local_read + local_count), i, j);
+        local_count++;
         
         if (local_count == 8)
         {
