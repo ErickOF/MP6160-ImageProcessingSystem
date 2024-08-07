@@ -113,7 +113,7 @@ struct img_router: sc_module
     switch(address) {
         // To Filter
         case IMG_FILTER_KERNEL: {
-            dbgmodprint("Decoded address %016llX corresponds to Filter module.", address);
+            dbgmodprint(use_prints, "Decoded address %016llX corresponds to Filter module.", address);
             return IMG_FILTER_INITIATOR_ID;
         }
 
@@ -121,17 +121,17 @@ struct img_router: sc_module
         case SOBEL_INPUT_0: 
         case SOBEL_INPUT_1: 
         case SOBEL_OUTPUT: {
-            dbgmodprint("Decoded address %016llX corresponds to Sobel module.", address);
+            dbgmodprint(use_prints, "Decoded address %016llX corresponds to Sobel module.", address);
             return IMG_SOBEL_INITIATOR_ID;
         }
 
         // To/From Memory Valid addresses
         case MEM_START ... MEM_FINISH : {
-            dbgmodprint("Decoded address %016llX corresponds to Memory.", address);
+            dbgmodprint(use_prints, "Decoded address %016llX corresponds to Memory.", address);
             return IMG_MEMORY_INITIATOR_ID;
         }
         default: {
-            dbgmodprint("[ERROR] Decoding invalid address %016llX.", address);
+            dbgmodprint(use_prints, "[ERROR] Decoding invalid address %016llX.", address);
             SC_REPORT_FATAL("[IMG ROUTER]", "Received address is invalid, does not match any hardware block");
             return INVALID_INITIATOR_ID;
         }   
@@ -151,12 +151,12 @@ struct img_router: sc_module
     item.delay = delay;
     trans.get_extension(img_ext);
     if (bw_fifo.num_free() == 0) {
-        dbgmodprint("[BW_FIFO] FIFO is FULL. Waiting...");
+        dbgmodprint(use_prints, "[BW_FIFO] FIFO is FULL. Waiting...");
         wait(bw_fifo.data_read_event());
     }
     bw_fifo.nb_write(item);
     wait(bw_fifo.data_written_event());
-    dbgmodprint("[BW_FIFO] Pushed transaction #%0d", img_ext->transaction_number);
+    dbgmodprint(use_prints, "[BW_FIFO] Pushed transaction #%0d", img_ext->transaction_number);
     return tlm::TLM_ACCEPTED;
   }
 
@@ -173,12 +173,12 @@ struct img_router: sc_module
     item.delay = delay;
     trans.get_extension(img_ext);
     if (fw_fifo.num_free() == 0) {
-        dbgmodprint("[FW_FIFO] FIFO is FULL. Waiting...");
+        dbgmodprint(use_prints, "[FW_FIFO] FIFO is FULL. Waiting...");
         wait(fw_fifo.data_read_event());
     }
     fw_fifo.nb_write(item);
     wait(fw_fifo.data_written_event());
-    dbgmodprint("[FW_FIFO] Pushed transaction #%0d", img_ext->transaction_number);
+    dbgmodprint(use_prints, "[FW_FIFO] Pushed transaction #%0d", img_ext->transaction_number);
     return tlm::TLM_ACCEPTED;
   }
 
@@ -199,7 +199,7 @@ struct img_router: sc_module
         phase = item.phase;
         delay = item.delay;
         (*trans_ptr).get_extension(img_ext);
-        dbgmodprint("[FW_FIFO] Popped transaction #%0d", img_ext->transaction_number);
+        dbgmodprint(use_prints, "[FW_FIFO] Popped transaction #%0d", img_ext->transaction_number);
         fw_m_peq.notify(*trans_ptr, phase, delay);
         wait(fw_delay);
     }
@@ -222,7 +222,7 @@ struct img_router: sc_module
         phase = item.phase;
         delay = item.delay;
         (*trans_ptr).get_extension(img_ext);
-        dbgmodprint("[BW_FIFO] Popped transaction #%0d", img_ext->transaction_number);
+        dbgmodprint(use_prints, "[BW_FIFO] Popped transaction #%0d", img_ext->transaction_number);
         bw_m_peq.notify(*trans_ptr, phase, delay);
         wait(bw_delay);
     }
@@ -238,7 +238,7 @@ struct img_router: sc_module
     sc_dt::uint64 address = trans.get_address();
     this->transaction_in_bw_path_id = img_ext->transaction_number;
 
-    dbgmodprint("Received transaction #%0d with address %016llX in backward path. Redirecting transaction to CPU", img_ext->transaction_number, address);
+    dbgmodprint(use_prints, "Received transaction #%0d with address %016llX in backward path. Redirecting transaction to CPU", img_ext->transaction_number, address);
     target_socket->nb_transport_bw(trans, local_phase, this->bw_delay);
   }
 
@@ -252,7 +252,7 @@ struct img_router: sc_module
     this->transaction_in_fw_path_id = img_ext->transaction_number;
 
     unsigned int initiator_id = decode_address(address);
-    dbgmodprint("Received transaction #%0d with address %016llX in forward path. Redirecting transaction through initiator %d", img_ext->transaction_number, address, initiator_id);
+    dbgmodprint(use_prints, "Received transaction #%0d with address %016llX in forward path. Redirecting transaction through initiator %d", img_ext->transaction_number, address, initiator_id);
     (*initiator_socket[initiator_id])->nb_transport_fw(trans, local_phase, this->fw_delay);
   }
   
