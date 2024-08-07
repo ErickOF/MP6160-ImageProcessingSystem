@@ -42,9 +42,11 @@ struct img_target: sc_module
     //DEBUG
     unsigned int transaction_in_progress_id = 0;
 
+    bool use_prints;
+
     //Constructor
     SC_CTOR(img_target)   
-    : socket("socket"), response_transaction(0), m_peq(this, &img_target::peq_cb) // Construct and name socket   
+    : socket("socket"), response_transaction(0), m_peq(this, &img_target::peq_cb), use_prints(true) // Construct and name socket   
     {   
         // Register callbacks for incoming interface method calls
         socket.register_nb_transport_fw(this, &img_target::nb_transport_fw);
@@ -84,7 +86,7 @@ struct img_target: sc_module
                 trans.acquire();
                 trans.get_extension(img_ext);
                 
-                dbgmodprint("BEGIN_REQ RECEIVED TRANS ID %0d", img_ext->transaction_number);
+                dbgmodprint(use_prints, "BEGIN_REQ RECEIVED TRANS ID %0d", img_ext->transaction_number);
                 
                 //Queue a response
                 tlm::tlm_phase int_phase = internal_processing_ph;
@@ -99,7 +101,7 @@ struct img_target: sc_module
             }
             default: {
                 if (phase == internal_processing_ph){
-                    dbgmodprint("INTERNAL PHASE: PROCESSING TRANSACTION");
+                    dbgmodprint(use_prints, "INTERNAL PHASE: PROCESSING TRANSACTION");
                     process_transaction(trans);
                 }
                 break;
@@ -125,13 +127,13 @@ struct img_target: sc_module
                     // Target only care about acknowledge of the succesful response
                     (*response_transaction).release();
                     (*response_transaction).get_extension(img_ext);
-                    dbgmodprint("TLM_ACCEPTED RECEIVED TRANS ID %0d", img_ext->transaction_number);
+                    dbgmodprint(use_prints, "TLM_ACCEPTED RECEIVED TRANS ID %0d", img_ext->transaction_number);
                     break;
                 }
 
                 //Not implementing Updated and Completed Status
                 default: {
-                    dbgmodprint("[ERROR] Invalid status received at target");
+                    dbgmodprint(use_prints, "[ERROR] Invalid status received at target");
                     break;
                 }
             }
@@ -159,7 +161,7 @@ struct img_target: sc_module
         unsigned int len = trans.get_data_length();
         trans.get_extension(img_ext);
         
-        dbgmodprint("Processing transaction: %0d", img_ext->transaction_number);
+        dbgmodprint(use_prints, "Processing transaction: %0d", img_ext->transaction_number);
         this->transaction_in_progress_id = img_ext->transaction_number;
 
         //Process transaction
@@ -170,11 +172,10 @@ struct img_target: sc_module
                 this->do_when_read_transaction(response_data_ptr, len, addr);
                 //Add read according to length
                 //-----------DEBUG-----------
-                dbgmodprint("[DEBUG] Reading: ");
+                dbgmodprint(use_prints, "[DEBUG] Reading: ");
                 for (long unsigned int i = 0; i < len/sizeof(int); ++i){
-                  dbgmodprint("%02x", *(reinterpret_cast<int*>(response_data_ptr)+i));
+                  dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(response_data_ptr)+i));
                 }
-                printf("\n");
                 //-----------DEBUG-----------
                 trans.set_data_ptr(response_data_ptr);
                 break;
@@ -182,21 +183,20 @@ struct img_target: sc_module
             case tlm::TLM_WRITE_COMMAND: {
                 this->do_when_write_transaction(data_ptr, len, addr);
                 //-----------DEBUG-----------
-                dbgmodprint("[DEBUG] Writing: ");
+                dbgmodprint(use_prints, "[DEBUG] Writing: ");
                 for (long unsigned int i = 0; i < len/sizeof(int); ++i){
-                  dbgmodprint("%02x", *(reinterpret_cast<int*>(data_ptr)+i));
+                  dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(data_ptr)+i));
                 }
-                printf("\n");
                 //-----------DEBUG-----------
                 break;
             }
             default: {
-                dbgmodprint("ERROR Command %0d is NOT valid", cmd);
+                dbgmodprint(use_prints, "ERROR Command %0d is NOT valid", cmd);
             }
         }
 
         //Send response
-        dbgmodprint("BEGIN_RESP SENT TRANS ID %0d", img_ext->transaction_number);
+        dbgmodprint(use_prints, "BEGIN_RESP SENT TRANS ID %0d", img_ext->transaction_number);
         response_transaction = &trans;
         //send_response(trans);
         send_response_e.notify();

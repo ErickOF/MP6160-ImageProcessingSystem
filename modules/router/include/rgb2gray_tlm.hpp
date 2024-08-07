@@ -17,7 +17,11 @@ using namespace std;
 struct rgb2gray_tlm : public Rgb2Gray, public img_target
 {
 
-    SC_CTOR(rgb2gray_tlm): Rgb2Gray(Rgb2Gray::name()), img_target(img_target::name()) {
+    rgb2gray_tlm(sc_module_name name) : Rgb2Gray((std::string(name) + "_HW_block").c_str()), img_target((std::string(name) + "_target").c_str()) {
+#ifdef DISABLE_RGB_DEBUG
+        this->use_prints = false;
+#endif //DISABLE_RGB_DEBUG
+        checkprintenableimgtar(use_prints);
     }
 
     //Override do_when_transaction functions

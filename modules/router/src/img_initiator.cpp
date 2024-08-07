@@ -47,10 +47,12 @@ struct img_initiator: sc_module
   // DEBUG
   unsigned int transaction_sent_id = 0;
   unsigned int transaction_received_id = 0;
+
+  bool use_prints;
   
   //Constructor
   SC_CTOR(img_initiator)   
-  : socket("socket"), m_peq(this, &img_initiator::peq_cb) // Construct and name socket   
+  : socket("socket"), m_peq(this, &img_initiator::peq_cb), use_prints(true) // Construct and name socket   
   {   
     // Register callbacks for incoming interface method calls
     socket.register_nb_transport_bw(this, &img_initiator::nb_transport_bw);
@@ -81,11 +83,10 @@ struct img_initiator: sc_module
 
     data = transaction->get_data_ptr();
     //-----------DEBUG-----------
-    dbgmodprint("Reading at Initiator: ");
+    dbgmodprint(use_prints, "Reading at Initiator: ");
     for (long unsigned int i = 0; i < transaction->get_data_length()/sizeof(int); ++i){
-      dbgmodprint("%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
+      dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
     }
-    printf("\n");
     //-----------DEBUG-----------
   }
 
@@ -108,11 +109,10 @@ struct img_initiator: sc_module
     transaction->set_extension(img_ext);
 
     //-----------DEBUG-----------
-    dbgmodprint("Writing: ");
+    dbgmodprint(use_prints, "Writing: ");
     for (long unsigned int i = 0; i < data_length/sizeof(int); ++i){
-      dbgmodprint("%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
+      dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
     }
-    printf("\n");
     //-----------DEBUG-----------
 
     //Set transaction
@@ -134,14 +134,14 @@ struct img_initiator: sc_module
 
     this->transaction_sent_id = img_ext->transaction_number;
 
-    dbgmodprint("BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
+    dbgmodprint(use_prints, "BEGIN_REQ SENT TRANS ID %0d", img_ext->transaction_number);
     status = socket->nb_transport_fw(*transaction, phase, ((cur_command == tlm::TLM_WRITE_COMMAND) ? this->write_delay : this->read_delay));  // Non-blocking transport call   
 
     // Check request status returned by target
     switch (status) {   
         //Case 1: Transaction was accepted
         case tlm::TLM_ACCEPTED: {
-          dbgmodprint("%s received -> Transaction ID %d", "TLM_ACCEPTED", img_ext->transaction_number);
+          dbgmodprint(use_prints, "%s received -> Transaction ID %d", "TLM_ACCEPTED", img_ext->transaction_number);
           check_transaction(*transaction);
           //transaction->release();
           //Initiator only cares about sending the transaction, doesnt need to wait for response (non-blocking)
@@ -150,7 +150,7 @@ struct img_initiator: sc_module
 
         //Not implementing Updated and Completed Status
         default: {
-          dbgmodprint("[ERROR] Invalid status received at initiator -> Transaction ID %d", img_ext->transaction_number);
+          dbgmodprint(use_prints, "[ERROR] Invalid status received at initiator -> Transaction ID %d", img_ext->transaction_number);
           break;
         }
     }
@@ -161,11 +161,10 @@ struct img_initiator: sc_module
     this->transaction_received_id = img_ext->transaction_number;
     // }
     //-----------DEBUG-----------
-    dbgmodprint("[DEBUG1] Reading at Initiator: ");
+    dbgmodprint(use_prints, "[DEBUG1] Reading at Initiator: ");
     for (long unsigned int i = 0; i < transaction->get_data_length()/sizeof(int); ++i){
-      dbgmodprint("%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
+      dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(transaction->get_data_ptr())+i));
     }
-    printf("\n");
     //-----------DEBUG-----------
 
     //Increment transaction ID
@@ -185,7 +184,7 @@ struct img_initiator: sc_module
   void peq_cb(tlm::tlm_generic_payload& trans, const tlm::tlm_phase& phase)
   {
 
-    //dbgmodprint("%s received -> Transaction ID %d from address %x", phase, this->id_extension->transaction_id);
+    //dbgmodprint(use_prints, "%s received -> Transaction ID %d from address %x", phase, this->id_extension->transaction_id);
     //cout << name() << " " <<hex << trans.get_address() << " BEGIN_RESP RECEIVED at " << sc_time_stamp() << endl;
     switch (phase) {
       case tlm::BEGIN_RESP: {
@@ -195,20 +194,18 @@ struct img_initiator: sc_module
         //Initiator dont care about confirming resp transaction. So nothing else to do.
 
         //-----------DEBUG-----------
-        dbgmodprint("[DEBUG] Reading at Initiator: ");
+        dbgmodprint(use_prints, "[DEBUG] Reading at Initiator: ");
         for (long unsigned int i = 0; i < trans.get_data_length()/sizeof(int); ++i){
-          dbgmodprint("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
+          dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
         }
-        printf("\n");
         //-----------DEBUG-----------
 
         transaction_received_e.notify();
         //-----------DEBUG-----------
-        dbgmodprint("[DEBUG] Reading at Initiator: ");
+        dbgmodprint(use_prints, "[DEBUG] Reading at Initiator: ");
         for (long unsigned int i = 0; i < trans.get_data_length()/sizeof(int); ++i){
-          dbgmodprint("%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
+          dbgmodprint(use_prints, "%02x", *(reinterpret_cast<int*>(trans.get_data_ptr())+i));
         }
-        printf("\n");
         //-----------DEBUG-----------
         break;
       }
