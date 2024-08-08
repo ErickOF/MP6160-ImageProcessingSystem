@@ -234,6 +234,11 @@ tools/datagen/src/imgs/*_sobel_*
 test
 *.zst
 .vscode
+*.hex
+*.bin
+modules/VirtualPrototype/sw/dump
+modules/VirtualPrototype/sw/sw
+modules/VirtualPrototype/Log.txt
 VirtualPrototype/Log.txt
 VirtualPrototype/log.txt
 VirtualPrototype/sw/dump

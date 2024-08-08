@@ -8,7 +8,7 @@
 
 struct img_transmiter_tlm: public img_transmiter, public img_target
 {
-    SC_CTOR(img_transmiter_tlm): img_transmiter(img_transmiter::name()), img_target(img_target::name()) {
+    img_transmiter_tlm(sc_module_name name) : img_transmiter((std::string(name) + "_transmiter").c_str()), img_target((std::string(name) + "_target").c_str()) {
         set_mem_attributes(IMG_OUTPUT_ADDRESS_LO, IMG_OUTPUT_SIZE);
     }
 

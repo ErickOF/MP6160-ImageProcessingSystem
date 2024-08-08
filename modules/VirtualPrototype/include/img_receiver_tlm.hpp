@@ -8,7 +8,7 @@
 
 struct img_receiver_tlm: public img_receiver, public img_target
 {
-    SC_CTOR(img_receiver_tlm): img_receiver(img_receiver::name()), img_target(img_target::name()) {
+    img_receiver_tlm(sc_module_name name) : img_receiver((std::string(name) + "_receiver").c_str()), img_target((std::string(name) + "_target").c_str()) {
         set_mem_attributes(IMG_INPUT_ADDRESS_LO, IMG_INPUT_SIZE);
     }
 
