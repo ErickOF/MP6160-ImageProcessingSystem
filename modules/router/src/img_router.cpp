@@ -112,21 +112,21 @@ struct img_router: sc_module
   {
     switch(address) {
         // To Filter
-        case IMG_FILTER_KERNEL: {
+        case IMG_FILTER_KERNEL_ADDRESS_LO: {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Filter module.", address);
             return IMG_FILTER_INITIATOR_ID;
         }
 
         // To/from Sobel
-        case SOBEL_INPUT_0: 
-        case SOBEL_INPUT_1: 
-        case SOBEL_OUTPUT: {
+        case SOBEL_INPUT_0_ADDRESS_LO: 
+        case SOBEL_INPUT_1_ADDRESS_LO: 
+        case SOBEL_OUTPUT_ADDRESS_LO: {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Sobel module.", address);
             return IMG_SOBEL_INITIATOR_ID;
         }
 
         // To/From Memory Valid addresses
-        case MEM_START ... MEM_FINISH : {
+        case MEMORY_ADDRESS_LO ... MEMORY_ADDRESS_HI : {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Memory.", address);
             return IMG_MEMORY_INITIATOR_ID;
         }

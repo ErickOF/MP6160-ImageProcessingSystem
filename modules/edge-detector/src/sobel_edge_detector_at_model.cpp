@@ -15,9 +15,9 @@ void Edge_Detector::wr()
     {
     wait(wr_t);
 #ifdef USING_TLM_TB_EN
-    if ((address - SOBEL_INPUT_0) == 0)
+    if ((address - SOBEL_INPUT_0_ADDRESS_LO) == 0)
 #else
-    if ((address.read() - SOBEL_INPUT_0) == 0)
+    if ((address.read() - SOBEL_INPUT_0_ADDRESS_LO) == 0)
 #endif // USING_TLM_TB_EN
     {
       int j = 0;
@@ -81,9 +81,9 @@ void Edge_Detector::wr()
       gotLocalWindow.notify(0, SC_NS);
     }
 #ifdef USING_TLM_TB_EN
-    else if ((address - SOBEL_INPUT_1) == 0)
+    else if ((address - SOBEL_INPUT_1_ADDRESS_LO) == 0)
 #else
-    else if ((address.read() - SOBEL_INPUT_1) == 0)
+    else if ((address.read() - SOBEL_INPUT_1_ADDRESS_LO) == 0)
 #endif // USING_TLM_TB_EN
     {
 #ifdef USING_TLM_TB_EN
@@ -110,9 +110,9 @@ void Edge_Detector::rd()
   {
     wait(rd_t);
 #ifdef USING_TLM_TB_EN
-    if ((address - SOBEL_OUTPUT) == 0)
+    if ((address - SOBEL_OUTPUT_ADDRESS_LO) == 0)
 #else
-    if ((address.read() - SOBEL_OUTPUT) == 0)
+    if ((address.read() - SOBEL_OUTPUT_ADDRESS_LO) == 0)
 #endif // USING_TLM_TB_EN
     {
       data = (sc_uint<32>(0), resultSobelGradientY, resultSobelGradientX);
