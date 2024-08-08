@@ -27,23 +27,10 @@ void ips_filter_tlm::do_when_write_transaction(unsigned char*& data, unsigned in
   IPS_OUT_TYPE_TB* result = new IPS_OUT_TYPE_TB;
   IPS_IN_TYPE_TB* img_window = new IPS_IN_TYPE_TB[3 * 3];
 
-  dbgprint("[DEBUG]: data: %0d, address %0d, data_length %0d, size of char %0d", *data, address, data_length, sizeof(char));
+  //dbgprint("[DEBUG]: data: %0d, address %0d, data_length %0d, size of char %0d", *data, address, data_length, sizeof(char));
   this->img_window[address] = (IPS_IN_TYPE_TB) *data;
-  dbgprint("[DEBUG]: img_window data: %0f", this->img_window[address]);
-  
-  // if ((IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * sizeof(char)) != data_length)
-  // {
-  //   SC_REPORT_FATAL("IPS_FILTER", "Illegal transaction size");
-  // }
-  
-  // for (int i = 0; i < IPS_FILTER_KERNEL_SIZE; i++)
-  // {
-  //   for (int j = 0; j < IPS_FILTER_KERNEL_SIZE; j++)
-  //   {
-  //     *(img_window + ((i * IPS_FILTER_KERNEL_SIZE) + j)) = (IPS_IN_TYPE_TB)*(data + ((i * IPS_FILTER_KERNEL_SIZE) + j));
-  //     this->img_window[(i * IPS_FILTER_KERNEL_SIZE) + j] = (IPS_IN_TYPE_TB)*(data + ((i * IPS_FILTER_KERNEL_SIZE) + j));
-  //   }
-  // }
+  //dbgprint("[DEBUG]: img_window data: %0f", this->img_window[address]);
+
   if (address == 8) {
     filter(this->img_window, result);
   }

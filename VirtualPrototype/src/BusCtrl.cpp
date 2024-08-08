@@ -42,8 +42,8 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 		trace_socket->b_transport(trans, delay);
 		break;
 	[[likely]] default:
-		if ((IMG_FILTER_KERNEL_ADDRESS_LO / 4 <= adr  && adr < IMG_FILTER_KERNEL_ADDRESS_HI / 4) || 
-		    (IMG_FILTER_OUTPUT_ADDRESS_LO / 4 <= adr  && adr < IMG_FILTER_OUTPUT_ADDRESS_HI / 4))
+		if ((IMG_FILTER_KERNEL_ADDRESS_LO / 4 <= adr && adr < IMG_FILTER_KERNEL_ADDRESS_HI / 4) || 
+		    (IMG_FILTER_OUTPUT_ADDRESS_LO / 4 <= adr && adr < IMG_FILTER_OUTPUT_ADDRESS_HI / 4))
 		{
 			std::cout << "Writing/Reading to Filter!" << std::endl;
 			filter_socket->b_transport(trans, delay);
