@@ -238,6 +238,8 @@ test
 *.bin
 modules/VirtualPrototype/sw/dump
 modules/VirtualPrototype/sw/sw
+modules/VirtualPrototype/FreeRTOS/dump
+modules/VirtualPrototype/FreeRTOS/freertos
 modules/VirtualPrototype/Log.txt
 modules/VirtualPrototype/log.txt
 VirtualPrototype/Log.txt

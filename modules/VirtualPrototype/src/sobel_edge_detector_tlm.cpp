@@ -59,7 +59,7 @@ void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, uns
     }
     else if (SOBEL_INPUT_0_SIZE <= address && address < SOBEL_INPUT_0_SIZE + SOBEL_INPUT_1_SIZE) {
       for (int i = 0; i < data_length; i++) {
-        this->sobel_input[address + i - SOBEL_INPUT_0_SIZE] = *(data + i - SOBEL_INPUT_0_SIZE);
+        this->sobel_input[address + i - SOBEL_INPUT_0_SIZE] = *(data + i);
       }
     }
 
