@@ -297,30 +297,35 @@ int sc_main(int, char*[])
 	sc_argc();
 	sc_argv();
 
-	sc_signal<sc_uint<8> > signal[10];
+	sc_signal<sc_uint<8> > signal;
+  sc_signal<sc_uint<8> > signal_bus[9];
 	sc_clock clk("clk", 1, SC_NS);
 
 	testbench tb_module("tb_module");
 	Filter filter("filter");
 
 	filter.clk(clk);
-	filter.input_window_0(signal[0]);
-	filter.input_window_1(signal[1]);
-	filter.input_window_2(signal[2]);
-	filter.input_window_3(signal[3]);
-	filter.input_window_4(signal[4]);
-	filter.input_window_5(signal[5]);
-	filter.input_window_6(signal[6]);
-	filter.input_window_7(signal[7]);
-	filter.input_window_8(signal[8]);
+	filter.input_window_0(signal_bus[0]);
+	filter.input_window_1(signal_bus[1]);
+	filter.input_window_2(signal_bus[2]);
+	filter.input_window_3(signal_bus[3]);
+	filter.input_window_4(signal_bus[4]);
+	filter.input_window_5(signal_bus[5]);
+	filter.input_window_6(signal_bus[6]);
+	filter.input_window_7(signal_bus[7]);
+	filter.input_window_8(signal_bus[8]);
 
 	for (int i = 0; i < 9; i++){
-		tb_module.img_window[i](signal[i]);
+		tb_module.img_window[i](signal_bus[i]);
 	}
-	filter.output(signal[9]);
-	tb_module.mean(signal[9]);
+	filter.output(signal);
+	tb_module.mean(signal);
 
 	sc_start();
+#ifdef IPS_DEBUG_EN
+	std::cout << "Test starting" << std::endl;
+	std::cout << "@" << sc_time_stamp() << std::endl;
+#endif // IPS_DEBUG_EN
 
 
 //  printf(" Signal is %0u\n", signal.read());
