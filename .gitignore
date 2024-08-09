@@ -234,3 +234,9 @@ tools/datagen/src/imgs/*_sobel_*
 test
 *.zst
 .vscode
+
+#Ignore VIVADO project
+HLS/IpsFilterHLS/.apc
+HLS/IpsFilterHLS/.settings
+HLS/IpsFilterHLS/solution1
+HLS/IpsFilterHLS/*
