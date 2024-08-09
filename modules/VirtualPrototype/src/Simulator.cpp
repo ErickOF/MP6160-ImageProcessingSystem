@@ -215,7 +215,53 @@ int sc_main(int argc, char *argv[]) {
 	/* Parse and process program arguments. -f is mandatory */
 	process_arguments(argc, argv);
 
+	// Open VCD file
+	sc_trace_file* wf = sc_create_vcd_trace_file("riscv_tb");
+	wf->set_time_unit(1, SC_PS);
+
 	top = new Simulator("top");
+
+	sc_trace(wf, top->filter_DUT->img_window[0], "filter_window(0)(0)");
+	sc_trace(wf, top->filter_DUT->img_window[1], "filter_window(0)(1)");
+	sc_trace(wf, top->filter_DUT->img_window[2], "filter_window(0)(2)");
+	sc_trace(wf, top->filter_DUT->img_window[3], "filter_window(1)(0)");
+	sc_trace(wf, top->filter_DUT->img_window[4], "filter_window(1)(1)");
+	sc_trace(wf, top->filter_DUT->img_window[5], "filter_window(1)(2)");
+	sc_trace(wf, top->filter_DUT->img_window[6], "filter_window(2)(0)");
+	sc_trace(wf, top->filter_DUT->img_window[7], "filter_window(2)(1)");
+	sc_trace(wf, top->filter_DUT->img_window[8], "filter_window(2)(2)");
+	sc_trace(wf, top->filter_DUT->img_result, "filter_result");
+	sc_trace(wf, top->sobel_edge_detector_DUT->Edge_Detector::data, "sobel_data");
+	sc_trace(wf, top->sobel_edge_detector_DUT->Edge_Detector::address, "sobel_address");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[0][0], "sobel_localWindow(0)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[0][1], "sobel_localWindow(0)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[0][2], "sobel_localWindow(0)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[1][0], "sobel_localWindow(1)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[1][1], "sobel_localWindow(1)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[1][2], "sobel_localWindow(1)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[2][0], "sobel_localWindow(2)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[2][1], "sobel_localWindow(2)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localWindow[2][2], "sobel_localWindow(2)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[0][0], "sobel_localMultX(0)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[0][1], "sobel_localMultX(0)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[0][2], "sobel_localMultX(0)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[1][0], "sobel_localMultX(1)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[1][1], "sobel_localMultX(1)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[1][2], "sobel_localMultX(1)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[2][0], "sobel_localMultX(2)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[2][1], "sobel_localMultX(2)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultX[2][2], "sobel_localMultX(2)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[0][0], "sobel_localMultY(0)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[0][1], "sobel_localMultY(0)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[0][2], "sobel_localMultY(0)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[1][0], "sobel_localMultY(1)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[1][1], "sobel_localMultY(1)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[1][2], "sobel_localMultY(1)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[2][0], "sobel_localMultY(2)(0)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[2][1], "sobel_localMultY(2)(1)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->localMultY[2][2], "sobel_localMultY(2)(2)");
+	sc_trace(wf, top->sobel_edge_detector_DUT->resultSobelGradientX, "sobel_resultSobelGradientX");
+	sc_trace(wf, top->sobel_edge_detector_DUT->resultSobelGradientY, "sobel_resultSobelGradientY");
 
 	top->load_img_from_memory();
 
@@ -232,6 +278,7 @@ int sc_main(int argc, char *argv[]) {
 	//Generate output image
 	top->save_img_from_memory();
 	
+	sc_close_vcd_trace_file(wf);
 	std::cout << "Press Enter to finish" << std::endl;
 	std::cin.ignore();
 

@@ -14,7 +14,7 @@ struct sobel_edge_detector_tlm : public Edge_Detector, public img_target
 
     sobel_edge_detector_tlm(sc_module_name name) : Edge_Detector((std::string(name) + "_HW_block").c_str()), img_target((std::string(name) + "_target").c_str()) {
         sobel_input = new sc_uint<8>[9];
-        set_mem_attributes(SOBEL_INPUT_0_ADDRESS_LO, SOBEL_INPUT_0_SIZE+SOBEL_INPUT_1_SIZE);
+        set_mem_attributes(SOBEL_INPUT_0_ADDRESS_LO, SOBEL_INPUT_0_SIZE+SOBEL_INPUT_1_SIZE+SOBEL_OUTPUT_SIZE);
     }
 
     //Override do_when_transaction functions
@@ -23,6 +23,7 @@ struct sobel_edge_detector_tlm : public Edge_Detector, public img_target
 
     void read() override;
     void write() override;
+    void wr() override;
 
     sc_uint<8> *sobel_input;
 };

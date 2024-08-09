@@ -12,6 +12,9 @@ LINKER   = riscv32-unknown-elf-g++
 LDFLAGS   = -I. -static 
 LIBS   = $(EXTRA_LIBS)
 
+CFLAGS += -DUSING_RISCV_TLM_TB_EN
+LDFLAGS += -DUSING_RISCV_TLM_TB_EN
+
 
 # change these to proper directories where each file should be
 SRCDIR   = ./

@@ -176,8 +176,29 @@ int main(void) {
   unsigned char *img = (unsigned char*) IMG_INPUT_ADDRESS_LO;
   unsigned char *filtered_img = new unsigned char[IMAG_COLS*IMAG_ROWS];
   unsigned char *img_result = (unsigned char*) IMG_OUTPUT_ADDRESS_LO;
+  unsigned char *sobel_input_0_ptr = (unsigned char*) SOBEL_INPUT_0_ADDRESS_LO;
+  unsigned char *sobel_input_1_ptr = (unsigned char*) SOBEL_INPUT_1_ADDRESS_LO;
+  short int *sobel_output_ptr = (short int*) SOBEL_OUTPUT_ADDRESS_LO;
+  unsigned char *local_window = new unsigned char[3 * 3];
+  short int *sobel_results = new short int[2];
 
   memcpy(img_result, img, IMAG_COLS*IMAG_ROWS*sizeof(char));
+  printf("Starting with SOBEL testing on address %p\n", (void*)sobel_input_0_ptr);
+  *(local_window + 0) = 150;
+  *(local_window + 1) = 20;
+  *(local_window + 2) = 38;
+  *(local_window + 3) = 64;
+  *(local_window + 4) = 32;
+  *(local_window + 5) = 8;
+  *(local_window + 6) = 16;
+  *(local_window + 7) = 75;
+  *(local_window + 8) = 99;
+  printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_0_ptr);
+  memcpy(sobel_input_0_ptr, local_window, 8 * sizeof(char));
+  printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_1_ptr);
+  memcpy(sobel_input_1_ptr, (local_window + 8), 1 * sizeof(char));
+  memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
+  printf("Results of SOBEL are %d at address %p and %d at address %p\n", sobel_results[0], (void*)sobel_output_ptr, sobel_results[1], (void*)(sobel_output_ptr + 1));
 
   // for(int i = 0; i < IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE; i++) {
   //   *(local_window_ptr+i) = i;

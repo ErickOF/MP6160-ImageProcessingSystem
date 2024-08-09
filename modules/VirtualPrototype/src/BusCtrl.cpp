@@ -50,7 +50,7 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 		}
 		else if ((SOBEL_INPUT_0_ADDRESS_LO / 4 <= adr && adr < SOBEL_INPUT_0_ADDRESS_HI / 4) || 
 		         (SOBEL_INPUT_1_ADDRESS_LO / 4 <= adr && adr < SOBEL_INPUT_1_ADDRESS_HI / 4) ||
-				 (SOBEL_OUTPUT_ADDRESS_LO / 4 <= adr && adr < SOBEL_OUTPUT_ADDRESS_HI / 4))
+		         (SOBEL_OUTPUT_ADDRESS_LO / 4 <= adr && adr < SOBEL_OUTPUT_ADDRESS_HI / 4))
 		{
 			std::cout << "Writing/Reading to Sobel!" << std::endl;
 			sobel_edge_detector_socket->b_transport(trans, delay);
