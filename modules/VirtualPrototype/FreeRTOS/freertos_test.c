@@ -190,7 +190,7 @@ void transfer_window(int i, int j, unsigned long long source_address, unsigned l
 	memcpy((target_ptr + 8), (local_window + 8), sizeof(char));
 }
 
-static void task_test_sobel(void *pParameter)
+void obtain_gradients_sobel()
 {
 	short int *sobel_output_ptr = (short int*) SOBEL_OUTPUT_ADDRESS_LO;
 	short int *output_image_X_ptr = (short int*) IMG_INPROCESS_B_ADDRESS_LO;
@@ -272,11 +272,6 @@ void convert_to_grayscale()
 	printf("Done IMG Grayscale Step: \n");
 }
 
-static void task_test_grayscale(void *pParameter)
-{
-	convert_to_grayscale();
-}
-
 void filter_image()
 {
 	unsigned char *filter_output_ptr = (unsigned char*) IMG_FILTER_OUTPUT_ADDRESS_LO;
@@ -306,11 +301,6 @@ void filter_image()
 	}
 
 	printf("Done IMG Filtering Step: \n");
-}
-
-static void task_test_filtering(void *pParameter)
-{
-	filter_image();
 }
 
 int intSqrt(int x) 
@@ -378,7 +368,12 @@ void unificate_img()
 }
 
 static void testbench(void *pParameter) {
-	// filter_image();
+	convert_to_grayscale();
+
+	filter_image();
+
+	obtain_gradients_sobel();
+
 	unificate_img();
 }
 
