@@ -106,7 +106,8 @@ struct img_router: sc_module
   #define IMG_FILTER_INITIATOR_ID 0
   #define IMG_SOBEL_INITIATOR_ID  1
   #define IMG_MEMORY_INITIATOR_ID 2
-  #define INVALID_INITIATOR_ID    3
+  #define IMG_ETHERNET_INITIATOR_ID 3
+  #define INVALID_INITIATOR_ID    4
   
   unsigned int decode_address (sc_dt::uint64 address)
   {
@@ -123,6 +124,15 @@ struct img_router: sc_module
         case SOBEL_OUTPUT_ADDRESS_LO: {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Sobel module.", address);
             return IMG_SOBEL_INITIATOR_ID;
+        }
+
+        case ETHERNET_DATA_WR:
+        case ETHERNET_DATA_DONE:
+        case ETHERNET_CHECK_DONE:
+        {
+          dbgmodprint(use_prints, "Decoded address %016llX corresponds to Ethernet module.", address);
+
+          return IMG_ETHERNET_INITIATOR_ID;
         }
 
         // To/From Memory Valid addresses

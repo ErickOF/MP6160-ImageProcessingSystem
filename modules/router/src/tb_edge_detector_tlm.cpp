@@ -26,6 +26,8 @@ using namespace std;
 #include <tlm_utils/simple_target_socket.h>
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
+#include <systemc-ams.h>
+
 #include "common_func.hpp"
 #include "important_defines.hpp"
 
@@ -35,6 +37,8 @@ using namespace std;
 #include "sobel_edge_detector_tlm.hpp"
 #include "unification_pv_model.hpp"
 #include "ips_jpg_pv_model.hpp"
+#include "packetGenerator_tlm.hpp"
+#include "ethernetEncoder.h"
 #include "img_initiator.cpp"
 #include "img_router.cpp"
 
@@ -42,10 +46,40 @@ using namespace std;
 #error "Not all the required macros (RGB2GRAY_PV_EN, IPS_FILTER_LT_EN, EDGE_DETECTOR_AT_EN, IMG_UNIFICATE_PV_EN and IPS_JPG_PV_EN) are defined."
 #endif // Models
 
+struct Ethernet_AMS_Signals {
+    sca_tdf::sca_signal<bool> valid;
+    sca_tdf::sca_signal<double> mlt3_out_signal;
+
+    sca_tdf::sca_signal<bool> data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out_signal;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out;
+
+    sca_tdf::sca_signal<bool> tmp_data_out_valid;
+
+    sca_tdf::sca_signal<bool> n2_data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> n2_data_out;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> n2_data_valid;
+    sca_tdf::sca_signal<bool> n1_data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> n1_data_out;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> n1_data_valid;
+
+    sca_tdf::sca_signal<sc_dt::sc_bv<64>> data_in;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> data_in_valid;
+
+    sca_tdf::sca_signal<sc_dt::sc_bv<64>> data_to_send;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> data_valid_to_send;
+
+    sca_tdf::sca_signal<sc_dt::sc_int<4>> n1_sigBitCount;
+    sca_tdf::sca_signal<sc_dt::sc_int<4>> n2_sigBitCount;
+    sca_tdf::sca_signal<sc_dt::sc_int<4>> sigBitCount;
+
+    sca_tdf::sca_signal<sc_dt::sc_int<32>> remaining_bytes_to_send;
+};
+
 SC_MODULE(Tb_top)
 {
   
-  img_router<3> *router;
+  img_router<4> *router;
   //img_initiator *sobel_initiator;
   //img_initiator *tb_initiator;
   //img_initiator *filter_initiator;
@@ -56,12 +90,18 @@ SC_MODULE(Tb_top)
   ips_filter_tlm *filter_DUT;
   img_unification_module* unification_DUT;
   jpg_output *jpg_comp_DUT;
+  packetGenerator_tlm *packetGenerator_DUT;
+  ethernetEncoder *ethernetEncoder_DUT;
+
+  Ethernet_AMS_Signals ethernetSignals;
+
+  sca_core::sca_time sample_time;
 
   bool use_prints = true;
   
-  SC_CTOR(Tb_top)
+  SC_CTOR(Tb_top) : sample_time(10, SC_NS)
   {
-    router = new img_router<3>("router");
+    router = new img_router<4>("router");
     edge_detector_DUT = new sobel_edge_detector_tlm("edge_detector_DUT");
     rgb2gray_DUT = new Rgb2Gray("rgb2gray_DUT");
     tb_initiator = new img_initiator("tb_initiator");
@@ -72,6 +112,38 @@ SC_MODULE(Tb_top)
     filter_DUT = new ips_filter_tlm("filter_DUT");
     unification_DUT = new img_unification_module("unification_DUT");
     jpg_comp_DUT = new jpg_output("jpg_comp_DUT", IMAG_ROWS, IMAG_COLS);
+    packetGenerator_DUT = new packetGenerator_tlm("packetGenerator_DUT", sample_time);
+    ethernetEncoder_DUT = new ethernetEncoder("ethernetEncoder_DUT", sample_time);
+    
+    // Connecting the signals to ethernet modules
+    packetGenerator_DUT->data_out_valid(ethernetSignals.data_out_valid);
+    packetGenerator_DUT->data_out(ethernetSignals.data_out);
+
+    packetGenerator_DUT->tmp_data_out_valid_(ethernetSignals.tmp_data_out_valid);
+
+    packetGenerator_DUT->n2_data_out_valid_(ethernetSignals.n2_data_out_valid);
+    packetGenerator_DUT->n2_data_out_(ethernetSignals.n2_data_out);
+    packetGenerator_DUT->n2_data_valid_(ethernetSignals.n2_data_valid);
+
+    packetGenerator_DUT->n1_data_out_valid_(ethernetSignals.n1_data_out_valid);
+    packetGenerator_DUT->n1_data_out_(ethernetSignals.n1_data_out);
+    packetGenerator_DUT->n1_data_valid_(ethernetSignals.n1_data_valid);
+
+    packetGenerator_DUT->data_in_(ethernetSignals.data_in);
+    packetGenerator_DUT->data_in_valid_(ethernetSignals.data_in_valid);
+
+    packetGenerator_DUT->data_to_send_(ethernetSignals.data_to_send);
+    packetGenerator_DUT->data_valid_to_send_(ethernetSignals.data_valid_to_send);
+
+    packetGenerator_DUT->n1_sigBitCount_(ethernetSignals.n1_sigBitCount);
+    packetGenerator_DUT->n2_sigBitCount_(ethernetSignals.n2_sigBitCount);
+    packetGenerator_DUT->sigBitCount(ethernetSignals.sigBitCount);
+
+    packetGenerator_DUT->remaining_bytes_to_send(ethernetSignals.remaining_bytes_to_send);
+
+    ethernetEncoder_DUT->data_in(ethernetSignals.data_out);
+    ethernetEncoder_DUT->mlt3_out(ethernetSignals.mlt3_out_signal);
+    ethernetEncoder_DUT->valid(ethernetSignals.data_out_valid);
     
     router->set_delays(sc_time(20, SC_NS), sc_time(20, SC_NS));
     // sobel_initiator->start_img_initiators();
@@ -90,6 +162,7 @@ SC_MODULE(Tb_top)
     router->initiator_socket[0]->bind(filter_DUT->socket);
     router->initiator_socket[1]->bind(edge_detector_DUT->socket);
     router->initiator_socket[2]->bind(memory_DUT->socket);
+    router->initiator_socket[3]->bind(packetGenerator_DUT->socket);
     tb_initiator->socket.bind(router->target_socket);
     
     SC_THREAD(thread_process);
@@ -628,6 +701,88 @@ SC_MODULE(Tb_top)
     
     dbgprint("Finished with the compression of the image");
     
+    local_count = 0;
+    local_group_count = 0;
+    current_number_of_pixels = 0;
+    next_target_of_completion = 10.0;
+    for (int i = 0; i < compression_output_size; i++)
+    {
+      if (local_count == 0)
+      {
+        unsigned char* read_ptr;
+        local_read = new unsigned char[8];
+      
+        dbgmodprint(use_prints, "Before doing a read in TB");
+        tb_initiator->read(read_ptr, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), 8 * sizeof(char));
+        dbgmodprint(use_prints, "After doing a read in TB");
+        memcpy(local_read, read_ptr, 8 * sizeof(char));
+        delete[] read_ptr;
+      }
+
+      local_count++;
+
+      if (local_count == 8)
+      {
+        unsigned char* write_ptr;
+        unsigned char* read_ptr;
+
+        tb_initiator->read(read_ptr, ETHERNET_CHECK_DONE, 1 * sizeof(char));
+        while (*read_ptr == 1)
+        {
+          delete[] read_ptr;
+          wait(100, SC_NS);
+          tb_initiator->read(read_ptr, ETHERNET_CHECK_DONE, 1 * sizeof(char));
+        }
+
+        write_ptr = new unsigned char[1];
+        *write_ptr = 1;
+        tb_initiator->write(local_read, ETHERNET_DATA_WR, 8 * sizeof(char));
+        tb_initiator->write(write_ptr, ETHERNET_DATA_DONE, 1 * sizeof(char));
+        delete[] write_ptr;
+        delete[] local_read;
+        local_count = 0;
+        local_group_count++;
+      }
+    }
+    
+    if (compression_output_size % 8 != 0)
+    {
+      unsigned char* write_ptr;
+      unsigned char* read_ptr;
+
+      tb_initiator->read(read_ptr, ETHERNET_CHECK_DONE, 1 * sizeof(char));
+      while (*read_ptr == 1)
+      {
+        delete[] read_ptr;
+        wait(100, SC_NS);
+        tb_initiator->read(read_ptr, ETHERNET_CHECK_DONE, 1 * sizeof(char));
+      }
+
+      dbgmodprint(use_prints, "Before doing a read in TB");
+      tb_initiator->read(read_ptr, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), (compression_output_size % 8) * sizeof(char));
+      dbgmodprint(use_prints, "After doing a read in TB");
+
+      write_ptr = new unsigned char[1];
+      *write_ptr = 1;
+
+      tb_initiator->write(read_ptr, ETHERNET_DATA_WR, (compression_output_size % 8) * sizeof(char));
+      tb_initiator->write(write_ptr, ETHERNET_DATA_DONE, 1 * sizeof(char));
+
+      delete[] write_ptr;
+      delete[] read_ptr;
+    }
+
+    unsigned char* read_ptr;
+    tb_initiator->read(read_ptr, ETHERNET_CHECK_DONE, 1 * sizeof(char));
+    while (*read_ptr == 1)
+    {
+      delete[] read_ptr;
+      wait(100, SC_NS);
+      tb_initiator->read(read_ptr, ETHERNET_CHECK_DONE, 1 * sizeof(char));
+    }
+
+    dbgprint("Finished with the transmision of the image");
+    
     imwrite("grayImagePrevMem.jpg", grayImagePrevMem);
     imwrite("grayImageAfterMem.jpg", grayImageAfterMem);
     imwrite("filteredImagePrevMem.jpg", filteredImagePrevMem);
@@ -638,6 +793,8 @@ SC_MODULE(Tb_top)
     imwrite("detectedImageAfterMemY.jpg", detectedImageAfterMemY);
     imwrite("detectedImagePrevMem.jpg", detectedImagePrevMem);
     imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);
+
+    sc_stop();
   }
   
   void extract_window(int i, int j, unsigned int initial_address, unsigned char*& local_window_ptr)
@@ -860,6 +1017,7 @@ int sc_main(int, char*[])
   
   // Open VCD file
   sc_trace_file* wf = sc_create_vcd_trace_file("edge_detector");
+  sca_util::sca_trace_file* wf_ams = sca_util::sca_create_vcd_trace_file("edge_detector_ams");
   wf->set_time_unit(1, SC_PS);
 
   Tb_top top("top");
@@ -919,10 +1077,31 @@ int sc_main(int, char*[])
   sc_trace(wf, top.memory_DUT->mem_address, "memory_address");
   sc_trace(wf, top.memory_DUT->mem_we, "memory_we");
   
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.mlt3_out_signal, "mlt3_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_out_signal, "data_out_signal");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_out_valid, "data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_out, "data_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_in, "pkt_gen_data_in");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_in_valid, "pkt_gen_data_in_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_data_valid, "pkt_gen_n2_data_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_data_out_valid, "pkt_gen_n2_data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_data_out, "pkt_gen_n2_data_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_data_valid, "pkt_gen_n1_data_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_data_out_valid, "pkt_gen_n1_data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_data_out, "pkt_gen_n1_data_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.sigBitCount, "pkt_gen_sigBitCount");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_sigBitCount, "pkt_gen_n1_sigBitCount");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_sigBitCount, "pkt_gen_n2_sigBitCount");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.tmp_data_out_valid, "pkt_gen_tmp_data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_to_send, "pkt_gen_data_to_send");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_valid_to_send, "pkt_gen_data_valid_to_send");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.remaining_bytes_to_send, "pkt_gen_remaining_bytes_to_send");
+  
   sc_start();
 
   dbgprint("Terminating simulation");
   sc_close_vcd_trace_file(wf);
+  sca_util::sca_close_vcd_trace_file(wf_ams);
 
   return 0;
 }
