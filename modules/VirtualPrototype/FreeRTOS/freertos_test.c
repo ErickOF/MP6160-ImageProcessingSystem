@@ -221,12 +221,13 @@ void transfer_window(int i, int j, unsigned long long source_address, unsigned l
 		*(local_window + 8) = *(read_ptr + 2);
 	}
 
-	if (((i == 0 || i == IMAG_ROWS - 1) && (j < 2 || j > IMAG_COLS - 3)) || ((j == 0 || j == IMAG_COLS -1) && (i < 2 || i > IMAG_ROWS - 3)))
-	{
-		printf("Window %0d %0d:\n\t%5d %5d %5d\n\t%5d %5d %5d\n\t%5d %5d %5d\n", i, j, local_window[0], local_window[1], local_window[2], local_window[3],local_window[4], local_window[5], local_window[6], local_window[7], local_window[8]);
-	}
+	// if (((i == 0 || i == IMAG_ROWS - 1) && (j < 2 || j > IMAG_COLS - 3)) || ((j == 0 || j == IMAG_COLS -1) && (i < 2 || i > IMAG_ROWS - 3)))
+	// {
+	// 	printf("Window %0d %0d:\n\t%5d %5d %5d\n\t%5d %5d %5d\n\t%5d %5d %5d\n", i, j, local_window[0], local_window[1], local_window[2], local_window[3],local_window[4], local_window[5], local_window[6], local_window[7], local_window[8]);
+	// }
 
-	memcpy(target_ptr, local_window, 9 * sizeof(char));
+	memcpy(target_ptr, local_window, 8 * sizeof(char));
+	memcpy((target_ptr + 8), (local_window + 8), sizeof(char));
 }
 
 static void task_test_sobel(void *pParameter)
