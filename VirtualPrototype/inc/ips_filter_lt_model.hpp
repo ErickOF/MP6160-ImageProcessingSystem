@@ -99,8 +99,6 @@ void Filter<IN, OUT, N>::exec_filter()
     for (i = 0; i < N; ++i)
       for (j = 0; j < N; ++j)
         *(this->result_ptr) += this->kernel[i * N + j] * this->img_window_tmp[i * N + j];
-        printf("Result: %0f, Kernel: %0f, Window[%0d, %0d] %0f \n", *(this->result_ptr), this->kernel[i * N + j], i, j, this->img_window_tmp[i * N + j]);
-    printf("Result: %0f\n", *(this->result_ptr));
   }
 }
 
