@@ -17,46 +17,6 @@
 
 extern void register_timer_isr();
 
-QueueHandle_t my_queue = NULL;
-
-static void task_1(void *pParameter) {
-    
-        int data = 5;
-	printf("Task 1 starts\n");
-
-	while(1) {
-		printf("T1: Tick %ld\n",  xTaskGetTickCount() );
-                xQueueSend(my_queue, &data, portMAX_DELAY);
-		vTaskDelay(100 / portTICK_PERIOD_MS);
-	}
-}
-
-static void task_2(void *pParameter) {
-    
-        int data = 7;
-        
-	printf("Task 2 starts\n");
-
-	while(1) {
-		printf("T2: Tick %ld\n",  xTaskGetTickCount() );
-                xQueueSend(my_queue, &data, portMAX_DELAY);
-		vTaskDelay(500 / portTICK_PERIOD_MS);
-	}
-}
-
-static void task_3(void *pParameter) {
-        int data;
-        
- 	printf("Task 3 starts\n");
-
-	while(1) {
-                xQueueReceive(my_queue, &data, portMAX_DELAY);
-		printf("T3: Tick %ld. Recv: %ld\n",  xTaskGetTickCount(), data);
-		//vTaskDelay(1000 / portTICK_PERIOD_MS);
-	}   
-    
-}
-
 void transfer_window(int i, int j, unsigned long long source_address, unsigned long long target_address)
 {
 	unsigned char *source_ptr = (unsigned char *) source_address;
@@ -232,32 +192,17 @@ void transfer_window(int i, int j, unsigned long long source_address, unsigned l
 
 static void task_test_sobel(void *pParameter)
 {
-	unsigned char *sobel_input_0_ptr = (unsigned char*) SOBEL_INPUT_0_ADDRESS_LO;
-	unsigned char *sobel_input_1_ptr = (unsigned char*) SOBEL_INPUT_1_ADDRESS_LO;
 	short int *sobel_output_ptr = (short int*) SOBEL_OUTPUT_ADDRESS_LO;
 	short int *output_image_X_ptr = (short int*) IMG_INPROCESS_B_ADDRESS_LO;
 	short int *output_image_Y_ptr = (short int*) IMG_INPROCESS_C_ADDRESS_LO;
-	unsigned char local_window[3 * 3];
 	short int sobel_results[2];
 
-	// printf("Starting with SOBEL testing on address %p\n", (void*)sobel_input_0_ptr);
-  // *(local_window + 0) = 150;
-  // *(local_window + 1) = 20;
-  // *(local_window + 2) = 38;
-  // *(local_window + 3) = 64;
-  // *(local_window + 4) = 32;
-  // *(local_window + 5) = 8;
-  // *(local_window + 6) = 16;
-  // *(local_window + 7) = 75;
-  // *(local_window + 8) = 99;
-  // printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_0_ptr);
-  // memcpy(sobel_input_0_ptr, local_window, 8 * sizeof(char));
-  // printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_1_ptr);
-  // memcpy(sobel_input_1_ptr, (local_window + 8), 1 * sizeof(char));
-  // memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
-  // printf("Results of SOBEL are %d at address %p and %d at address %p\n", sobel_results[0], (void*)sobel_output_ptr, sobel_results[1], (void*)(sobel_output_ptr + 1));
+	int final_target = IMAG_ROWS * IMAG_COLS;
+	int current_progress = 0;
+	int step = final_target / 10;
+	int next_target = 1;
 
-	printf("Starting to process of image with Sobel gradient\n");
+	printf("Starting IMG Sobel Step: \n");
 
 	for (int i = 0; i < IMAG_ROWS; i++)
 	{
@@ -267,10 +212,17 @@ static void task_test_sobel(void *pParameter)
 			memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
 			*(output_image_X_ptr + ((i * IMAG_COLS) + j)) = sobel_results[0];
 			*(output_image_Y_ptr + ((i * IMAG_COLS) + j)) = sobel_results[1];
+
+			if (current_progress == next_target * step)
+			{
+				printf("Current progress is at %0d%%\n", next_target * 10);
+				next_target++;
+			}
+			current_progress++;
 		}
 	}
 
-	printf("Finished process of image with Sobel gradient\n");
+	printf("Done IMG Sobel Step: \n");
 }
 
 unsigned char compute_gray_value(unsigned char r_val, unsigned char g_val, unsigned char b_val)
@@ -285,7 +237,12 @@ void convert_to_grayscale()
 	unsigned char rgb_val[3];
 	unsigned char gray_val;
 
-	printf("Starting process of image with grayscale conversion\n");
+	int final_target = IMAG_ROWS * IMAG_COLS;
+	int current_progress = 0;
+	int step = final_target / 10;
+	int next_target = 1;
+
+	printf("Starting IMG Grayscale Step: \n");
 
 	for (int i = 0; i < IMAG_ROWS; i++)
 	{
@@ -302,10 +259,17 @@ void convert_to_grayscale()
 			// 	printf("On pixel %0d %0d gray value %0d\n", i, j, gray_val);
 			// }
 			*(target_ptr + ((i * IMAG_COLS) + j)) = gray_val;
+
+			if (current_progress == next_target * step)
+			{
+				printf("Current progress is at %0d%%\n", next_target * 10);
+				next_target++;
+			}
+			current_progress++;
 		}
 	}
 
-	printf("Finished process of image with grayscale conversion\n");
+	printf("Done IMG Grayscale Step: \n");
 }
 
 static void task_test_grayscale(void *pParameter)
@@ -318,7 +282,12 @@ void filter_image()
 	unsigned char *filter_output_ptr = (unsigned char*) IMG_FILTER_OUTPUT_ADDRESS_LO;
 	unsigned char *output_image_ptr = (unsigned char*) IMG_COMPRESSED_ADDRESS_LO;
 
-	printf("Starting filtering of image\n");
+	int final_target = IMAG_ROWS * IMAG_COLS;
+	int current_progress = 0;
+	int step = final_target / 10;
+	int next_target = 1;
+
+	printf("Starting IMG Filtering Step: \n");
 
 	for (int i = 0; i < IMAG_ROWS; i++)
 	{
@@ -326,10 +295,17 @@ void filter_image()
 		{
 			transfer_window(i, j, IMG_INPROCESS_A_ADDRESS_LO, IMG_FILTER_KERNEL_ADDRESS_LO);
 			*(output_image_ptr + ((i * IMAG_COLS) + j)) = *(filter_output_ptr);
+
+			if (current_progress == next_target * step)
+			{
+				printf("Current progress is at %0d%%\n", next_target * 10);
+				next_target++;
+			}
+			current_progress++;
 		}
 	}
 
-	printf("Finished filtering of image\n");
+	printf("Done IMG Filtering Step: \n");
 }
 
 static void task_test_filtering(void *pParameter)
@@ -337,21 +313,81 @@ static void task_test_filtering(void *pParameter)
 	filter_image();
 }
 
+int intSqrt(int x) 
+{
+  unsigned int s = 0;
+  for (unsigned int i = (1 << 15); i > 0; i >>= 1){
+    if (((s+i) * (s+i)) <= x){
+      s += i;
+    }
+  }
+  return s;
+}
+
+int norm(int a, int b) 
+{
+  int norm_result = 0;
+
+  norm_result = intSqrt(a*a+b*b); //sqrt(pow(a, 2) + pow(b, 2));
+
+
+  return norm_result;
+}
+
+void unificate_img()
+{
+	short int *x_img = (short int *) IMG_INPROCESS_B_ADDRESS_LO;
+	short int *y_img = (short int *) IMG_INPROCESS_C_ADDRESS_LO;
+	unsigned char *unificated_img = (unsigned char *) IMG_INPROCESS_A_ADDRESS_LO;
+
+	int final_target = IMAG_ROWS * IMAG_COLS;
+	int current_progress = 0;
+	int step = final_target / 10;
+	int next_target = 1;
+
+	printf("Starting IMG Unification Step: \n");
+
+	//Iterate over image
+	for (int i = 0; i < IMAG_ROWS * IMAG_COLS; i++)
+	{
+		int pixel_magnitude;
+		int pixel_x = (int) *x_img;
+		int pixel_y = (int) *y_img;
+
+		pixel_magnitude = norm(pixel_x, pixel_y);
+
+		if (pixel_magnitude > 255)
+		{
+			pixel_magnitude = 255;
+		}
+		*unificated_img = (unsigned char) pixel_magnitude;
+
+		x_img++;
+		y_img++;
+		unificated_img++;
+
+		if (current_progress == next_target * step)
+		{
+			printf("Current progress is at %0d%%\n", next_target * 10);
+			next_target++;
+		}
+		current_progress++;
+	}
+
+	printf("Done IMG Unification Step: \n");
+}
+
+static void testbench(void *pParameter) {
+	// filter_image();
+	unificate_img();
+}
+
 int main( void )
 {
 
 	printf("Starting FreeRTOS test\n");
 
-        my_queue = xQueueCreate(10, sizeof(int));
-        
-        /* Create tasks */
-        xTaskCreate(task_1, "Task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
-	xTaskCreate(task_2, "Task2", 10000, NULL, tskIDLE_PRIORITY+1, NULL);
-        xTaskCreate(task_3, "Task3", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
-        
-	// xTaskCreate(task_test_sobel, "TaskSobel", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
-	// xTaskCreate(task_test_grayscale, "TaskGrayscale", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
-	xTaskCreate(task_test_filtering, "TaskFiltering", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+	xTaskCreate(testbench, "testbench", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
 	/* Start the kernel.  From here on, only tasks and interrupts will run. */
 	vTaskStartScheduler();
 
