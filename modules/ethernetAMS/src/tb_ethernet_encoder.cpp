@@ -1,3 +1,5 @@
+#ifndef USING_TLM_TB_EN
+
 #ifndef TB_ETHERNET_ENCODER_CPP
 #define TB_ETHERNET_ENCODER_CPP
 
@@ -136,3 +138,5 @@ int sc_main(int argc, char* argv[])
 }
 
 #endif // TB_ETHERNET_ENCODER_CPP
+
+#endif // USING_TLM_TB_EN
