@@ -16,7 +16,7 @@ void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data, uns
   unsigned char* sobel_results_ptr;
   sc_uint<8> local_result;
 
-  dbgimgtarmodprint("Called do_when_read_transaction witha address %016llX and length %d", address, data_length);
+  dbgimgtarmodprint("Called do_when_read_transaction with an address %016llX and length %d", address, data_length);
 
   if ((address >= (SOBEL_INPUT_0_SIZE + SOBEL_INPUT_1_SIZE)) && (address < (SOBEL_INPUT_0_SIZE + SOBEL_INPUT_1_SIZE + SOBEL_OUTPUT_SIZE)))
   {
@@ -48,7 +48,7 @@ void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data, uns
 
 void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address)
 {
-  dbgimgtarmodprint("Called do_when_write_transaction witha address %016llX and length %d", address, data_length);
+  dbgimgtarmodprint("Called do_when_write_transaction with an address %016llX and length %d", address, data_length);
 
   if (address < (SOBEL_INPUT_0_SIZE + SOBEL_INPUT_1_SIZE))
   {

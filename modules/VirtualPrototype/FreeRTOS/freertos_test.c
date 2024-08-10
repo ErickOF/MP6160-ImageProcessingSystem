@@ -313,6 +313,30 @@ static void task_test_grayscale(void *pParameter)
 	convert_to_grayscale();
 }
 
+void filter_image()
+{
+	unsigned char *filter_output_ptr = (unsigned char*) IMG_FILTER_OUTPUT_ADDRESS_LO;
+	unsigned char *output_image_ptr = (unsigned char*) IMG_COMPRESSED_ADDRESS_LO;
+
+	printf("Starting filtering of image\n");
+
+	for (int i = 0; i < IMAG_ROWS; i++)
+	{
+		for (int j = 0; j < IMAG_COLS; j++)
+		{
+			transfer_window(i, j, IMG_INPROCESS_A_ADDRESS_LO, IMG_FILTER_KERNEL_ADDRESS_LO);
+			*(output_image_ptr + ((i * IMAG_COLS) + j)) = *(filter_output_ptr);
+		}
+	}
+
+	printf("Finished filtering of image\n");
+}
+
+static void task_test_filtering(void *pParameter)
+{
+	filter_image();
+}
+
 int main( void )
 {
 
@@ -326,7 +350,8 @@ int main( void )
         xTaskCreate(task_3, "Task3", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
         
 	// xTaskCreate(task_test_sobel, "TaskSobel", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
-	xTaskCreate(task_test_grayscale, "TaskGrayscale", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+	// xTaskCreate(task_test_grayscale, "TaskGrayscale", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+	xTaskCreate(task_test_filtering, "TaskFiltering", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
 	/* Start the kernel.  From here on, only tasks and interrupts will run. */
 	vTaskStartScheduler();
 
