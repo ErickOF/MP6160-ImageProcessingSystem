@@ -273,6 +273,46 @@ static void task_test_sobel(void *pParameter)
 	printf("Finished process of image with Sobel gradient\n");
 }
 
+unsigned char compute_gray_value(unsigned char r_val, unsigned char g_val, unsigned char b_val)
+{
+	return (unsigned char)((299 * (int)r_val + 587 * (int)g_val + 114 * (int)b_val) / 1000);
+}
+
+void convert_to_grayscale()
+{
+	unsigned char *source_ptr = (unsigned char *) IMG_INPUT_ADDRESS_LO;
+	unsigned char *target_ptr = (unsigned char *) IMG_INPROCESS_A_ADDRESS_LO;
+	unsigned char rgb_val[3];
+	unsigned char gray_val;
+
+	printf("Starting process of image with grayscale conversion\n");
+
+	for (int i = 0; i < IMAG_ROWS; i++)
+	{
+		for (int j = 0; j < IMAG_COLS; j++)
+		{
+			memcpy(rgb_val, source_ptr + ((i * 3 * IMAG_COLS) + (j * 3)), 3 * sizeof(char));
+			// if (i == 0 && j < 10)
+			// {
+			// 	printf("On pixel %0d %0d r %0d g %0d b %0d\n", i, j, rgb_val[0], rgb_val[1], rgb_val[2]);
+			// }
+			gray_val = compute_gray_value(rgb_val[0], rgb_val[1], rgb_val[2]);
+			// if (i == 0 && j < 10)
+			// {
+			// 	printf("On pixel %0d %0d gray value %0d\n", i, j, gray_val);
+			// }
+			*(target_ptr + ((i * IMAG_COLS) + j)) = gray_val;
+		}
+	}
+
+	printf("Finished process of image with grayscale conversion\n");
+}
+
+static void task_test_grayscale(void *pParameter)
+{
+	convert_to_grayscale();
+}
+
 int main( void )
 {
 
@@ -285,7 +325,8 @@ int main( void )
 	xTaskCreate(task_2, "Task2", 10000, NULL, tskIDLE_PRIORITY+1, NULL);
         xTaskCreate(task_3, "Task3", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
         
-	xTaskCreate(task_test_sobel, "TaskSobel", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+	// xTaskCreate(task_test_sobel, "TaskSobel", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
+	xTaskCreate(task_test_grayscale, "TaskGrayscale", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL);
 	/* Start the kernel.  From here on, only tasks and interrupts will run. */
 	vTaskStartScheduler();
 
