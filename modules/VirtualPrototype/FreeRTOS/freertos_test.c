@@ -57,30 +57,219 @@ static void task_3(void *pParameter) {
     
 }
 
+void transfer_window(int i, int j, unsigned long long source_address, unsigned long long target_address)
+{
+	unsigned char *source_ptr = (unsigned char *) source_address;
+	unsigned char *target_ptr = (unsigned char *) target_address;
+	unsigned char local_window[9];
+	unsigned char read_ptr[3];
+
+	if ((i == 0) && (j == 0)) // Upper left corner of the image
+	{
+		// First row
+		*(local_window    ) = 0;
+		*(local_window + 1) = 0;
+		*(local_window + 2) = 0;
+		// Second row
+		memcpy(read_ptr, source_ptr, 2 * sizeof(char));
+		*(local_window + 3) = 0;
+		*(local_window + 4) = *(read_ptr    );
+		*(local_window + 5) = *(read_ptr + 1);
+		// Third row
+		memcpy(read_ptr, source_ptr + IMAG_COLS, 2 * sizeof(char));
+		*(local_window + 6) = 0;
+		*(local_window + 7) = *(read_ptr    );
+		*(local_window + 8) = *(read_ptr + 1);
+	}
+	else if ((i == 0) && (j == IMAG_COLS - 1)) // Upper right corner of the image
+	{
+		// First row
+		*(local_window    ) = 0;
+		*(local_window + 1) = 0;
+		*(local_window + 2) = 0;
+		// Second row
+		memcpy(read_ptr, source_ptr + (IMAG_COLS - 2), 2 * sizeof(char));
+		*(local_window + 3) = *(read_ptr    );
+		*(local_window + 4) = *(read_ptr + 1);
+		*(local_window + 5) = 0;
+		// Third row
+		memcpy(read_ptr, source_ptr + (IMAG_COLS + (IMAG_COLS - 2)), 2 * sizeof(char));
+		*(local_window + 6) = *(read_ptr    );
+		*(local_window + 7) = *(read_ptr + 1);
+		*(local_window + 8) = 0;
+	}
+	else if (i == 0) // Upper border
+	{
+		// First row
+		*(local_window    ) = 0;
+		*(local_window + 1) = 0;
+		*(local_window + 2) = 0;
+		// Second row
+		memcpy(read_ptr, source_ptr + (j - 1), 3 * sizeof(char));
+		*(local_window + 3) = *(read_ptr    );
+		*(local_window + 4) = *(read_ptr + 1);
+		*(local_window + 5) = *(read_ptr + 2);
+		// Third row
+		memcpy(read_ptr, source_ptr + (IMAG_COLS + (j - 1)), 3 * sizeof(char));
+		*(local_window + 6) = *(read_ptr    );
+		*(local_window + 7) = *(read_ptr + 1);
+		*(local_window + 8) = *(read_ptr + 2);
+	}
+	else if ((i == IMAG_ROWS - 1) && (j == 0)) // Lower left corner of the image
+	{
+		// First row
+		memcpy(read_ptr, source_ptr + ((IMAG_ROWS - 2) * IMAG_COLS), 2 * sizeof(char));
+		*(local_window    ) = 0;
+		*(local_window + 1) = *(read_ptr    );
+		*(local_window + 2) = *(read_ptr + 1);
+		// Second row
+		memcpy(read_ptr, source_ptr + ((IMAG_ROWS - 1) * IMAG_COLS), 2 * sizeof(char));
+		*(local_window + 3) = 0;
+		*(local_window + 4) = *(read_ptr    );
+		*(local_window + 5) = *(read_ptr + 1);
+		// Third row
+		*(local_window + 6) = 0;
+		*(local_window + 7) = 0;
+		*(local_window + 8) = 0;
+	}
+	else if ((i == IMAG_ROWS - 1) && (j == IMAG_COLS - 1)) // Lower right corner of the image
+	{
+		// First row
+		memcpy(read_ptr, source_ptr + (((IMAG_ROWS - 2) * IMAG_COLS) + (IMAG_COLS - 2)), 2 * sizeof(char));
+		*(local_window    ) = *(read_ptr    );
+		*(local_window + 1) = *(read_ptr + 1);
+		*(local_window + 2) = 0;
+		// Second row
+		memcpy(read_ptr, source_ptr + (((IMAG_ROWS - 1) * IMAG_COLS) + (IMAG_COLS - 2)), 2 * sizeof(char));
+		*(local_window + 3) = *(read_ptr    );
+		*(local_window + 4) = *(read_ptr + 1);
+		*(local_window + 5) = 0;
+		// Third row
+		*(local_window + 6) = 0;
+		*(local_window + 7) = 0;
+		*(local_window + 8) = 0;
+	}
+	else if (i == IMAG_ROWS - 1) // Lower border of the image
+	{
+		// First row
+		memcpy(read_ptr, source_ptr + (((IMAG_ROWS - 2) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+		*(local_window    ) = *(read_ptr    );
+		*(local_window + 1) = *(read_ptr + 1);
+		*(local_window + 2) = *(read_ptr + 2);
+		// Second row
+		memcpy(read_ptr, source_ptr + (((IMAG_ROWS - 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+		*(local_window + 3) = *(read_ptr    );
+		*(local_window + 4) = *(read_ptr + 1);
+		*(local_window + 5) = *(read_ptr + 2);
+		// Third row
+		*(local_window + 6) = 0;
+		*(local_window + 7) = 0;
+		*(local_window + 8) = 0;
+	}
+	else if (j == 0) // Left border of the image
+	{
+		// First row
+		memcpy(read_ptr, source_ptr + ((i - 1) * IMAG_COLS), 2 * sizeof(char));
+		*(local_window    ) = 0;
+		*(local_window + 1) = *(read_ptr    );
+		*(local_window + 2) = *(read_ptr + 1);
+		// Second row
+		memcpy(read_ptr, source_ptr + (i * IMAG_COLS), 2 * sizeof(char));
+		*(local_window + 3) = 0;
+		*(local_window + 4) = *(read_ptr    );
+		*(local_window + 5) = *(read_ptr + 1);
+		// Third row
+		memcpy(read_ptr, source_ptr + ((i + 1) * IMAG_COLS), 2 * sizeof(char));
+		*(local_window + 6) = 0;
+		*(local_window + 7) = *(read_ptr    );
+		*(local_window + 8) = *(read_ptr + 1);
+	}
+	else if (j == IMAG_COLS - 1) // Right border of the image
+	{
+		// First row
+		memcpy(read_ptr, source_ptr + (((i - 1) * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
+		*(local_window    ) = *(read_ptr    );
+		*(local_window + 1) = *(read_ptr + 1);
+		*(local_window + 2) = 0;
+		// Second row
+		memcpy(read_ptr, source_ptr + ((i * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
+		*(local_window + 3) = *(read_ptr    );
+		*(local_window + 4) = *(read_ptr + 1);
+		*(local_window + 5) = 0;
+		// Third row
+		memcpy(read_ptr, source_ptr + (((i + 1) * IMAG_COLS) + (j - 1)), 2 * sizeof(char));
+		*(local_window + 6) = *(read_ptr    );
+		*(local_window + 7) = *(read_ptr + 1);
+		*(local_window + 8) = 0;
+	}
+	else // Rest of the image
+	{
+		// First row
+		memcpy(read_ptr, source_ptr + (((i - 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+		*(local_window    ) = *(read_ptr    );
+		*(local_window + 1) = *(read_ptr + 1);
+		*(local_window + 2) = *(read_ptr + 2);
+		// Second row
+		memcpy(read_ptr, source_ptr + ((i * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+		*(local_window + 3) = *(read_ptr    );
+		*(local_window + 4) = *(read_ptr + 1);
+		*(local_window + 5) = *(read_ptr + 2);
+		// Third row
+		memcpy(read_ptr, source_ptr + (((i + 1) * IMAG_COLS) + (j - 1)), 3 * sizeof(char));
+		*(local_window + 6) = *(read_ptr    );
+		*(local_window + 7) = *(read_ptr + 1);
+		*(local_window + 8) = *(read_ptr + 2);
+	}
+
+	if (((i == 0 || i == IMAG_ROWS - 1) && (j < 2 || j > IMAG_COLS - 3)) || ((j == 0 || j == IMAG_COLS -1) && (i < 2 || i > IMAG_ROWS - 3)))
+	{
+		printf("Window %0d %0d:\n\t%5d %5d %5d\n\t%5d %5d %5d\n\t%5d %5d %5d\n", i, j, local_window[0], local_window[1], local_window[2], local_window[3],local_window[4], local_window[5], local_window[6], local_window[7], local_window[8]);
+	}
+
+	memcpy(target_ptr, local_window, 9 * sizeof(char));
+}
+
 static void task_test_sobel(void *pParameter)
 {
 	unsigned char *sobel_input_0_ptr = (unsigned char*) SOBEL_INPUT_0_ADDRESS_LO;
 	unsigned char *sobel_input_1_ptr = (unsigned char*) SOBEL_INPUT_1_ADDRESS_LO;
 	short int *sobel_output_ptr = (short int*) SOBEL_OUTPUT_ADDRESS_LO;
+	short int *output_image_X_ptr = (short int*) IMG_INPROCESS_B_ADDRESS_LO;
+	short int *output_image_Y_ptr = (short int*) IMG_INPROCESS_C_ADDRESS_LO;
 	unsigned char local_window[3 * 3];
 	short int sobel_results[2];
 
-	printf("Starting with SOBEL testing on address %p\n", (void*)sobel_input_0_ptr);
-  *(local_window + 0) = 150;
-  *(local_window + 1) = 20;
-  *(local_window + 2) = 38;
-  *(local_window + 3) = 64;
-  *(local_window + 4) = 32;
-  *(local_window + 5) = 8;
-  *(local_window + 6) = 16;
-  *(local_window + 7) = 75;
-  *(local_window + 8) = 99;
-  printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_0_ptr);
-  memcpy(sobel_input_0_ptr, local_window, 8 * sizeof(char));
-  printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_1_ptr);
-  memcpy(sobel_input_1_ptr, (local_window + 8), 1 * sizeof(char));
-  memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
-  printf("Results of SOBEL are %d at address %p and %d at address %p\n", sobel_results[0], (void*)sobel_output_ptr, sobel_results[1], (void*)(sobel_output_ptr + 1));
+	// printf("Starting with SOBEL testing on address %p\n", (void*)sobel_input_0_ptr);
+  // *(local_window + 0) = 150;
+  // *(local_window + 1) = 20;
+  // *(local_window + 2) = 38;
+  // *(local_window + 3) = 64;
+  // *(local_window + 4) = 32;
+  // *(local_window + 5) = 8;
+  // *(local_window + 6) = 16;
+  // *(local_window + 7) = 75;
+  // *(local_window + 8) = 99;
+  // printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_0_ptr);
+  // memcpy(sobel_input_0_ptr, local_window, 8 * sizeof(char));
+  // printf("Will copy values to SOBEL on address %p\n", (void*)sobel_input_1_ptr);
+  // memcpy(sobel_input_1_ptr, (local_window + 8), 1 * sizeof(char));
+  // memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
+  // printf("Results of SOBEL are %d at address %p and %d at address %p\n", sobel_results[0], (void*)sobel_output_ptr, sobel_results[1], (void*)(sobel_output_ptr + 1));
+
+	printf("Starting to process of image with Sobel gradient\n");
+
+	for (int i = 0; i < IMAG_ROWS; i++)
+	{
+		for (int j = 0; j < IMAG_COLS; j++)
+		{
+			transfer_window(i, j, IMG_COMPRESSED_ADDRESS_LO, SOBEL_INPUT_0_ADDRESS_LO);
+			memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
+			*(output_image_X_ptr + ((i * IMAG_COLS) + j)) = sobel_results[0];
+			*(output_image_Y_ptr + ((i * IMAG_COLS) + j)) = sobel_results[1];
+		}
+	}
+
+	printf("Finished process of image with Sobel gradient\n");
 }
 
 int main( void )

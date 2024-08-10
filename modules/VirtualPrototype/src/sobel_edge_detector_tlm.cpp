@@ -109,7 +109,7 @@ void sobel_edge_detector_tlm::wr()
     }
     else if ((Edge_Detector::address >= SOBEL_INPUT_1_ADDRESS_LO) && (Edge_Detector::address < SOBEL_INPUT_1_ADDRESS_HI))
     {
-      localWindow[2][2] = data.range(8, 0);
+      localWindow[2][2] = data.range(7, 0);
       gotLocalWindow.notify(0, SC_NS);
     }
   }

@@ -892,7 +892,7 @@ int sc_main(int, char*[])
   sc_trace(wf, top.edge_detector_DUT->localWindow[1][0], "sobel_localWindow(1)(0)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[1][1], "sobel_localWindow(1)(1)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[1][2], "sobel_localWindow(1)(2)");
-  sc_trace(wf, top.edge_detector_DUT->localWindow[2][0], "sobel_localWindow(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[2][0], "sobel_localWindow(2)(0)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[2][1], "sobel_localWindow(2)(1)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[2][2], "sobel_localWindow(2)(2)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[0][0], "sobel_localMultX(0)(0)");
@@ -901,7 +901,7 @@ int sc_main(int, char*[])
   sc_trace(wf, top.edge_detector_DUT->localMultX[1][0], "sobel_localMultX(1)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[1][1], "sobel_localMultX(1)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[1][2], "sobel_localMultX(1)(2)");
-  sc_trace(wf, top.edge_detector_DUT->localMultX[2][0], "sobel_localMultX(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[2][0], "sobel_localMultX(2)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[2][1], "sobel_localMultX(2)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[2][2], "sobel_localMultX(2)(2)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[0][0], "sobel_localMultY(0)(0)");
@@ -910,7 +910,7 @@ int sc_main(int, char*[])
   sc_trace(wf, top.edge_detector_DUT->localMultY[1][0], "sobel_localMultY(1)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[1][1], "sobel_localMultY(1)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[1][2], "sobel_localMultY(1)(2)");
-  sc_trace(wf, top.edge_detector_DUT->localMultY[2][0], "sobel_localMultY(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[2][0], "sobel_localMultY(2)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[2][1], "sobel_localMultY(2)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[2][2], "sobel_localMultY(2)(2)");
   sc_trace(wf, top.edge_detector_DUT->resultSobelGradientX, "sobel_resultSobelGradientX");
