@@ -126,9 +126,10 @@ struct img_router: sc_module
             return IMG_SOBEL_INITIATOR_ID;
         }
 
-        case ETHERNET_DATA_WR:
-        case ETHERNET_DATA_DONE:
-        case ETHERNET_CHECK_DONE:
+        case IMG_OUTPUT_ADDRESS_LO ... (IMG_OUTPUT_ADDRESS_HI - 1):
+        case IMG_OUTPUT_SIZE_ADDRESS_LO:
+        case IMG_OUTPUT_DONE_ADDRESS_LO:
+        case IMG_OUTPUT_STATUS_ADDRESS_LO:
         {
           dbgmodprint(use_prints, "Decoded address %016llX corresponds to Ethernet module.", address);
 
@@ -136,12 +137,12 @@ struct img_router: sc_module
         }
 
         // To/From Memory Valid addresses
-        case MEMORY_ADDRESS_LO ... MEMORY_ADDRESS_HI : {
+        case MEMORY_ADDRESS_LO ... (MEMORY_ADDRESS_HI - 1) : {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Memory.", address);
             return IMG_MEMORY_INITIATOR_ID;
         }
         default: {
-            dbgmodprint(use_prints, "[ERROR] Decoding invalid address %016llX.", address);
+            dbgmodprint(true, "[ERROR] Decoding invalid address %016llX.", address);
             SC_REPORT_FATAL("[IMG ROUTER]", "Received address is invalid, does not match any hardware block");
             return INVALID_INITIATOR_ID;
         }   

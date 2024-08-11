@@ -19,7 +19,7 @@ using namespace std;
 void packetGenerator_tlm::do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address){
   dbgimgtarmodprint(use_prints, "Calling do_when_read_transaction");
 
-  if ((address = ETHERNET_CHECK_DONE) && (data_length == 1))
+  if ((address >= IMG_OUTPUT_STATUS_ADDRESS_LO) && (address < IMG_OUTPUT_STATUS_ADDRESS_HI))
   {
     if (packetGenerator::tmp_data_out_valid == true)
     {
@@ -36,34 +36,22 @@ void packetGenerator_tlm::do_when_write_transaction(unsigned char*& data, unsign
 {
   dbgimgtarmodprint(use_prints, "Calling do_when_write_transaction");
 
-  if ((address >= ETHERNET_DATA_WR) && (address + data_length - 1 < ETHERNET_DATA_DONE))
+  if ((address >= IMG_OUTPUT_ADDRESS_LO) && (address < IMG_OUTPUT_SIZE_ADDRESS_LO))
   {
-
-    if (tmp_data_length == 0)
-    {
-      tmp_data = new unsigned char[data_length];
-      memcpy(tmp_data, data, sizeof(char) * data_length);
-    }
-    else
-    {
-      unsigned char* tmp_data_;
-      tmp_data_ = tmp_data;
-      tmp_data = new unsigned char[tmp_data_length + data_length];
-      memcpy(tmp_data, tmp_data_, sizeof(char) * tmp_data_length);
-      memcpy(tmp_data + tmp_data_length, data, data_length);
-
-      delete[] tmp_data_;
-    }
-
-    dbgimgtarmodprint(use_prints, "Previous data_length %0d new data_length %0d", tmp_data_length, tmp_data_length + data_length);
-    tmp_data_length = tmp_data_length + data_length;
+    memcpy(tmp_data + address - IMG_OUTPUT_ADDRESS_LO, data, data_length);
   }
-  else if ((address == ETHERNET_DATA_DONE) && (data_length == 1) && (*data == 1))
+  else if ((address >= IMG_OUTPUT_SIZE_ADDRESS_LO) && (address < IMG_OUTPUT_DONE_ADDRESS_LO))
+  {
+    unsigned char *data_length_ptr = (unsigned char *)&tmp_data_length;
+    memcpy(data_length_ptr + address - IMG_OUTPUT_SIZE_ADDRESS_LO, data, data_length);
+
+    dbgimgtarmodprint(use_prints, "Current data_length %0d", tmp_data_length);
+  }
+  else if ((address >= IMG_OUTPUT_DONE_ADDRESS_LO) && (address < IMG_OUTPUT_STATUS_ADDRESS_LO) && (*data == 1))
   {
     if (tmp_data_length == 0)
     {
-      tmp_data = new unsigned char[1];
-      *tmp_data = 0;
+      *(tmp_data) = 0;
       tmp_data_length = 1;
     }
 
@@ -71,7 +59,6 @@ void packetGenerator_tlm::do_when_write_transaction(unsigned char*& data, unsign
 
     fill_data(tmp_data, (int)tmp_data_length);
 
-    delete[] tmp_data;
     tmp_data_length = 0;
   }
 }

@@ -14,12 +14,14 @@ using namespace std;
 
 #include "packetGenerator.h"
 #include "../src/img_target.cpp"
+#include "address_map.hpp"
 
 //Extended Unification TLM
 struct packetGenerator_tlm : public packetGenerator, public img_target
 {
 
     packetGenerator_tlm(sc_module_name name, sca_core::sca_time sample_time) : packetGenerator((std::string(name) + "_AMS_HW_block").c_str(), sample_time), img_target((std::string(name) + "_target").c_str()), tmp_data_length(0) {
+       tmp_data = new unsigned char[IMG_OUTPUT_SIZE];
 #ifdef DISABLE_PACKET_GENERATOR_DEBUG
         this->use_prints = false;
 #endif // DISABLE_PACKET_GENERATOR_DEBUG
@@ -32,5 +34,6 @@ struct packetGenerator_tlm : public packetGenerator, public img_target
 
     unsigned int tmp_data_length;
     unsigned char* tmp_data;
+
 };
 #endif // PACKET_GENERATOR_TLM_HPP
