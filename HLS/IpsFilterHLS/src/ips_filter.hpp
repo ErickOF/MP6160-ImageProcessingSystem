@@ -20,21 +20,23 @@ SC_MODULE (Filter) {
     sc_out<sc_uint<8> > output;
 
     sc_in<bool> clk;
-
-
-    void filter();
-    void init_kernel();
-
+    
     SC_HAS_PROCESS(Filter);
-    Filter(sc_module_name Filter)
-    : sc_module(Filter)
+    Filter(sc_module_name name)
     {
       SC_CTHREAD(filter, clk.pos());
-      //sensitive << input_window_0 << input_window_1 << input_window_2 << input_window_3 << input_window_4 << input_window_5 << input_window_6 << input_window_7 << input_window_8;
-      // for (int i = 0; i < N*N; i++){
+      // SC_METHOD(filter);
+      // sensitive << input_window_0 << input_window_1 << input_window_2 << input_window_3 << input_window_4 << input_window_5 << input_window_6 << input_window_7 << input_window_8;
+      // for (int i = 0; i < N*N; is++){
       //   kernel[i] = 1/N;
       // }
     }
+
+
+    void filter();
+    // void init_kernel();
+
 };
+
 
 #endif // IPS_FILTER_HPP

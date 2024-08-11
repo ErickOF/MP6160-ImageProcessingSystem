@@ -69,17 +69,17 @@
 //#endif // IPS_DUMP_EN
 //
 //  // Variables
-//  sc_uint<8> * img_window;
-//  sc_uint<8>  result;
+//  sc_uint<8>* img_window;
+//  sc_uint<8> result;
 //
 //  int i, j;
 //  int x, y;
 //
-//  sc_signal<sc_uint<8> > s_img_window[IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE];
-//  sc_signal<sc_uint<8> > s_result;
+//  sc_signal<sc_uint<8>> s_img_window[IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE];
+//  sc_signal<sc_uint<8>> s_result;
 //
 //  // Initialize image window
-//  img_window = new sc_uint<8> [IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
+//  img_window = new sc_uint<8>[IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
 //
 //  // Instantiate filter module and do the connection
 //#ifdef IPS_DUMP_EN
@@ -128,7 +128,7 @@
 //      {
 //        for (j = 0; j < IPS_FILTER_KERNEL_SIZE; ++j)
 //        {
-//          img_window[i * IPS_FILTER_KERNEL_SIZE + j] = sub_img.at<sc_uint<8> >(i, j);
+//          img_window[i * IPS_FILTER_KERNEL_SIZE + j] = sub_img.at<sc_uint<8>>(i, j);
 //#ifdef IPS_DEBUG_EN
 //          std::cout << "[" << img_window[i * IPS_FILTER_KERNEL_SIZE + j] << "]";
 //#endif // IPS_DEBUG_EN
@@ -146,10 +146,10 @@
 //
 //      result = s_result.read();
 //
-//      o_img.at<sc_uint<8> >(y, x) = result;
+//      o_img.at<sc_uint<8>>(y, x) = result;
 //
 //#ifdef IPS_DEBUG_EN
-//      std::cout << "Result[" << x << "][" << y << "] = " << o_img.at<sc_uint<8> >(y, x) << std::endl << std::endl;
+//      std::cout << "Result[" << x << "][" << y << "] = " << o_img.at<sc_uint<8>>(y, x) << std::endl << std::endl;
 //#endif // IPS_DEBUG_EN
 //    }
 //  }
@@ -189,11 +189,11 @@
 //#endif // IPS_DEBUG_EN
 //
 //  // Variables
-//  sc_uint<8> * img_window;
-//  sc_uint<8>  result;
+//  sc_uint<8>* img_window;
+//  sc_uint<8> result;
 //
-//  sc_signal<sc_uint<8> > s_img_window;
-//  sc_signal<sc_uint<8> > s_result;
+//  sc_signal<sc_uint<8>> s_img_window;
+//  sc_signal<sc_uint<8>> s_result;
 //
 //  // Instantiate filter module and do the connection
 //#ifdef IPS_DUMP_EN
@@ -221,20 +221,20 @@
 //#endif // IPS_DEBUG_EN
 //
 //  // Initialize image window
-//  img_window = new sc_uint<8> [IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
+//  img_window = new sc_uint<8>[IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
 //
 //    for (size_t i = 0; i < IPS_FILTER_KERNEL_SIZE; ++i)
 //    {
 //      for (size_t j = 0; j < IPS_FILTER_KERNEL_SIZE; ++j)
 //      {
-//        sc_uint<8>  value;
+//        sc_uint<8> value;
 //
 //  #ifdef TEST_MODE_ONE_WINDOW_RANDOM
-//        value = (sc_uint<8> ) (rand() % 256);
+//        value = (sc_uint<8>) (rand() % 256);
 //  #elif defined(TEST_MODE_ONE_WINDOW_NORMAL)
-//        value = (sc_uint<8> ) (i * IPS_FILTER_KERNEL_SIZE + j);
+//        value = (sc_uint<8>) (i * IPS_FILTER_KERNEL_SIZE + j);
 //  #else
-//        value = (sc_uint<8> ) i;
+//        value = (sc_uint<8>) i;
 //  #endif // TEST_MODE_ONE_WINDOW
 //
 //        img_window[i * IPS_FILTER_KERNEL_SIZE + j] = value;
@@ -260,7 +260,7 @@
 //	std::cout << "Iteration: " << i << " img_window = " << (int) img_window[i] << std::endl;
 //#endif // IPS_DEBUG_EN
 //  	  s_img_window.write(img_window[i]);
-//      sc_uint<8>  value2 = s_img_window.read();
+//      sc_uint<8> value2 = s_img_window.read();
 //
 //#ifdef IPS_DEBUG_EN
 //	std::cout << "Iteration: " << i << " s_img_window = " << (int) value2 << std::endl;
@@ -289,10 +289,10 @@
 
 int sc_main(int, char*[])
 {
-	sc_report_handler::set_actions( "/IEEE_Std_1666/deprecated" , SC_DO_NOTHING);
-	sc_report_handler::set_actions( SC_ID_LOGIC_X_TO_BOOL_, SC_LOG);
-	sc_report_handler::set_actions( SC_ID_VECTOR_CONTAINS_LOGIC_VALUE_, SC_LOG);
-	sc_report_handler::set_actions( SC_ID_OBJECT_EXISTS_, SC_LOG);
+	// sc_report_handler::set_actions( "/IEEE_Std_1666/deprecated" , SC_DO_NOTHING);
+	// sc_report_handler::set_actions( SC_ID_LOGIC_X_TO_BOOL_, SC_LOG);
+	// sc_report_handler::set_actions( SC_ID_VECTOR_CONTAINS_LOGIC_VALUE_, SC_LOG);
+	// sc_report_handler::set_actions( SC_ID_OBJECT_EXISTS_, SC_LOG);
 	// Pass command linke arguments
 	sc_argc();
 	sc_argv();
