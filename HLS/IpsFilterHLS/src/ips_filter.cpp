@@ -18,16 +18,16 @@ void Filter::filter()
     result = result * (0.1111);
 
     #ifndef __SYNTHESIS__
-      cout << "Step: " << 1 << " Window Input = " << input_window_0.read() << endl;
-      cout << "Step: " << 2 << " Window Input = " << input_window_1.read() << endl;
-      cout << "Step: " << 3 << " Window Input = " << input_window_2.read() << endl;
-      cout << "Step: " << 4 << " Window Input = " << input_window_3.read() << endl;
-      cout << "Step: " << 5 << " Window Input = " << input_window_4.read() << endl;
-      cout << "Step: " << 6 << " Window Input = " << input_window_5.read() << endl;
-      cout << "Step: " << 7 << " Window Input = " << input_window_6.read() << endl;
-      cout << "Step: " << 8 << " Window Input = " << input_window_7.read() << endl;
-      cout << "Step: " << 9 << " Window Input = " << input_window_8.read() << endl;
-      cout << "Result: " << (int) result << endl;
+      // cout << "Step: " << 1 << " Window Input = " << input_window_0.read() << endl;
+      // cout << "Step: " << 2 << " Window Input = " << input_window_1.read() << endl;
+      // cout << "Step: " << 3 << " Window Input = " << input_window_2.read() << endl;
+      // cout << "Step: " << 4 << " Window Input = " << input_window_3.read() << endl;
+      // cout << "Step: " << 5 << " Window Input = " << input_window_4.read() << endl;
+      // cout << "Step: " << 6 << " Window Input = " << input_window_5.read() << endl;
+      // cout << "Step: " << 7 << " Window Input = " << input_window_6.read() << endl;
+      // cout << "Step: " << 8 << " Window Input = " << input_window_7.read() << endl;
+      // cout << "Step: " << 9 << " Window Input = " << input_window_8.read() << endl;
+      // cout << "Result: " << (int) result << endl;
     #endif //__SYNTHESIS__
 
     // // Perform the convolution

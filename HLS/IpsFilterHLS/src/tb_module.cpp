@@ -13,7 +13,7 @@
 
 #define IPS_FILTER_KERNEL_SIZE 3
 #define DELAY_TIME (IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * 1) + 4 + 2 + 1
-#define IPS_IMG_PATH_TB "../../../inputs/car_noisy_image.png"
+#define IPS_IMG_PATH_TB "../../../inputs/car_noisy_image.jpg"
 
 SC_MODULE (testbench) {
 	sc_out<sc_uint<8> > img_window[IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE];
@@ -125,8 +125,8 @@ SC_MODULE (testbench) {
 			std::cout << " channels = " << image.channels() << std::endl;
 		}
 
-		image.rows = 100;
-		image.cols = 100;
+		// image.rows = 100;
+		// image.cols = 100;
 		sc_uint<8> local_window[IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
 		sc_uint<8> result;
 
@@ -140,7 +140,7 @@ SC_MODULE (testbench) {
 #endif // IPS_DEBUG_EN
 
 				// Define the Window
-				extract_window(y, x, &image.data[0], &local_window[0], image.cols, image.rows);
+				extract_window(y, x, image, &local_window[0], image.cols, image.rows);
 
 				for (int i = 0; i < IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE; ++i)
      			{
@@ -157,10 +157,11 @@ SC_MODULE (testbench) {
  				result = mean.read();
 				// cout << "Read Result: " << (int) result << endl;
 				// result = (sc_uint<8>) local_window[0];
-     			o_img.data[y*image.rows+x] = result;
+     			o_img.data[y*image.cols + x]= result;
+				//*o_img.ptr(y, x) = result;
 #ifdef IPS_DEBUG_EN
 				// SC_REPORT_INFO("TEST_MODE_IMAGE", "filtering");
-				std::cout << "Iteration: " << (int) y*image.rows + x << " Original Pixel: " << (int) image.data[y* image.rows + x] << " Result = " << (int) result << std::endl;
+				std::cout << "Iteration: " << (int) y*image.cols + x << " Original Pixel: " << (int) image.data[y* image.rows + x] << " Result = " << (int) result << std::endl;
 #endif // IPS_DEBUG_E
 			}
 		}
@@ -174,7 +175,7 @@ SC_MODULE (testbench) {
 	}
 #endif //TEST_MODE_IMAGE
 
-	void extract_window(int x, int y, unsigned char *image, sc_uint<8>*window, int img_width , int img_height)
+	void extract_window(int x, int y, cv::Mat image, sc_uint<8>*window, int img_width , int img_height)
 	{
 		int offset;
 
@@ -186,118 +187,117 @@ SC_MODULE (testbench) {
 		if ((x == 0) && (y == 0)){
 			//First Row
 			//Second Row
-			offset = 0;
-			window[4] = image[offset + 0];
-			window[5] = image[offset + 1];
+			window[4] =*image.ptr(x + 0, y);
+			window[5] =*image.ptr(x + 0, y+1);
 			//Third Row
-			offset = img_height;
-			window[7] = image[offset + 0];
-			window[8] = image[offset + 1];
+			
+			window[7] =*image.ptr(x + 1, y + 0);
+			window[8] =*image.ptr(x + 1, y + 1);
 		}
-		else if ((x == 0) && (y == img_height - 1)){
+		else if ((x + 0 == 0) && (y == img_height - 1)){
 			//First Row
 			//Second Row
-			offset = img_height - 2;
-			window[3] = image[offset + 0];
-			window[4] = image[offset + 1];
+			
+			window[3] =*image.ptr(x + 0, y + 0);
+			window[4] =*image.ptr(x + 0, y + 1);
 			//Third Row
-			offset = img_height + (img_height - 2);
-			window[6] = image[offset + 0];
-			window[7] = image[offset + 1];
+			
+			window[6] =*image.ptr(x + 1, y + 0);
+			window[7] =*image.ptr(x + 1, y + 1);
 		}
-		else if ((x == 0) ){
+		else if ((x + 0 == 0) ){
 			//First Row
 			//Second Row
-			offset = (y-1);
-			window[3] = image[offset + 0];
-			window[4] = image[offset + 1];
-			window[5] = image[offset + 2];
+			
+			window[3] =*image.ptr(x + 0, y + 0);
+			window[4] =*image.ptr(x + 0, y + 1);
+			window[5] =*image.ptr(x + 0, y + 2);
 			//Third Row
-			offset = img_height + (y-1);
-			window[6] = image[offset + 0];
-			window[7] = image[offset + 1];
-			window[8] = image[offset + 2];
+			
+			window[6] =*image.ptr(x + 1, y + 0);
+			window[7] =*image.ptr(x + 1, y + 1);
+			window[8] =*image.ptr(x + 1, y + 2);
 		}
-		else if ((x == img_width-1) && (y == 0)){
+		else if ((x + 0 == img_width-1) && (y == 0)){
 			//First Row
-			offset = (img_width - 2) * img_height;
-			window[1] = image[offset + 0];
-			window[2] = image[offset + 1];
+			
+			window[1] =*image.ptr(x - 1, y + 0);
+			window[2] =*image.ptr(x - 1, y + 1);
 			//Second Row
-			offset = (img_width - 1) * img_height;
-			window[4] = image[offset + 0];
-			window[5] = image[offset + 1];
-			//Third Row
-		}
-		else if ((x == img_width-1) && (y == img_height-1)){
-			//First Row
-			offset = ((img_width - 2) * img_height) + (img_height - 2);
-			window[0] = image[offset + 0];
-			window[1] = image[offset + 1];
-			//Second Row
-			offset = ((img_width - 1) * img_height) + (img_height - 2);
-			window[3] = image[offset + 0];
-			window[4] = image[offset + 1];
+			
+			window[4] =*image.ptr(x + 0, y + 0);
+			window[5] =*image.ptr(x + 0, y + 1);
 			//Third Row
 		}
-		else if ((x == img_width-1)){
+		else if ((x + 0 == img_width-1) && (y == img_height-1)){
 			//First Row
-			offset = ((img_width - 2) * img_height) + (y - 1);
-			window[0] = image[offset + 0];
-			window[1] = image[offset + 1];
-			window[2] = image[offset + 2];
+			
+			window[0] =*image.ptr(x - 1, y + 0);
+			window[1] =*image.ptr(x - 1, y + 1);
 			//Second Row
-			offset = ((img_width - 1) * img_height) + (y - 1);
-			window[3] = image[offset + 0];
-			window[4] = image[offset + 1];
-			window[5] = image[offset + 2];
+			
+			window[3] =*image.ptr(x + 0, y + 0);
+			window[4] =*image.ptr(x + 0, y + 1);
+			//Third Row
+		}
+		else if ((x + 0 == img_width-1)){
+			//First Row
+			
+			window[0] =*image.ptr(x - 1, y + 0);
+			window[1] =*image.ptr(x - 1, y + 1);
+			window[2] =*image.ptr(x - 1, y + 2);
+			//Second Row
+			
+			window[3] =*image.ptr(x + 0, y + 0);
+			window[4] =*image.ptr(x + 0, y + 1);
+			window[5] =*image.ptr(x + 0, y + 2);
 			//Third Row
 		}
 		else if ((y == 0)){
 			//First Row
-			offset = (x - 1) * img_height;
-			window[1] = image[offset + 0];
-			window[2] = image[offset + 1];
+			
+			window[1] =*image.ptr(x - 1, y + 0);
+			window[2] =*image.ptr(x - 1, y + 1);
 			//Second Row
-			offset = (x * img_height);
-			window[4] = image[offset + 0];
-			window[5] = image[offset + 1];
+			
+			window[4] =*image.ptr(x + 0, y + 0);
+			window[5] =*image.ptr(x + 0, y + 1);
 			//Third Row
-			offset = (x + 1) * img_height;
-			window[7] = image[offset + 0];
-			window[8] = image[offset + 1];
+			
+			window[7] =*image.ptr(x + 1, y + 0);
+			window[8] =*image.ptr(x + 1, y + 1);
 		}
 		else if (y == img_height-1){
 			//First Row
-			offset = ((x - 1) * img_height) + (y - 1);
-			window[0] = image[offset + 0];
-			window[1] = image[offset + 1];
+			
+			window[0] =*image.ptr(x - 1, y + 0);
+			window[1] =*image.ptr(x - 1, y + 1);
 			//Second Row
-			offset = (x * img_height) + (y - 1);
-			window[3] = image[offset + 0];
-			window[4] = image[offset + 1];
+			
+			window[3] =*image.ptr(x + 0, y + 0);
+			window[4] =*image.ptr(x + 0, y + 1);
 			//Third Row
-			offset = ((x + 1) * img_height) + (y - 1);
-			window[6] = image[offset + 0];
-			window[7] = image[offset + 1];
+			
+			window[6] =*image.ptr(x + 1, y + 0);
+			window[7] =*image.ptr(x + 1, y + 1);
 		}
 		else
 		{
 			//First Row
-			offset = ((x - 1) * img_height) + (y - 1);
-			window[0] = image[offset + 0];
-			window[1] = image[offset + 1];
-			window[2] = image[offset + 2];
+			
+			window[0] =*image.ptr(x - 1, y + 0);
+			window[1] =*image.ptr(x - 1, y + 1);
+			window[2] =*image.ptr(x - 1, y + 2);
 			//Second Row
-			offset = (x * img_height) + (y - 1);
-			window[3] = image[offset + 0];
-			window[4] = image[offset + 1];
-			window[5] = image[offset + 2];
+			
+			window[3] =*image.ptr(x + 0, y + 0);
+			window[4] =*image.ptr(x + 0, y + 1);
+			window[5] =*image.ptr(x + 0, y + 2);
 			//Third Row
-			offset = ((x + 1) * img_height) + (y - 1);
-			window[6] = image[offset + 0];
-			window[7] = image[offset + 1];
-			window[8] = image[offset + 2];
+			
+			window[6] =*image.ptr(x + 1, y + 0);
+			window[7] =*image.ptr(x + 1, y + 1);
+			window[8] =*image.ptr(x + 1, y + 2);
 		}
 	}
 };
