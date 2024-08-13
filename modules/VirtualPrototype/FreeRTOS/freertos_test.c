@@ -415,30 +415,58 @@ void save_image_from_mem(int image_id)
 	printf("Saved image with id %0d\n", image_id);
 }
 
+void receive_image()
+{
+	unsigned char *start_reception = (unsigned char *) IMG_INPUT_START_ADDRESS_LO;
+	unsigned char *receive_status = (unsigned char *) IMG_INPUT_DONE_ADDRESS_LO;
+	unsigned char receive_status_result;
+
+	const TickType_t xDelay = 200;
+
+	printf("Preparing to receive image from VGA\n");
+
+	*start_reception = 1;
+
+	printf("Sent start signal to receiver\n");
+
+	memcpy(&receive_status_result, receive_status, sizeof(char));
+	while(receive_status_result == 0)
+	{
+		printf("\tReceiver still receiving data\n");
+		vTaskDelay(xDelay);
+		memcpy(&receive_status_result, receive_status, sizeof(char));
+	}
+	printf("Receive process finished in the receiver\n");
+}
+
 static void testbench(void *pParameter) {
+	receive_image();
+
+	save_image_from_mem(0);
+
 	convert_to_grayscale();
 
 	save_image_from_mem(1);
 
-	filter_image();
+	// filter_image();
 
-	save_image_from_mem(2);
+	// save_image_from_mem(2);
 
-	obtain_gradients_sobel();
+	// obtain_gradients_sobel();
 
-	save_image_from_mem(3);
+	// save_image_from_mem(3);
 
-	unificate_img();
+	// unificate_img();
 
-	save_image_from_mem(4);
+	// save_image_from_mem(4);
 
-	copy_data();
+	// copy_data();
 
-	save_image_from_mem(5);
+	// save_image_from_mem(5);
 
-	transmit_data(IMAG_ROWS * IMAG_COLS);
+	// transmit_data(IMAG_ROWS * IMAG_COLS);
 
-	save_image_from_mem(6);
+	// save_image_from_mem(6);
 }
 
 int main( void )

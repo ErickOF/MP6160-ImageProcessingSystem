@@ -58,7 +58,9 @@ void BusCtrl::b_transport(tlm::tlm_generic_payload &trans,
 			dbgmodprint(use_prints, "Writing/Reading to Sobel!");
 			sobel_edge_detector_socket->b_transport(trans, delay);
 		}
-		else if ((IMG_INPUT_ADDRESS_LO / 4 <= adr && adr < IMG_INPUT_ADDRESS_HI / 4))
+		else if ((IMG_INPUT_ADDRESS_LO / 4 <= adr && adr < IMG_INPUT_ADDRESS_HI / 4) ||
+						 (IMG_INPUT_START_ADDRESS_LO / 4 <= adr && adr < IMG_INPUT_START_ADDRESS_HI / 4) ||
+						 (IMG_INPUT_DONE_ADDRESS_LO / 4 <= adr && adr < IMG_INPUT_DONE_ADDRESS_HI / 4))
 		{
 			dbgmodprint(use_prints, "Writing/Reading to Receiver!");
 			receiver_socket->b_transport(trans, delay);

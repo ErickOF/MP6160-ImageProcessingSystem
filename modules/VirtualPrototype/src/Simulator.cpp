@@ -34,7 +34,9 @@
 #include "important_defines.hpp"
 #include "ips_filter_tlm.hpp"
 #include "sobel_edge_detector_tlm.hpp"
-#include "img_receiver_tlm.hpp"
+#include "adc.hpp"
+#include "vga_tlm.hpp"
+#include "seq_item_vga.hpp"
 #include "packetGenerator_tlm.hpp"
 #include "ethernetEncoder.h"
 #include "ethernetDecoder_tlm.hpp"
@@ -71,9 +73,26 @@ struct Ethernet_AMS_Signals {
 	sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out_signal;
 };
 
+struct vga_ams_signals_t
+{
+  // -- Inputs of VGA
+  sc_signal<sc_uint<IPS_BITS>> s_tx_red;
+  sc_signal<sc_uint<IPS_BITS>> s_tx_green;
+  sc_signal<sc_uint<IPS_BITS>> s_tx_blue;
+  // -- Outputs of VGA
+  sc_signal<bool> s_hsync;
+  sc_signal<bool> s_vsync;
+  sc_signal<unsigned int> s_h_count;
+  sc_signal<unsigned int> s_v_count;
+  // -- Outputs of DAC
+  sca_tdf::sca_signal<double> s_ana_red;
+  sca_tdf::sca_signal<double> s_ana_green;
+  sca_tdf::sca_signal<double> s_ana_blue;
+};
+
 std::string filename;
 bool debug_session = false;
-int source_image = 0;
+int source_image = -1;
 int output_image = 0;
 bool use_prints = false;
 
@@ -92,15 +111,24 @@ SC_MODULE(Simulator) {
 	Timer *timer;
 
 	//Our modules
-  	ips_filter_tlm *filter_DUT;
+	ips_filter_tlm *filter_DUT;
 	sobel_edge_detector_tlm *sobel_edge_detector_DUT;
-	img_receiver_tlm *receiver_DUT;
+	adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_red_DUT;
+	adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_green_DUT;
+	adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_blue_DUT;
+	vga_tlm *vga_DUT;
+	seq_item_vga<
+		IPS_BITS,
+		IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
+		IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
+		IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *ips_seq_item_vga;
 	packetGenerator_tlm *packetGenerator_DUT;
 	ethernetEncoder *ethernetEncoder_DUT;
 	ethernetDecoder_tlm *ethernetDecoder_DUT;
 	img_saver_tlm *img_saver_DUT;
 
 	Ethernet_AMS_Signals ethernetSignals;
+	vga_ams_signals_t vga_signals;
 	
 	sca_core::sca_time sample_time;
 
@@ -119,7 +147,6 @@ SC_MODULE(Simulator) {
 		//Our modules
     	filter_DUT = new ips_filter_tlm("filter_DUT", use_prints);
 		sobel_edge_detector_DUT = new sobel_edge_detector_tlm("sobel_edge_detector_DUT", use_prints);
-		receiver_DUT = new img_receiver_tlm("receiver_DUT");
 		packetGenerator_DUT = new packetGenerator_tlm("packetGenerator_DUT", use_prints, sample_time);
 		ethernetEncoder_DUT = new ethernetEncoder("ethernetEncoder_DUT", sample_time);
 		ethernetDecoder_DUT = new ethernetDecoder_tlm("ethernetDecoder_DUT", sample_time);
@@ -158,6 +185,37 @@ SC_MODULE(Simulator) {
 		ethernetDecoder_DUT->mlt3_in(ethernetSignals.mlt3_out_signal);
 		ethernetDecoder_DUT->data_out(ethernetSignals.data_out_signal);
 
+		ips_seq_item_vga = new seq_item_vga<IPS_BITS,
+				IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
+				IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
+				IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("ips_seq_item_vga");
+		ips_seq_item_vga->hcount(vga_signals.s_h_count);
+		ips_seq_item_vga->vcount(vga_signals.s_v_count);
+		ips_seq_item_vga->o_red(vga_signals.s_ana_red);
+		ips_seq_item_vga->o_green(vga_signals.s_ana_green);
+		ips_seq_item_vga->o_blue(vga_signals.s_ana_blue);
+
+		adc_red_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_red_DUT");
+		adc_red_DUT->in(vga_signals.s_ana_red);
+		adc_red_DUT->out(vga_signals.s_tx_red);
+
+		adc_green_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_green_DUT");
+		adc_green_DUT->in(vga_signals.s_ana_green);
+		adc_green_DUT->out(vga_signals.s_tx_green);
+
+		adc_blue_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_blue_DUT");
+		adc_blue_DUT->in(vga_signals.s_ana_blue);
+		adc_blue_DUT->out(vga_signals.s_tx_blue);
+
+		vga_DUT = new vga_tlm("vga_DUT", use_prints);
+		vga_DUT->red(vga_signals.s_tx_red);
+		vga_DUT->green(vga_signals.s_tx_green);
+		vga_DUT->blue(vga_signals.s_tx_blue);
+		vga_DUT->o_h_count(vga_signals.s_h_count);
+		vga_DUT->o_v_count(vga_signals.s_v_count);
+		vga_DUT->o_hsync(vga_signals.s_hsync);
+		vga_DUT->o_vsync(vga_signals.s_vsync);
+
 		cpu->instr_bus.bind(Bus->cpu_instr_socket);
 		cpu->mem_intf->data_bus.bind(Bus->cpu_data_socket);
 
@@ -171,11 +229,11 @@ SC_MODULE(Simulator) {
 		Bus->filter_socket.bind(filter_DUT->socket);
 		Bus->sobel_edge_detector_socket.bind(sobel_edge_detector_DUT->socket);
 
-		Bus->receiver_socket.bind(receiver_DUT->socket);
+		Bus->receiver_socket.bind(vga_DUT->socket);
 		Bus->transmiter_socket.bind(packetGenerator_DUT->socket);
 		Bus->image_saver_socket.bind(img_saver_DUT->socket);
 
-		img_saver_DUT->img_input_ptr = receiver_DUT->input_image;
+		img_saver_DUT->img_input_ptr = vga_DUT->return_mem_ptr();
 		img_saver_DUT->img_inprocess_a_ptr = MainMemory->get_pointer_to_mem_region(IMG_INPROCESS_A_ADDRESS_LO);
 		img_saver_DUT->img_inprocess_b_ptr = MainMemory->get_pointer_to_mem_region(IMG_INPROCESS_B_ADDRESS_LO);
 		img_saver_DUT->img_inprocess_c_ptr = MainMemory->get_pointer_to_mem_region(IMG_INPROCESS_C_ADDRESS_LO);
@@ -261,7 +319,7 @@ SC_MODULE(Simulator) {
 				{
 					if (use_receiver == true)
 					{
-						receiver_DUT->backdoor_write(pixel_value_ptr, width * channels, address + (i * channels * IMAG_COLS));
+						vga_DUT->backdoor_write(pixel_value_ptr, width * channels, address + (i * channels * IMAG_COLS));
 					}
 					else
 					{
@@ -285,7 +343,7 @@ SC_MODULE(Simulator) {
 					{
 						if (use_receiver == true)
 						{
-							receiver_DUT->backdoor_write(pixel_value_ptr, channels, address + ((i * channels * IMAG_COLS) + (j * channels)));
+							vga_DUT->backdoor_write(pixel_value_ptr, channels, address + ((i * channels * IMAG_COLS) + (j * channels)));
 						}
 						else
 						{
@@ -308,7 +366,7 @@ SC_MODULE(Simulator) {
 					{
 						if (use_receiver == true)
 						{
-							receiver_DUT->backdoor_write(pixel_value_ptr, channels, address + ((i * channels * IMAG_COLS) + (j * channels)));
+							vga_DUT->backdoor_write(pixel_value_ptr, channels, address + ((i * channels * IMAG_COLS) + (j * channels)));
 						}
 						else
 						{
@@ -363,7 +421,7 @@ SC_MODULE(Simulator) {
 		{
 			channels = 3;
 			pixel_count = IMAG_COLS * IMAG_ROWS * channels;
-			receiver_DUT->backdoor_read(img_ptr, pixel_count, IMG_INPUT_ADDRESS_LO);
+			vga_DUT->backdoor_read(img_ptr, pixel_count, IMG_INPUT_ADDRESS_LO);
 
 			stbi_write_png("output_image_0.png", IMAG_COLS, IMAG_ROWS, channels, img_ptr, IMAG_COLS * channels);
 		}
@@ -448,7 +506,7 @@ SC_MODULE(Simulator) {
 				printf("WARNING: The image output option O <image output> (0...4) provided %0d didn't match any expected output, the original image be saved\n", output_image_);
 				channels = 3;
 				pixel_count = IMAG_COLS * IMAG_ROWS * channels;
-				receiver_DUT->backdoor_read(img_ptr, pixel_count, IMG_INPROCESS_A_ADDRESS_LO);
+				vga_DUT->backdoor_read(img_ptr, pixel_count, IMG_INPROCESS_A_ADDRESS_LO);
 				stbi_write_png("output_image_0.png", IMAG_COLS, IMAG_ROWS, channels, img_ptr, IMAG_COLS * channels);
 				break;
 			}
@@ -556,7 +614,8 @@ int sc_main(int argc, char *argv[]) {
 
 	// Open VCD file
 	sc_trace_file* wf = sc_create_vcd_trace_file("riscv_tb");
-	sca_util::sca_trace_file* wf_ams = sca_util::sca_create_vcd_trace_file("riscv_ams_tb");
+	sca_util::sca_trace_file* wf_ams_ethernet = sca_util::sca_create_vcd_trace_file("riscv_ams_ethernet_tb");
+	sca_util::sca_trace_file* wf_ams_vga = sca_util::sca_create_vcd_trace_file("riscv_ams_vga_tb");
 	wf->set_time_unit(1, SC_PS);
 
 	top = new Simulator("top");
@@ -603,27 +662,36 @@ int sc_main(int argc, char *argv[]) {
 	sc_trace(wf, top->sobel_edge_detector_DUT->resultSobelGradientX, "sobel_resultSobelGradientX");
 	sc_trace(wf, top->sobel_edge_detector_DUT->resultSobelGradientY, "sobel_resultSobelGradientY");
 
-	sca_util::sca_trace(wf_ams, top->ethernetSignals.mlt3_out_signal, "mlt3_out");
-	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_out_valid, "data_out_valid");
-	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_out, "data_out");
-	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_out_signal, "data_out_decoded");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.data_in, "pkt_gen_data_in");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.data_in_valid, "pkt_gen_data_in_valid");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n2_data_valid, "pkt_gen_n2_data_valid");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n2_data_out_valid, "pkt_gen_n2_data_out_valid");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n2_data_out, "pkt_gen_n2_data_out");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n1_data_valid, "pkt_gen_n1_data_valid");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n1_data_out_valid, "pkt_gen_n1_data_out_valid");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n1_data_out, "pkt_gen_n1_data_out");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.sigBitCount, "pkt_gen_sigBitCount");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n1_sigBitCount, "pkt_gen_n1_sigBitCount");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n2_sigBitCount, "pkt_gen_n2_sigBitCount");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.tmp_data_out_valid, "pkt_gen_tmp_data_out_valid");
-	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_to_send, "pkt_gen_data_to_send");
-	// sca_util::sca_trace(wf_ams, top->ethernetSignals.data_valid_to_send, "pkt_gen_data_valid_to_send");
-	sca_util::sca_trace(wf_ams, top->ethernetSignals.remaining_bytes_to_send, "pkt_gen_remaining_bytes_to_send");
+	sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.mlt3_out_signal, "mlt3_out");
+	sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_out_valid, "data_out_valid");
+	sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_out, "data_out");
+	sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_out_signal, "data_out_decoded");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_in, "pkt_gen_data_in");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_in_valid, "pkt_gen_data_in_valid");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n2_data_valid, "pkt_gen_n2_data_valid");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n2_data_out_valid, "pkt_gen_n2_data_out_valid");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n2_data_out, "pkt_gen_n2_data_out");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n1_data_valid, "pkt_gen_n1_data_valid");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n1_data_out_valid, "pkt_gen_n1_data_out_valid");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n1_data_out, "pkt_gen_n1_data_out");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.sigBitCount, "pkt_gen_sigBitCount");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n1_sigBitCount, "pkt_gen_n1_sigBitCount");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.n2_sigBitCount, "pkt_gen_n2_sigBitCount");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.tmp_data_out_valid, "pkt_gen_tmp_data_out_valid");
+	sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_to_send, "pkt_gen_data_to_send");
+	// sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.data_valid_to_send, "pkt_gen_data_valid_to_send");
+	sca_util::sca_trace(wf_ams_ethernet, top->ethernetSignals.remaining_bytes_to_send, "pkt_gen_remaining_bytes_to_send");
 
-	top->load_img_from_memory(source_image);
+	sca_util::sca_trace(wf_ams_vga, top->vga_signals.s_hsync, "s_hsync");
+	sca_util::sca_trace(wf_ams_vga, top->vga_signals.s_vsync, "s_vsync");
+	sca_util::sca_trace(wf_ams_vga, top->vga_signals.s_ana_red, "s_ana_red");
+	sca_util::sca_trace(wf_ams_vga, top->vga_signals.s_ana_green, "s_ana_green");
+	sca_util::sca_trace(wf_ams_vga, top->vga_signals.s_ana_blue, "s_ana_blue");
+
+	if (source_image >= 0)
+	{
+		top->load_img_from_memory(source_image);
+	}
 
 	auto start = std::chrono::steady_clock::now();
 	sc_core::sc_start();
@@ -639,7 +707,8 @@ int sc_main(int argc, char *argv[]) {
 	// top->save_img_from_memory(output_image);
 	
 	sc_close_vcd_trace_file(wf);
-	sca_util::sca_close_vcd_trace_file(wf_ams);
+	sca_util::sca_close_vcd_trace_file(wf_ams_ethernet);
+	sca_util::sca_close_vcd_trace_file(wf_ams_vga);
 	std::cout << "Press Enter to finish" << std::endl;
 	std::cin.ignore();
 

@@ -41,6 +41,12 @@ void img_saver_tlm::do_when_write_transaction(unsigned char*&data, unsigned int 
       img_ptr = new unsigned char[pixel_count];
 
       memcpy(img_ptr, img_input_ptr, pixel_count);
+
+      for (int i = 0; i < IMAG_COLS * IMAG_ROWS * channels; i += channels) {
+        // Swap the R (index i) and B (index i+2) channels
+        std::swap(img_ptr[i], img_ptr[i + 2]);
+      }
+
       stbi_write_png("output_image_0.png", IMAG_COLS, IMAG_ROWS, channels, img_ptr, IMAG_COLS * channels);
 
       dbgimgtarmodprint(true, "Saving original image");
