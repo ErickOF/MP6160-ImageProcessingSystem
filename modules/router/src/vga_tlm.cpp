@@ -18,7 +18,7 @@ void vga_tlm::do_when_read_transaction(unsigned char *&data, unsigned int data_l
   }
   else if ((address >= IMG_INPUT_ADDRESS_LO) && (address < IMG_INPUT_ADDRESS_HI))
   {
-    memcpy(data, (vga::tmp_img + address - IMG_INPUT_ADDRESS_LOW), data_length);
+    memcpy(data, (vga::tmp_img + address - IMG_INPUT_ADDRESS_LO), data_length);
   }
 }
 
