@@ -1,5 +1,3 @@
-
-
 #ifndef IMG_ROUTER_CPP
 #define IMG_ROUTER_CPP
 
@@ -107,7 +105,8 @@ struct img_router: sc_module
   #define IMG_SOBEL_INITIATOR_ID  1
   #define IMG_MEMORY_INITIATOR_ID 2
   #define IMG_ETHERNET_INITIATOR_ID 3
-  #define INVALID_INITIATOR_ID    4
+  #define IMG_VGA_INITIATOR_ID    4
+  #define INVALID_INITIATOR_ID    5
   
   unsigned int decode_address (sc_dt::uint64 address)
   {

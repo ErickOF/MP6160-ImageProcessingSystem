@@ -22,7 +22,7 @@ using namespace std;
 #include "common_func.hpp"
 #include "important_defines.hpp"
 
-#define TEST_N_TARGETS 3
+#define TEST_N_TARGETS 4
 
 SC_MODULE(Tb_router_top)
 {

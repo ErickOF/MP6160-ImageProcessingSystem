@@ -117,11 +117,20 @@ public:
       }
       else
       {
-        cv::Vec3b pixel = tx_img.at<cv::Vec3b>(IMG_ROW, IMG_COL, 0);
+        if ((IMG_ROW >= this->tx_img.rows) || (IMG_COL >= this->tx_img.cols))
+        {
+          this->o_red.write(0);
+          this->o_green.write(0);
+          this->o_blue.write(0);
+        }
+        else
+        {
+          cv::Vec3b pixel = tx_img.at<cv::Vec3b>(IMG_ROW, IMG_COL, 0);
 
-        this->o_red.write(static_cast<sc_uint<8>>(pixel[0]));
-        this->o_green.write(static_cast<sc_uint<8>>(pixel[1]));
-        this->o_blue.write(static_cast<sc_uint<8>>(pixel[2]));
+          this->o_red.write(static_cast<sc_uint<8>>(pixel[0]));
+          this->o_green.write(static_cast<sc_uint<8>>(pixel[1]));
+          this->o_blue.write(static_cast<sc_uint<8>>(pixel[2]));
+        }
 
 #ifdef IPS_DEBUG_EN
         std::cout << " ipixel = (" << static_cast<int>(pixel[0]) << ","

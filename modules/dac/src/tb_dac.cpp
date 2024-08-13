@@ -1,3 +1,4 @@
+#ifndef USING_TLM_TB_EN
 #include <systemc-ams.h>
 #include "dac.hpp"
 #include "seq_item_dac.hpp"
@@ -43,3 +44,4 @@ int sc_main(int, char*[])
 
   return 0;
 };
+#endif // USING_TLM_TB_EN
