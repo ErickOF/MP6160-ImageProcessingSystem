@@ -13,7 +13,7 @@
 
 #define IPS_FILTER_KERNEL_SIZE 3
 #define DELAY_TIME (IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE * 1) + 4 + 2 + 1
-#define IPS_IMG_PATH_TB "../../../inputs/car_noisy_image.jpg"
+#define IPS_IMG_PATH_TB "../../../inputs/car_noisy_image.png"
 
 SC_MODULE (testbench) {
 	sc_out<sc_uint<8> > img_window[IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE];
@@ -109,6 +109,11 @@ SC_MODULE (testbench) {
 		cv::Mat image;
 		read_image.convertTo(image, CV_8U);
 
+		//For error calculation
+		sc_uint<16> mean_result;
+		sc_uint<8> error;
+		sc_uint<16> mean_error;
+
 		cv::Mat o_img(image.size(), image.type());
 
 		// Check if the image is loaded successfully
@@ -124,11 +129,10 @@ SC_MODULE (testbench) {
 			std::cout << " cols = " << image.cols;
 			std::cout << " channels = " << image.channels() << std::endl;
 		}
-
-		// image.rows = 100;
-		// image.cols = 100;
 		sc_uint<8> local_window[IPS_FILTER_KERNEL_SIZE * IPS_FILTER_KERNEL_SIZE];
 		sc_uint<8> result;
+
+		mean_error = 0;
 
 		// Create each windown and filter
 		for (int y = 0; y < image.rows - IPS_FILTER_KERNEL_SIZE; ++y)
@@ -142,10 +146,13 @@ SC_MODULE (testbench) {
 				// Define the Window
 				extract_window(y, x, image, &local_window[0], image.cols, image.rows);
 
+				mean_result = 0;
+
 				for (int i = 0; i < IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE; ++i)
      			{
 					//local_window[i* IPS_FILTER_KERNEL_SIZE + j] = sub_img.data[i* IPS_FILTER_KERNEL_SIZE + j];
 					img_window[i].write(local_window[i]);
+					mean_result += local_window[i];
 #ifdef IPS_DEBUG_EN
 					std::cout << "[" << (int) local_window[i] << "]";
 #endif // IPS_DEBUG_EN
@@ -153,15 +160,17 @@ SC_MODULE (testbench) {
 #ifdef IPS_DEBUG_EN
        			std::cout << std::endl;
 #endif // IPS_DEBUG_EN
+				mean_result /= (IPS_FILTER_KERNEL_SIZE*IPS_FILTER_KERNEL_SIZE);
+
 				wait(DELAY_TIME + 10, SC_NS);
  				result = mean.read();
-				// cout << "Read Result: " << (int) result << endl;
-				// result = (sc_uint<8>) local_window[0];
      			o_img.data[y*image.cols + x]= result;
 				//*o_img.ptr(y, x) = result;
+				error = abs(mean_result - result);
+				mean_error += error;
 #ifdef IPS_DEBUG_EN
 				// SC_REPORT_INFO("TEST_MODE_IMAGE", "filtering");
-				std::cout << "Iteration: " << (int) y*image.cols + x << " Original Pixel: " << (int) image.data[y* image.rows + x] << " Result = " << (int) result << std::endl;
+			 	// std::cout << "Iteration: " << (int) y*image.cols + x << " Result = " << (int) result << " Expected result = " << (int) mean_result << " Error: " << (int) error << std::endl;
 #endif // IPS_DEBUG_E
 			}
 		}
@@ -172,6 +181,8 @@ SC_MODULE (testbench) {
 		// Save the final image
 		std::string output_img_path = "filtered_image.png";
 		cv::imwrite(output_img_path, final_img);
+		std::cout << "Test finished with Mean error: " << ((float) mean_error)/(image.rows*image.cols) << " Total error: "<< mean_error << std::endl;
+
 	}
 #endif //TEST_MODE_IMAGE
 
