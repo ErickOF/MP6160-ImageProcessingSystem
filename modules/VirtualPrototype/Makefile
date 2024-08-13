@@ -1,6 +1,8 @@
 # Include common Makefile
 include ../Makefile
 
+LIBS+=-lsystemc-ams
+
 # Defining preprocessor directive for debug
 ifdef IPS_DEBUG_EN
 	CFLAGS += -DIPS_DEBUG_EN

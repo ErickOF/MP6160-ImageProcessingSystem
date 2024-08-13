@@ -208,14 +208,14 @@ void obtain_gradients_sobel()
 	{
 		for (int j = 0; j < IMAG_COLS; j++)
 		{
-			transfer_window(i, j, IMG_COMPRESSED_ADDRESS_LO, SOBEL_INPUT_0_ADDRESS_LO);
+			transfer_window(i, j, IMG_INPROCESS_D_ADDRESS_LO, SOBEL_INPUT_0_ADDRESS_LO);
 			memcpy(sobel_results, sobel_output_ptr, 2 * sizeof(short int));
 			*(output_image_X_ptr + ((i * IMAG_COLS) + j)) = sobel_results[0];
 			*(output_image_Y_ptr + ((i * IMAG_COLS) + j)) = sobel_results[1];
 
 			if (current_progress == next_target * step)
 			{
-				printf("Current progress is at %0d%%\n", next_target * 10);
+				printf("\tCurrent progress is at %0d%%\n", next_target * 10);
 				next_target++;
 			}
 			current_progress++;
@@ -262,7 +262,7 @@ void convert_to_grayscale()
 
 			if (current_progress == next_target * step)
 			{
-				printf("Current progress is at %0d%%\n", next_target * 10);
+				printf("\tCurrent progress is at %0d%%\n", next_target * 10);
 				next_target++;
 			}
 			current_progress++;
@@ -275,7 +275,7 @@ void convert_to_grayscale()
 void filter_image()
 {
 	unsigned char *filter_output_ptr = (unsigned char*) IMG_FILTER_OUTPUT_ADDRESS_LO;
-	unsigned char *output_image_ptr = (unsigned char*) IMG_COMPRESSED_ADDRESS_LO;
+	unsigned char *output_image_ptr = (unsigned char*) IMG_INPROCESS_D_ADDRESS_LO;
 
 	int final_target = IMAG_ROWS * IMAG_COLS;
 	int current_progress = 0;
@@ -293,7 +293,7 @@ void filter_image()
 
 			if (current_progress == next_target * step)
 			{
-				printf("Current progress is at %0d%%\n", next_target * 10);
+				printf("\tCurrent progress is at %0d%%\n", next_target * 10);
 				next_target++;
 			}
 			current_progress++;
@@ -358,7 +358,7 @@ void unificate_img()
 
 		if (current_progress == next_target * step)
 		{
-			printf("Current progress is at %0d%%\n", next_target * 10);
+			printf("\tCurrent progress is at %0d%%\n", next_target * 10);
 			next_target++;
 		}
 		current_progress++;
@@ -367,14 +367,66 @@ void unificate_img()
 	printf("Done IMG Unification Step: \n");
 }
 
+void transmit_data(unsigned int data_length)
+{
+	unsigned int *data_length_ptr = (unsigned int *) IMG_OUTPUT_SIZE_ADDRESS_LO;
+	unsigned char *start_transmission = (unsigned char *) IMG_OUTPUT_DONE_ADDRESS_LO;
+	unsigned char *send_status = (unsigned char *) IMG_OUTPUT_STATUS_ADDRESS_LO;
+	unsigned char send_status_result;
+
+	const TickType_t xDelay = 200;
+
+	printf("Preparing to send %0d bytes\n", data_length);
+
+	*data_length_ptr = data_length;
+	*start_transmission = 1;
+
+	printf("Sent start signal to transmiter\n");
+
+	memcpy(&send_status_result, send_status, sizeof(char));
+	while(send_status_result == 1)
+	{
+		printf("\tTransmiter still sending data\n");
+		vTaskDelay(xDelay);
+		memcpy(&send_status_result, send_status, sizeof(char));
+	}
+	printf("Send process finished in the transmiter\n");
+}
+
+void copy_data()
+{
+	unsigned char *source_img = (unsigned char *) IMG_INPROCESS_A_ADDRESS_LO;
+	unsigned char *output_img = (unsigned char *) IMG_OUTPUT_ADDRESS_LO;
+
+	memcpy(output_img, source_img, IMAG_ROWS * IMAG_COLS);
+}
+
+void save_image_from_mem(int image_id)
+{
+	int *img_id_ptr = (int *) IMG_SAVER_ID_ADDRESS_LO;
+	unsigned char *save_img_ptr = (unsigned char *) IMG_SAVER_START_ADDRESS_LO;
+
+	*img_id_ptr = image_id;
+	*save_img_ptr = 1;
+	printf("Saved image with id %0d\n", image_id);
+}
+
 static void testbench(void *pParameter) {
-	convert_to_grayscale();
+	// convert_to_grayscale();
 
-	filter_image();
+	// filter_image();
 
-	obtain_gradients_sobel();
+	// obtain_gradients_sobel();
 
 	unificate_img();
+
+	save_image_from_mem(4);
+
+	copy_data();
+
+	save_image_from_mem(5);
+
+	transmit_data(IMAG_ROWS * IMAG_COLS);
 }
 
 int main( void )

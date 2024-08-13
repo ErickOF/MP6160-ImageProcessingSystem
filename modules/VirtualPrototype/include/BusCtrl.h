@@ -76,12 +76,13 @@ public:
 	tlm_utils::simple_initiator_socket<BusCtrl> sobel_edge_detector_socket;
 	tlm_utils::simple_initiator_socket<BusCtrl> receiver_socket; //VGA AMS socket
 	tlm_utils::simple_initiator_socket<BusCtrl> transmiter_socket; //Ethernet AMS Socket
+	tlm_utils::simple_initiator_socket<BusCtrl> image_saver_socket; //Component to save the temporal images
 
 	/**
 	 * @brief constructor
 	 * @param name module's name
 	 */
-	BusCtrl(sc_core::sc_module_name name);
+	BusCtrl(sc_core::sc_module_name name, bool use_prints);
 
 	/**
 	 * @brief TLM-2 blocking mechanism
@@ -97,6 +98,8 @@ private:
 	bool instr_direct_mem_ptr(tlm::tlm_generic_payload&,
 			tlm::tlm_dmi &dmi_data);
 	void invalidate_direct_mem_ptr(sc_dt::uint64 start, sc_dt::uint64 end);
+
+	bool use_prints;
 };
 
 #endif

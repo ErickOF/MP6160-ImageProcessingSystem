@@ -6,7 +6,6 @@ CC       = riscv32-unknown-elf-gcc
 
 # compiling flags here
 CFLAGS = -Wall -I. -O0 -static -march=rv32gc -mabi=ilp32 --specs=nosys.specs
-CFLAGS+=-std=c++17
 
 LINKER   = riscv32-unknown-elf-gcc
 # linking flags here

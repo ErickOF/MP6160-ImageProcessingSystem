@@ -224,3 +224,8 @@ void Memory::backdoor_read(unsigned char*&data, unsigned int data_length, sc_dt:
   	printf("Backdoor Reading: %0d\n", *(mem + address+i));
   }
 }
+
+unsigned char *Memory::get_pointer_to_mem_region(sc_dt::uint64 address)
+{
+	return (mem + address);
+}

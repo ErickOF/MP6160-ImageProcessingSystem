@@ -17,7 +17,7 @@ using namespace std;
 
 void ips_filter_tlm::do_when_read_transaction(unsigned char*& data, unsigned int data_length, sc_dt::uint64 address)
 {
-  dbgimgtarmodprint("Called do_when_read_transaction with an address %016llX and length %d", address, data_length);
+  dbgimgtarmodprint(use_prints, "Called do_when_read_transaction with an address %016llX and length %d", address, data_length);
 
   this->img_result = *(Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>::result_ptr);
   *data = (unsigned char) this->img_result;
@@ -28,13 +28,13 @@ void ips_filter_tlm::do_when_write_transaction(unsigned char*& data, unsigned in
 {
   IPS_OUT_TYPE_TB* result = new IPS_OUT_TYPE_TB;
 
-  dbgimgtarmodprint("Called do_when_write_transaction with an address %016llX and length %d", address, data_length);
+  dbgimgtarmodprint(use_prints, "Called do_when_write_transaction with an address %016llX and length %d", address, data_length);
 
-  //dbgprint("[DEBUG]: data: %0d, address %0d, data_length %0d, size of char %0d", *data, address, data_length, sizeof(char));
+  //dbgimgtarmodprint(use_prints, "[DEBUG]: data: %0d, address %0d, data_length %0d, size of char %0d", *data, address, data_length, sizeof(char));
   for (int i = 0; i < data_length; i++) {
     this->img_window[address + i] = (IPS_IN_TYPE_TB) *(data + i);
   }
-  //dbgprint("[DEBUG]: img_window data: %0f", this->img_window[address]);
+  //dbgimgtarmodprint(use_prints, "[DEBUG]: img_window data: %0f", this->img_window[address]);
 
   if (address == 8) {
     filter(this->img_window, result);

@@ -65,6 +65,8 @@ public:
 	void backdoor_write(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address);
 	void backdoor_read(unsigned char*&data, unsigned int data_length, sc_dt::uint64 address);
 
+	unsigned char *get_pointer_to_mem_region(sc_dt::uint64 address);
+
 private:
 
 	/**

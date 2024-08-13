@@ -26,11 +26,12 @@ struct img_target: sc_module
 
     uint32_t address_offset = 0;
     int mem_size = 0;
-    
+
+    bool use_prints;    
 
     //Constructor
     SC_CTOR(img_target)   
-    : socket("socket"), LATENCY(sc_time(10, SC_NS)) // Construct and name socket   
+    : socket("socket"), LATENCY(sc_time(10, SC_NS)), use_prints(true) // Construct and name socket   
     {   
         // Register callbacks for incoming interface method calls
         socket.register_b_transport(this, &img_target::b_transport);
@@ -64,17 +65,17 @@ struct img_target: sc_module
         // Generate the appropriate error response
         // *********************************************
         if (adr >= sc_dt::uint64(mem_size)) {
-            dbgmodprint("[DEBUG ERROR] TLM transaction is returned with response status TLM_ADDRESS_ERROR_RESPONSE");
+            dbgmodprint(true, "[DEBUG ERROR] TLM transaction is returned with response status TLM_ADDRESS_ERROR_RESPONSE");
             trans.set_response_status(tlm::TLM_ADDRESS_ERROR_RESPONSE);
             return;
         }
         if (byt != nullptr) {
-            dbgmodprint("[DEBUG ERROR] TLM transaction is returned with response status TLM_BYTE_ERROR_RESPONSE");
+            dbgmodprint(true, "[DEBUG ERROR] TLM transaction is returned with response status TLM_BYTE_ERROR_RESPONSE");
             trans.set_response_status(tlm::TLM_BYTE_ENABLE_ERROR_RESPONSE);
             return;
         }
         if (len > 4 || wid < len) {
-            dbgmodprint("[DEBUG ERROR] TLM transaction is returned with response status TLM_BURST_ERROR_RESPONSE");
+            dbgmodprint(true, "[DEBUG ERROR] TLM transaction is returned with response status TLM_BURST_ERROR_RESPONSE");
             trans.set_response_status(tlm::TLM_BURST_ERROR_RESPONSE);
             return;
         }
@@ -82,10 +83,10 @@ struct img_target: sc_module
         // Obliged to implement read and write commands
         if (cmd == tlm::TLM_READ_COMMAND) {
             this->do_when_read_transaction(ptr, len, adr);
-            // dbgmodprint("Read at address %0x, data: %0x", address_offset, *ptr);
+            // dbgmodprint(use_prints, "Read at address %0x, data: %0x", address_offset, *ptr);
         }
         else if (cmd == tlm::TLM_WRITE_COMMAND) {
-            // dbgmodprint("Write at address %0x, data: %0x", address_offset, *ptr);
+            // dbgmodprint(use_prints, "Write at address %0x, data: %0x", address_offset, *ptr);
             this->do_when_write_transaction(ptr, len, adr);
         }
 
