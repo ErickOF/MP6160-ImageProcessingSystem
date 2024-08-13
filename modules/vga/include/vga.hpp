@@ -12,7 +12,7 @@
 /**
  * @brief VGA representation class
  * 
- * @tparam N - the number of output bits of the digital pixel
+ * @tparam BITS - the number of output bits of the digital pixel
  * @tparam H_ACTIVE - output horizontal active video pixels
  * @tparam H_FP - wait after the display period before the sync
  *  horizontal pulse
@@ -27,7 +27,7 @@
  *  the next display period
  */
 template <
-  unsigned int N = 8,
+  unsigned int BITS = 8,
   unsigned int H_ACTIVE = 640,
   unsigned int H_FP = 16,
   unsigned int H_SYNC_PULSE = 96,
@@ -50,9 +50,9 @@ public:
   sc_core::sc_in<bool> clk;
 #endif // USING_TLM_TB_EN
   // Input pixel
-  sc_core::sc_in<sc_uint<N> > red;
-  sc_core::sc_in<sc_uint<N> > green;
-  sc_core::sc_in<sc_uint<N> > blue;
+  sc_core::sc_in<sc_uint<BITS> > red;
+  sc_core::sc_in<sc_uint<BITS> > green;
+  sc_core::sc_in<sc_uint<BITS> > blue;
   // Counter outputs
   sc_core::sc_out<unsigned int> o_h_count;
   sc_core::sc_out<unsigned int> o_v_count;
@@ -62,9 +62,9 @@ public:
   // Output vertical sync
   sc_core::sc_out<bool> o_vsync;
   // Output pixel
-  sc_core::sc_out<sc_uint<N> > o_red;
-  sc_core::sc_out<sc_uint<N> > o_green;
-  sc_core::sc_out<sc_uint<N> > o_blue;
+  sc_core::sc_out<sc_uint<BITS> > o_red;
+  sc_core::sc_out<sc_uint<BITS> > o_green;
+  sc_core::sc_out<sc_uint<BITS> > o_blue;
 #else
   unsigned char *tmp_img;
   bool start;

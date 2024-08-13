@@ -95,7 +95,7 @@ struct vga_ams_signals_t
 SC_MODULE(Tb_top)
 {
   
-  img_router<5> *router;
+  img_router<4> *router;
   //img_initiator *sobel_initiator;
   //img_initiator *tb_initiator;
   //img_initiator *filter_initiator;
@@ -108,19 +108,19 @@ SC_MODULE(Tb_top)
   jpg_output *jpg_comp_DUT;
   packetGenerator_tlm *packetGenerator_DUT;
   ethernetEncoder *ethernetEncoder_DUT;
-  adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_red_DUT;
-  adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_green_DUT;
-  adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_blue_DUT;
-  vga_tlm *vga_DUT;
-  seq_item_vga<
-    IPS_BITS,
-    IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
-    IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
-    IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *ips_seq_item_vga;
+  //adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_red_DUT;
+  //adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_green_DUT;
+  //adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_blue_DUT;
+  //vga_tlm *vga_DUT;
+  //seq_item_vga<
+  //  IPS_BITS,
+  //  IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
+  //  IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
+  //  IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *ips_seq_item_vga;
 
   Ethernet_AMS_Signals ethernetSignals;
 
-  vga_ams_signals_t vga_signals;
+  //vga_ams_signals_t vga_signals;
 
   sca_core::sca_time sample_time;
 
@@ -128,7 +128,7 @@ SC_MODULE(Tb_top)
   
   SC_CTOR(Tb_top) : sample_time(10, SC_NS)
   {
-    router = new img_router<5>("router");
+    router = new img_router<4>("router");
     edge_detector_DUT = new sobel_edge_detector_tlm("edge_detector_DUT");
     rgb2gray_DUT = new Rgb2Gray("rgb2gray_DUT");
     tb_initiator = new img_initiator("tb_initiator");
@@ -172,34 +172,34 @@ SC_MODULE(Tb_top)
     ethernetEncoder_DUT->mlt3_out(ethernetSignals.mlt3_out_signal);
     ethernetEncoder_DUT->valid(ethernetSignals.data_out_valid);
 
-    ips_seq_item_vga = new seq_item_vga<IPS_BITS,
-        IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
-        IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
-        IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("ips_seq_item_vga");
-    ips_seq_item_vga->hcount(vga_signals.s_h_count);
-    ips_seq_item_vga->vcount(vga_signals.s_v_count);
-    ips_seq_item_vga->o_red(vga_signals.s_ana_red);
-    ips_seq_item_vga->o_green(vga_signals.s_ana_green);
-    ips_seq_item_vga->o_blue(vga_signals.s_ana_blue);
+    //ips_seq_item_vga = new seq_item_vga<IPS_BITS,
+    //    IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
+    //    IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
+    //    IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("ips_seq_item_vga");
+    //ips_seq_item_vga->hcount(vga_signals.s_h_count);
+    //ips_seq_item_vga->vcount(vga_signals.s_v_count);
+    //ips_seq_item_vga->o_red(vga_signals.s_ana_red);
+    //ips_seq_item_vga->o_green(vga_signals.s_ana_green);
+    //ips_seq_item_vga->o_blue(vga_signals.s_ana_blue);
 
-    adc_red_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_red_DUT");
-    adc_red_DUT->in(vga_signals.s_ana_red);
-    adc_red_DUT->out(vga_signals.s_tx_red);
+    //adc_red_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_red_DUT");
+    //adc_red_DUT->in(vga_signals.s_ana_red);
+    //adc_red_DUT->out(vga_signals.s_tx_red);
 
-    adc_green_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_green_DUT");
-    adc_green_DUT->in(vga_signals.s_ana_green);
-    adc_green_DUT->out(vga_signals.s_tx_green);
+    //adc_green_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_green_DUT");
+    //adc_green_DUT->in(vga_signals.s_ana_green);
+    //adc_green_DUT->out(vga_signals.s_tx_green);
 
-    adc_blue_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_blue_DUT");
-    adc_blue_DUT->in(vga_signals.s_ana_blue);
-    adc_blue_DUT->out(vga_signals.s_tx_blue);
+    //adc_blue_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_blue_DUT");
+    //adc_blue_DUT->in(vga_signals.s_ana_blue);
+    //adc_blue_DUT->out(vga_signals.s_tx_blue);
 
-    vga_DUT = new vga_tlm("vga_DUT");
-    vga_DUT->red(vga_signals.s_tx_red);
-    vga_DUT->green(vga_signals.s_tx_green);
-    vga_DUT->blue(vga_signals.s_tx_blue);
-    vga_DUT->o_h_count(vga_signals.s_h_count);
-    vga_DUT->o_v_count(vga_signals.s_v_count);
+    //vga_DUT = new vga_tlm("vga_DUT");
+    //vga_DUT->red(vga_signals.s_tx_red);
+    //vga_DUT->green(vga_signals.s_tx_green);
+    //vga_DUT->blue(vga_signals.s_tx_blue);
+    //vga_DUT->o_h_count(vga_signals.s_h_count);
+    //vga_DUT->o_v_count(vga_signals.s_v_count);
     
     router->set_delays(sc_time(20, SC_NS), sc_time(20, SC_NS));
     // sobel_initiator->start_img_initiators();
@@ -219,7 +219,7 @@ SC_MODULE(Tb_top)
     router->initiator_socket[1]->bind(edge_detector_DUT->socket);
     router->initiator_socket[2]->bind(memory_DUT->socket);
     router->initiator_socket[3]->bind(packetGenerator_DUT->socket);
-    router->initiator_socket[4]->bind(vga_DUT->socket);
+    //router->initiator_socket[4]->bind(vga_DUT->socket);
     tb_initiator->socket.bind(router->target_socket);
     
     SC_THREAD(thread_process);
