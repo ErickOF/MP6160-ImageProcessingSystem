@@ -146,6 +146,16 @@ void img_saver_tlm::do_when_write_transaction(unsigned char*&data, unsigned int 
 
       dbgimgtarmodprint(true, "Saving results from memory in transmiter image");
       break;
+    case 6:
+      channels = 1;
+      pixel_count = IMAG_COLS * IMAG_ROWS * channels;
+      img_ptr = new unsigned char[pixel_count];
+
+      memcpy(img_ptr, img_output_dec_ptr, pixel_count);
+      stbi_write_png("output_image_6.png", IMAG_COLS, IMAG_ROWS, channels, img_ptr, IMAG_COLS * channels);
+
+      dbgimgtarmodprint(true, "Saving results from memory in transmiter image");
+      break;
     default:
       channels = 3;
       pixel_count = IMAG_COLS * IMAG_ROWS * channels;

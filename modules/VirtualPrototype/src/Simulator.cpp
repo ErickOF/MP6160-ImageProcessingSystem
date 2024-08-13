@@ -37,6 +37,7 @@
 #include "img_receiver_tlm.hpp"
 #include "packetGenerator_tlm.hpp"
 #include "ethernetEncoder.h"
+#include "ethernetDecoder_tlm.hpp"
 #include "img_saver_tlm.hpp"
 
 struct Ethernet_AMS_Signals {
@@ -66,6 +67,8 @@ struct Ethernet_AMS_Signals {
 	sca_tdf::sca_signal<sc_dt::sc_int<4>> sigBitCount;
 
 	sca_tdf::sca_signal<sc_dt::sc_int<32>> remaining_bytes_to_send;
+
+	sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out_signal;
 };
 
 std::string filename;
@@ -94,6 +97,7 @@ SC_MODULE(Simulator) {
 	img_receiver_tlm *receiver_DUT;
 	packetGenerator_tlm *packetGenerator_DUT;
 	ethernetEncoder *ethernetEncoder_DUT;
+	ethernetDecoder_tlm *ethernetDecoder_DUT;
 	img_saver_tlm *img_saver_DUT;
 
 	Ethernet_AMS_Signals ethernetSignals;
@@ -118,6 +122,7 @@ SC_MODULE(Simulator) {
 		receiver_DUT = new img_receiver_tlm("receiver_DUT");
 		packetGenerator_DUT = new packetGenerator_tlm("packetGenerator_DUT", use_prints, sample_time);
 		ethernetEncoder_DUT = new ethernetEncoder("ethernetEncoder_DUT", sample_time);
+		ethernetDecoder_DUT = new ethernetDecoder_tlm("ethernetDecoder_DUT", sample_time);
 		img_saver_DUT = new img_saver_tlm("img_saver_DUT");
 
 		// Connecting the signals to ethernet modules
@@ -150,6 +155,9 @@ SC_MODULE(Simulator) {
 		ethernetEncoder_DUT->mlt3_out(ethernetSignals.mlt3_out_signal);
 		ethernetEncoder_DUT->valid(ethernetSignals.data_out_valid);
 
+		ethernetDecoder_DUT->mlt3_in(ethernetSignals.mlt3_out_signal);
+		ethernetDecoder_DUT->data_out(ethernetSignals.data_out_signal);
+
 		cpu->instr_bus.bind(Bus->cpu_instr_socket);
 		cpu->mem_intf->data_bus.bind(Bus->cpu_data_socket);
 
@@ -173,6 +181,7 @@ SC_MODULE(Simulator) {
 		img_saver_DUT->img_inprocess_c_ptr = MainMemory->get_pointer_to_mem_region(IMG_INPROCESS_C_ADDRESS_LO);
 		img_saver_DUT->img_inprocess_d_ptr = MainMemory->get_pointer_to_mem_region(IMG_INPROCESS_D_ADDRESS_LO);
 		img_saver_DUT->img_output_ptr = packetGenerator_DUT->tmp_data;
+		img_saver_DUT->img_output_dec_ptr = ethernetDecoder_DUT->data;
 
 		if (debug_session) {
 			Debug debug(cpu, MainMemory);
@@ -597,6 +606,7 @@ int sc_main(int argc, char *argv[]) {
 	sca_util::sca_trace(wf_ams, top->ethernetSignals.mlt3_out_signal, "mlt3_out");
 	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_out_valid, "data_out_valid");
 	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_out, "data_out");
+	sca_util::sca_trace(wf_ams, top->ethernetSignals.data_out_signal, "data_out_decoded");
 	// sca_util::sca_trace(wf_ams, top->ethernetSignals.data_in, "pkt_gen_data_in");
 	// sca_util::sca_trace(wf_ams, top->ethernetSignals.data_in_valid, "pkt_gen_data_in_valid");
 	// sca_util::sca_trace(wf_ams, top->ethernetSignals.n2_data_valid, "pkt_gen_n2_data_valid");

@@ -31,6 +31,8 @@ void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data, uns
       memcpy((data + i), sobel_results_ptr, sizeof(char));
       // dbgimgtarmodprint(use_prints, "Results on sobel read %01X", sobel_results);
     }
+
+    dbgimgtarmodprint(true, "Returning gradient results, X gradient %0d Y gradient %0d", Edge_Detector::data.range(15, 0).to_int(), Edge_Detector::data.range(32, 16).to_int());
   }
   else
   {
@@ -61,6 +63,7 @@ void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, uns
       for (int i = 0; i < data_length; i++) {
         this->sobel_input[address + i - SOBEL_INPUT_0_SIZE] = *(data + i);
       }
+      dbgimgtarmodprint(true, "Got full window, will compute sobel gradients");
     }
 
     Edge_Detector::data = (this->sobel_input[7], this->sobel_input[6], this->sobel_input[5], this->sobel_input[4], this->sobel_input[3], this->sobel_input[2], this->sobel_input[1], this->sobel_input[0]);

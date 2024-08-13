@@ -199,7 +199,8 @@ void obtain_gradients_sobel()
 
 	int final_target = IMAG_ROWS * IMAG_COLS;
 	int current_progress = 0;
-	int step = final_target / 10;
+	int step_percent = 2;
+	int step = final_target / (100 / step_percent);
 	int next_target = 1;
 
 	printf("Starting IMG Sobel Step: \n");
@@ -215,7 +216,7 @@ void obtain_gradients_sobel()
 
 			if (current_progress == next_target * step)
 			{
-				printf("\tCurrent progress is at %0d%%\n", next_target * 10);
+				printf("\tCurrent progress is at %0d%%\n", next_target * step_percent);
 				next_target++;
 			}
 			current_progress++;
@@ -239,7 +240,8 @@ void convert_to_grayscale()
 
 	int final_target = IMAG_ROWS * IMAG_COLS;
 	int current_progress = 0;
-	int step = final_target / 10;
+	int step_percent = 2;
+	int step = final_target / (100 / step_percent);
 	int next_target = 1;
 
 	printf("Starting IMG Grayscale Step: \n");
@@ -262,7 +264,7 @@ void convert_to_grayscale()
 
 			if (current_progress == next_target * step)
 			{
-				printf("\tCurrent progress is at %0d%%\n", next_target * 10);
+				printf("\tCurrent progress is at %0d%%\n", next_target * step_percent);
 				next_target++;
 			}
 			current_progress++;
@@ -279,7 +281,8 @@ void filter_image()
 
 	int final_target = IMAG_ROWS * IMAG_COLS;
 	int current_progress = 0;
-	int step = final_target / 10;
+	int step_percent = 2;
+	int step = final_target / (100 / step_percent);
 	int next_target = 1;
 
 	printf("Starting IMG Filtering Step: \n");
@@ -293,7 +296,7 @@ void filter_image()
 
 			if (current_progress == next_target * step)
 			{
-				printf("\tCurrent progress is at %0d%%\n", next_target * 10);
+				printf("\tCurrent progress is at %0d%%\n", next_target * step_percent);
 				next_target++;
 			}
 			current_progress++;
@@ -332,7 +335,8 @@ void unificate_img()
 
 	int final_target = IMAG_ROWS * IMAG_COLS;
 	int current_progress = 0;
-	int step = final_target / 10;
+	int step_percent = 2;
+	int step = final_target / (100 / step_percent);
 	int next_target = 1;
 
 	printf("Starting IMG Unification Step: \n");
@@ -358,7 +362,7 @@ void unificate_img()
 
 		if (current_progress == next_target * step)
 		{
-			printf("\tCurrent progress is at %0d%%\n", next_target * 10);
+			printf("\tCurrent progress is at %0d%%\n", next_target * step_percent);
 			next_target++;
 		}
 		current_progress++;
@@ -412,11 +416,17 @@ void save_image_from_mem(int image_id)
 }
 
 static void testbench(void *pParameter) {
-	// convert_to_grayscale();
+	convert_to_grayscale();
 
-	// filter_image();
+	save_image_from_mem(1);
 
-	// obtain_gradients_sobel();
+	filter_image();
+
+	save_image_from_mem(2);
+
+	obtain_gradients_sobel();
+
+	save_image_from_mem(3);
 
 	unificate_img();
 
@@ -427,6 +437,8 @@ static void testbench(void *pParameter) {
 	save_image_from_mem(5);
 
 	transmit_data(IMAG_ROWS * IMAG_COLS);
+
+	save_image_from_mem(6);
 }
 
 int main( void )

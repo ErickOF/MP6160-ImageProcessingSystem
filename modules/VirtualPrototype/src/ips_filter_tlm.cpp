@@ -21,6 +21,8 @@ void ips_filter_tlm::do_when_read_transaction(unsigned char*& data, unsigned int
 
   this->img_result = *(Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>::result_ptr);
   *data = (unsigned char) this->img_result;
+
+  dbgimgtarmodprint(true, "Returning filter result %f", this->img_result);
   //memcpy(data, Filter<IPS_IN_TYPE_TB, IPS_OUT_TYPE_TB, IPS_FILTER_KERNEL_SIZE>::result_ptr, sizeof(IPS_OUT_TYPE_TB));
 }
 
@@ -37,6 +39,8 @@ void ips_filter_tlm::do_when_write_transaction(unsigned char*& data, unsigned in
   //dbgimgtarmodprint(use_prints, "[DEBUG]: img_window data: %0f", this->img_window[address]);
 
   if (address == 8) {
+    dbgimgtarmodprint(true, "Got full window, starting filtering now");
+
     filter(this->img_window, result);
   }
 }

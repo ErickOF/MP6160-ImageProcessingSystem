@@ -5,7 +5,7 @@
 
 void ethernetDecoder::set_attributes()
 {
-    set_timestep(10, sc_core::SC_NS); // Set a sample period of 10 ns
+    set_timestep(sample_time);
 }
 
 void ethernetDecoder::initialize()
@@ -151,8 +151,6 @@ void ethernetDecoder::processing()
               << ", found_sequence: " << found_sequence << std::endl;
 
     sample_count++;
-    // Set the next trigger
-    next_trigger(10, SC_NS);
 }
 
 #endif // ETHERNET_DECODER_CPP

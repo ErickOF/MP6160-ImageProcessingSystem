@@ -23,6 +23,7 @@ struct img_saver_tlm: public img_target
     unsigned char *img_inprocess_c_ptr;
     unsigned char *img_inprocess_d_ptr;
     unsigned char *img_output_ptr;
+    unsigned char *img_output_dec_ptr;
 };
 
 #endif // IMG_SAVER_TLM_HPP
