@@ -255,7 +255,7 @@ void convert_to_grayscale()
 			// {
 			// 	printf("On pixel %0d %0d r %0d g %0d b %0d\n", i, j, rgb_val[0], rgb_val[1], rgb_val[2]);
 			// }
-			gray_val = compute_gray_value(rgb_val[0], rgb_val[1], rgb_val[2]);
+			gray_val = compute_gray_value(rgb_val[2], rgb_val[1], rgb_val[0]);
 			// if (i == 0 && j < 10)
 			// {
 			// 	printf("On pixel %0d %0d gray value %0d\n", i, j, gray_val);
@@ -448,25 +448,25 @@ static void testbench(void *pParameter) {
 
 	save_image_from_mem(1);
 
-	// filter_image();
+	filter_image();
 
-	// save_image_from_mem(2);
+	save_image_from_mem(2);
 
-	// obtain_gradients_sobel();
+	obtain_gradients_sobel();
 
-	// save_image_from_mem(3);
+	save_image_from_mem(3);
 
-	// unificate_img();
+	unificate_img();
 
-	// save_image_from_mem(4);
+	save_image_from_mem(4);
 
-	// copy_data();
+	copy_data();
 
-	// save_image_from_mem(5);
+	save_image_from_mem(5);
 
-	// transmit_data(IMAG_ROWS * IMAG_COLS);
+	transmit_data(IMAG_ROWS * IMAG_COLS);
 
-	// save_image_from_mem(6);
+	save_image_from_mem(6);
 }
 
 int main( void )
