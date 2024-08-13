@@ -33,6 +33,10 @@ public:
       IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP>((std::string(name) + "_HW_block").c_str()),
       img_target((std::string(name) + "_target").c_str())
   {
+#ifdef DISABLE_VGA_DEBUG
+      this->use_prints = false;
+#endif // DISABLE_VGA_DEBUG
+      checkprintenableimgtar(use_prints);
   }
 
   // Override do_when_transaction functions

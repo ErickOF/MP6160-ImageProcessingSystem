@@ -9,6 +9,9 @@
 #define IPS_VGA_ACTIVE true
 #define IPS_VGA_INACTIVE false
 
+// Main clock frequency in Hz - 25.175 MHz
+#define CLK_FREQ 25175000
+
 /**
  * @brief VGA representation class
  * 
@@ -48,6 +51,11 @@ public:
 #ifndef USING_TLM_TB_EN
   // Input clock
   sc_core::sc_in<bool> clk;
+#else
+  // Compute the clock time in seconds
+  const double CLK_TIME = 1.0 / static_cast<double>(CLK_FREQ);
+  // Internal clock
+  sc_core::sc_clock clk;
 #endif // USING_TLM_TB_EN
   // Input pixel
   sc_core::sc_in<sc_uint<BITS> > red;
@@ -73,14 +81,18 @@ public:
 
   SC_CTOR(vga)
     : o_hsync("o_hsync"), o_vsync("o_vsync")
+#ifdef USING_TLM_TB_EN
+    , clk("clk", CLK_TIME, sc_core::SC_SEC)
+#endif
   {
     this->h_count = 0;
     this->v_count = 0;
 
-#ifndef USING_TLM_TB_EN
     SC_METHOD(run);
+#ifndef USING_TLM_TB_EN
     sensitive << clk.pos();
 #else
+    sensitive << clk;
     this->tmp_img = new unsigned char[H_ACTIVE * V_ACTIVE * 3];
     this->start = false;
     this->done = false;
@@ -94,12 +106,12 @@ public:
    */
   void run()
   {
-#ifndef USING_TLM_TB_EN
     if (this->clk.read())
-#else
-    if (this->start)
-#endif // USING_TLM_TB_EN
     {
+#ifdef USING_TLM_TB_EN
+    if (this->start)
+    {
+#endif // USING_TLM_TB_EN
 #ifdef IPS_DEBUG_EN
       std::cout << "@" << sc_core::sc_time_stamp().to_seconds() * 1e6 << "us" << std::endl;
 #endif // IPS_DEBUG_EN
@@ -150,6 +162,8 @@ public:
         {
           this->o_vsync.write(IPS_VGA_INACTIVE);
           this->v_count = 0;
+          this->done = true;
+          this->start = false;
         }
       }
 
@@ -171,6 +185,7 @@ public:
         this->tmp_img[INDEX + 1] = this->green.read();
         this->tmp_img[INDEX + 2] = this->blue.read();
       }
+    }
 #endif // USING_TLM_TB_EN
     }
   }

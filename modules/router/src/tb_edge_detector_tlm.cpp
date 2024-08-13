@@ -257,7 +257,7 @@ SC_MODULE(Tb_top)
     
     signed char* compression_results;
     
-    colorImage = imread("../../tools/datagen/src/imgs/car_rgb_noisy_image.jpg", IMREAD_UNCHANGED);
+    /*colorImage = imread("../../tools/datagen/src/imgs/car_rgb_noisy_image.jpg", IMREAD_UNCHANGED);
   
     if (colorImage.empty())
     { 
@@ -315,36 +315,62 @@ SC_MODULE(Tb_top)
       }
     }
 
-    dbgprint("Saved image in memory");
+    dbgprint("Saved image in memory");*/
 
-    dbgprint("Starting VGA to receive image");
-
-    unsigned char *vga_start = new unsigned char;
-    *vga_start = 1;
-    tb_initiator->write(vga_start, IMG_INPUT_START_ADDRESS_LO, sizeof(char));
-
-    for (int i = 0; i < IPS_TOTAL_VERTICAL; ++i)
-    {
-      for (int j = 0; j < IPS_TOTAL_HORIZONTAL; ++j)
-      {
-        this->vga_DUT->run();
-        // Wait 40ns for conversions
-      }
-    }
-
-    dbgprint("Ending VGA");
-    
     Mat grayImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat filteredImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImagePrevMemX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImagePrevMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     
+    Mat originalImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC3);
     Mat grayImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat filteredImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMemX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
+
+    dbgprint("Starting VGA to receive image");
+
+    unsigned char *vga_start = new unsigned char;
+    unsigned char *vga_done;
+    *vga_start = 1;
+    tb_initiator->write(vga_start, IMG_INPUT_START_ADDRESS_LO, sizeof(char));
+
+    // for (int i = 0; i < IPS_TOTAL_VERTICAL; ++i)
+    // {
+    //   for (int j = 0; j < IPS_TOTAL_HORIZONTAL; ++j)
+    //   {
+    //     // this->vga_DUT->run();
+    //     // Wait 40ns for conversions
+
+    //   }
+    // }
+    tb_initiator->read(vga_done, IMG_INPUT_DONE_ADDRESS_LO, sizeof(char));
+    while (*vga_done == 0)
+    {
+      delete[] vga_done;
+      wait(10, SC_US);
+      tb_initiator->read(vga_done, IMG_INPUT_DONE_ADDRESS_LO, sizeof(char));
+    }
+    delete[] vga_done;
+
+    dbgprint("Ending VGA");
+
+    tb_initiator->read(local_results, IMG_INPUT_ADDRESS_LO, IMAG_ROWS * IMAG_COLS * 3);
+
+    // Sanity check that the image was written in memory as expected
+    for (int i = 0; i < IMAG_ROWS; i++)
+    {
+      for (int j = 0; j < IMAG_COLS; j++)
+      {
+        originalImageAfterMem.at<cv::Vec3b>(i, j)[2] = local_results[(i * IMAG_COLS * 3) + (j * 3) + 2];
+        originalImageAfterMem.at<cv::Vec3b>(i, j)[1] = local_results[(i * IMAG_COLS * 3) + (j * 3) + 1];
+        originalImageAfterMem.at<cv::Vec3b>(i, j)[0] = local_results[(i * IMAG_COLS * 3) + (j * 3)    ];
+      }
+    }
+
+    /*
     
     total_number_of_pixels = IMAG_ROWS * IMAG_COLS;
 
@@ -818,7 +844,10 @@ SC_MODULE(Tb_top)
     }
 
     dbgprint("Finished with the transmision of the image");
+    */
     
+    imwrite("originalImageAfterMem.jpg", originalImageAfterMem);
+    /*
     imwrite("grayImagePrevMem.jpg", grayImagePrevMem);
     imwrite("grayImageAfterMem.jpg", grayImageAfterMem);
     imwrite("filteredImagePrevMem.jpg", filteredImagePrevMem);
@@ -828,7 +857,7 @@ SC_MODULE(Tb_top)
     imwrite("detectedImagePrevMemY.jpg", detectedImagePrevMemY);
     imwrite("detectedImageAfterMemY.jpg", detectedImageAfterMemY);
     imwrite("detectedImagePrevMem.jpg", detectedImagePrevMem);
-    imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);
+    imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);*/
 
     sc_stop();
   }

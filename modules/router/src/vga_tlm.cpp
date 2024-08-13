@@ -13,14 +13,12 @@ void vga_tlm::do_when_read_transaction(unsigned char *&data, unsigned int data_l
     else
     {
       *data = 0;
+      dbgimgtarmodprint(true, "VGA is still in progress");
     }
   }
   else if ((address >= IMG_INPUT_ADDRESS_LO) && (address < IMG_INPUT_ADDRESS_HI))
   {
-    if (vga::done == true)
-    {
-      memcpy(data, vga::tmp_img, IMG_INPUT_SIZE);
-    }
+    memcpy(data, (vga::tmp_img + address - IMG_INPUT_ADDRESS_LOW), data_length);
   }
 }
 
@@ -31,5 +29,6 @@ void vga_tlm::do_when_write_transaction(unsigned char *&data, unsigned int data_
   if ((address >= IMG_INPUT_START_ADDRESS_LO) && (address < IMG_INPUT_START_ADDRESS_HI))
   {
     vga::start = (*data == 1);
+    vga::done = !vga::start;
   }
 }
