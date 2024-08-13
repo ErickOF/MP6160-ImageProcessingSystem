@@ -330,22 +330,13 @@ SC_MODULE(Tb_top)
     Mat detectedImageAfterMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
 
-    dbgprint("Starting VGA to receive image");
+    dbgprint("Starting receiving of the image through VGA");
 
     unsigned char *vga_start = new unsigned char;
     unsigned char *vga_done;
     *vga_start = 1;
     tb_initiator->write(vga_start, IMG_INPUT_START_ADDRESS_LO, sizeof(char));
 
-    // for (int i = 0; i < IPS_TOTAL_VERTICAL; ++i)
-    // {
-    //   for (int j = 0; j < IPS_TOTAL_HORIZONTAL; ++j)
-    //   {
-    //     // this->vga_DUT->run();
-    //     // Wait 40ns for conversions
-
-    //   }
-    // }
     tb_initiator->read(vga_done, IMG_INPUT_DONE_ADDRESS_LO, sizeof(char));
     while (*vga_done == 0)
     {
@@ -355,7 +346,7 @@ SC_MODULE(Tb_top)
     }
     delete[] vga_done;
 
-    dbgprint("Ending VGA");
+    dbgprint("Finished receiving of the image through VGA");
 
     tb_initiator->read(local_results, IMG_INPUT_ADDRESS_LO, IMAG_ROWS * IMAG_COLS * 3);
 
@@ -370,8 +361,6 @@ SC_MODULE(Tb_top)
       }
     }
 
-    /*
-    
     total_number_of_pixels = IMAG_ROWS * IMAG_COLS;
 
     dbgprint("Starting gray scale conversion");
@@ -844,10 +833,10 @@ SC_MODULE(Tb_top)
     }
 
     dbgprint("Finished with the transmision of the image");
-    */
+    
     
     imwrite("originalImageAfterMem.jpg", originalImageAfterMem);
-    /*
+    
     imwrite("grayImagePrevMem.jpg", grayImagePrevMem);
     imwrite("grayImageAfterMem.jpg", grayImageAfterMem);
     imwrite("filteredImagePrevMem.jpg", filteredImagePrevMem);
@@ -857,7 +846,7 @@ SC_MODULE(Tb_top)
     imwrite("detectedImagePrevMemY.jpg", detectedImagePrevMemY);
     imwrite("detectedImageAfterMemY.jpg", detectedImageAfterMemY);
     imwrite("detectedImagePrevMem.jpg", detectedImagePrevMem);
-    imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);*/
+    imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);
 
     sc_stop();
   }

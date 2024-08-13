@@ -179,7 +179,7 @@ public:
 
       if (!((IMG_ROW < 0) || (IMG_COL < 0) || (IMG_ROW >= V_ACTIVE) || (IMG_COL >= H_ACTIVE)))
       {
-        const unsigned int INDEX = IMG_ROW * (3 * V_ACTIVE) + 3 * IMG_COL;
+        const unsigned int INDEX = IMG_ROW * (3 * H_ACTIVE) + 3 * IMG_COL;
 
         this->tmp_img[INDEX] = this->red.read();
         this->tmp_img[INDEX + 1] = this->green.read();
