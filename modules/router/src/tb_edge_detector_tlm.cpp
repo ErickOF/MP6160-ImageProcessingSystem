@@ -26,6 +26,8 @@ using namespace std;
 #include <tlm_utils/simple_target_socket.h>
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
+#include <systemc-ams.h>
+
 #include "common_func.hpp"
 #include "important_defines.hpp"
 
@@ -35,6 +37,11 @@ using namespace std;
 #include "sobel_edge_detector_tlm.hpp"
 #include "unification_pv_model.hpp"
 #include "ips_jpg_pv_model.hpp"
+#include "packetGenerator_tlm.hpp"
+#include "ethernetEncoder.h"
+#include "adc.hpp"
+#include "vga_tlm.hpp"
+#include "seq_item_vga.hpp"
 #include "img_initiator.cpp"
 #include "img_router.cpp"
 
@@ -42,10 +49,55 @@ using namespace std;
 #error "Not all the required macros (RGB2GRAY_PV_EN, IPS_FILTER_LT_EN, EDGE_DETECTOR_AT_EN, IMG_UNIFICATE_PV_EN and IPS_JPG_PV_EN) are defined."
 #endif // Models
 
+struct Ethernet_AMS_Signals {
+    sca_tdf::sca_signal<bool> valid;
+    sca_tdf::sca_signal<double> mlt3_out_signal;
+
+    sca_tdf::sca_signal<bool> data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> data_out;
+
+    sca_tdf::sca_signal<bool> tmp_data_out_valid;
+
+    sca_tdf::sca_signal<bool> n2_data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> n2_data_out;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> n2_data_valid;
+    sca_tdf::sca_signal<bool> n1_data_out_valid;
+    sca_tdf::sca_signal<sc_dt::sc_bv<4>> n1_data_out;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> n1_data_valid;
+
+    sca_tdf::sca_signal<sc_dt::sc_bv<64>> data_in;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> data_in_valid;
+
+    sca_tdf::sca_signal<sc_dt::sc_bv<64>> data_to_send;
+    sca_tdf::sca_signal<sc_dt::sc_bv<16>> data_valid_to_send;
+
+    sca_tdf::sca_signal<sc_dt::sc_int<4>> n1_sigBitCount;
+    sca_tdf::sca_signal<sc_dt::sc_int<4>> n2_sigBitCount;
+    sca_tdf::sca_signal<sc_dt::sc_int<4>> sigBitCount;
+
+    sca_tdf::sca_signal<sc_dt::sc_int<32>> remaining_bytes_to_send;
+};
+
+struct vga_ams_signals_t
+{
+  // -- Inputs of VGA
+  sc_signal<sc_uint<IPS_BITS>> s_tx_red;
+  sc_signal<sc_uint<IPS_BITS>> s_tx_green;
+  sc_signal<sc_uint<IPS_BITS>> s_tx_blue;
+  // -- Outputs of VGA
+  sc_signal<bool> s_hsync;
+  sc_signal<bool> s_vsync;
+  sc_signal<unsigned int> s_h_count;
+  sc_signal<unsigned int> s_v_count;
+  // -- Outputs of DAC
+  sca_tdf::sca_signal<double> s_ana_red;
+  sca_tdf::sca_signal<double> s_ana_green;
+  sca_tdf::sca_signal<double> s_ana_blue;
+};
+
 SC_MODULE(Tb_top)
 {
-  
-  img_router<3> *router;
+  img_router<5> *router;
   //img_initiator *sobel_initiator;
   //img_initiator *tb_initiator;
   //img_initiator *filter_initiator;
@@ -56,12 +108,28 @@ SC_MODULE(Tb_top)
   ips_filter_tlm *filter_DUT;
   img_unification_module* unification_DUT;
   jpg_output *jpg_comp_DUT;
+  packetGenerator_tlm *packetGenerator_DUT;
+  ethernetEncoder *ethernetEncoder_DUT;
+  adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_red_DUT;
+  adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_green_DUT;
+  adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *adc_blue_DUT;
+  vga_tlm *vga_DUT;
+  seq_item_vga<
+    IPS_BITS,
+    IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
+    IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
+    IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv> *ips_seq_item_vga;
+
+  Ethernet_AMS_Signals ethernetSignals;
+  vga_ams_signals_t vga_signals;
+
+  sca_core::sca_time sample_time;
 
   bool use_prints = true;
   
-  SC_CTOR(Tb_top)
+  SC_CTOR(Tb_top) : sample_time(10, SC_NS)
   {
-    router = new img_router<3>("router");
+    router = new img_router<5>("router");
     edge_detector_DUT = new sobel_edge_detector_tlm("edge_detector_DUT");
     rgb2gray_DUT = new Rgb2Gray("rgb2gray_DUT");
     tb_initiator = new img_initiator("tb_initiator");
@@ -72,6 +140,69 @@ SC_MODULE(Tb_top)
     filter_DUT = new ips_filter_tlm("filter_DUT");
     unification_DUT = new img_unification_module("unification_DUT");
     jpg_comp_DUT = new jpg_output("jpg_comp_DUT", IMAG_ROWS, IMAG_COLS);
+    packetGenerator_DUT = new packetGenerator_tlm("packetGenerator_DUT", sample_time);
+    ethernetEncoder_DUT = new ethernetEncoder("ethernetEncoder_DUT", sample_time);
+    
+    // Connecting the signals to ethernet modules
+    packetGenerator_DUT->data_out_valid(ethernetSignals.data_out_valid);
+    packetGenerator_DUT->data_out(ethernetSignals.data_out);
+
+    packetGenerator_DUT->tmp_data_out_valid_(ethernetSignals.tmp_data_out_valid);
+
+    packetGenerator_DUT->n2_data_out_valid_(ethernetSignals.n2_data_out_valid);
+    packetGenerator_DUT->n2_data_out_(ethernetSignals.n2_data_out);
+    packetGenerator_DUT->n2_data_valid_(ethernetSignals.n2_data_valid);
+
+    packetGenerator_DUT->n1_data_out_valid_(ethernetSignals.n1_data_out_valid);
+    packetGenerator_DUT->n1_data_out_(ethernetSignals.n1_data_out);
+    packetGenerator_DUT->n1_data_valid_(ethernetSignals.n1_data_valid);
+
+    packetGenerator_DUT->data_in_(ethernetSignals.data_in);
+    packetGenerator_DUT->data_in_valid_(ethernetSignals.data_in_valid);
+
+    packetGenerator_DUT->data_to_send_(ethernetSignals.data_to_send);
+    packetGenerator_DUT->data_valid_to_send_(ethernetSignals.data_valid_to_send);
+
+    packetGenerator_DUT->n1_sigBitCount_(ethernetSignals.n1_sigBitCount);
+    packetGenerator_DUT->n2_sigBitCount_(ethernetSignals.n2_sigBitCount);
+    packetGenerator_DUT->sigBitCount(ethernetSignals.sigBitCount);
+
+    packetGenerator_DUT->remaining_bytes_to_send(ethernetSignals.remaining_bytes_to_send);
+
+    ethernetEncoder_DUT->data_in(ethernetSignals.data_out);
+    ethernetEncoder_DUT->mlt3_out(ethernetSignals.mlt3_out_signal);
+    ethernetEncoder_DUT->valid(ethernetSignals.data_out_valid);
+
+    ips_seq_item_vga = new seq_item_vga<IPS_BITS,
+        IPS_H_ACTIVE, IPS_H_FP, IPS_H_SYNC_PULSE, IPS_H_BP,
+        IPS_V_ACTIVE, IPS_V_FP, IPS_V_SYNC_PULSE, IPS_V_BP,
+        IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("ips_seq_item_vga");
+    ips_seq_item_vga->hcount(vga_signals.s_h_count);
+    ips_seq_item_vga->vcount(vga_signals.s_v_count);
+    ips_seq_item_vga->o_red(vga_signals.s_ana_red);
+    ips_seq_item_vga->o_green(vga_signals.s_ana_green);
+    ips_seq_item_vga->o_blue(vga_signals.s_ana_blue);
+
+    adc_red_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_red_DUT");
+    adc_red_DUT->in(vga_signals.s_ana_red);
+    adc_red_DUT->out(vga_signals.s_tx_red);
+
+    adc_green_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_green_DUT");
+    adc_green_DUT->in(vga_signals.s_ana_green);
+    adc_green_DUT->out(vga_signals.s_tx_green);
+
+    adc_blue_DUT = new adc<IPS_BITS, IPS_VOLTAGE_MIN, IPS_VOLTAGE_MAX, VUnit::mv>("adc_blue_DUT");
+    adc_blue_DUT->in(vga_signals.s_ana_blue);
+    adc_blue_DUT->out(vga_signals.s_tx_blue);
+
+    vga_DUT = new vga_tlm("vga_DUT");
+    vga_DUT->red(vga_signals.s_tx_red);
+    vga_DUT->green(vga_signals.s_tx_green);
+    vga_DUT->blue(vga_signals.s_tx_blue);
+    vga_DUT->o_h_count(vga_signals.s_h_count);
+    vga_DUT->o_v_count(vga_signals.s_v_count);
+    vga_DUT->o_hsync(vga_signals.s_hsync);
+    vga_DUT->o_vsync(vga_signals.s_vsync);
     
     router->set_delays(sc_time(20, SC_NS), sc_time(20, SC_NS));
     // sobel_initiator->start_img_initiators();
@@ -90,6 +221,8 @@ SC_MODULE(Tb_top)
     router->initiator_socket[0]->bind(filter_DUT->socket);
     router->initiator_socket[1]->bind(edge_detector_DUT->socket);
     router->initiator_socket[2]->bind(memory_DUT->socket);
+    router->initiator_socket[3]->bind(packetGenerator_DUT->socket);
+    router->initiator_socket[4]->bind(vga_DUT->socket);
     tb_initiator->socket.bind(router->target_socket);
     
     SC_THREAD(thread_process);
@@ -124,7 +257,7 @@ SC_MODULE(Tb_top)
     
     signed char* compression_results;
     
-    colorImage = imread("../../tools/datagen/src/imgs/car_rgb_noisy_image.jpg", IMREAD_UNCHANGED);
+    /*colorImage = imread("../../tools/datagen/src/imgs/car_rgb_noisy_image.jpg", IMREAD_UNCHANGED);
   
     if (colorImage.empty())
     { 
@@ -152,7 +285,7 @@ SC_MODULE(Tb_top)
         *(local_results    ) = localR;
         *(local_results + 1) = localG;
         *(local_results + 2) = localB;
-        memory_DUT->backdoor_write(local_results, 3 * sizeof(char), IMG_INPUT + ((i * IMAG_COLS * 3) + (j * 3)));
+        memory_DUT->backdoor_write(local_results, 3 * sizeof(char), IMG_INPUT_ADDRESS_LO + ((i * IMAG_COLS * 3) + (j * 3)));
       }
     }
     
@@ -165,7 +298,7 @@ SC_MODULE(Tb_top)
         *(local_results    ) = 0;
         *(local_results + 1) = 0;
         *(local_results + 2) = 0;
-        memory_DUT->backdoor_write(local_results, 3 * sizeof(char), IMG_INPUT + ((i * IMAG_COLS * 3) + (j * 3)));
+        memory_DUT->backdoor_write(local_results, 3 * sizeof(char), IMG_INPUT_ADDRESS_LO + ((i * IMAG_COLS * 3) + (j * 3)));
       }
     }
     
@@ -178,23 +311,59 @@ SC_MODULE(Tb_top)
         *(local_results    ) = 0;
         *(local_results + 1) = 0;
         *(local_results + 2) = 0;
-        memory_DUT->backdoor_write(local_results, 3 * sizeof(char), IMG_INPUT + ((i * IMAG_COLS * 3) + (j * 3)));
+        memory_DUT->backdoor_write(local_results, 3 * sizeof(char), IMG_INPUT_ADDRESS_LO + ((i * IMAG_COLS * 3) + (j * 3)));
       }
     }
-    
+
+    dbgprint("Saved image in memory");*/
+
     Mat grayImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat filteredImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImagePrevMemX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImagePrevMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImagePrevMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     
+    Mat originalImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC3);
     Mat grayImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat filteredImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMemX(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMemY(IMAG_ROWS, IMAG_COLS, CV_8UC1);
     Mat detectedImageAfterMem(IMAG_ROWS, IMAG_COLS, CV_8UC1);
-    
+
+    dbgprint("Starting receiving of the image through VGA");
+
+    unsigned char *vga_start = new unsigned char;
+    unsigned char *vga_done;
+    *vga_start = 1;
+    tb_initiator->write(vga_start, IMG_INPUT_START_ADDRESS_LO, sizeof(char));
+
+    tb_initiator->read(vga_done, IMG_INPUT_DONE_ADDRESS_LO, sizeof(char));
+    while (*vga_done == 0)
+    {
+      delete[] vga_done;
+      wait(10, SC_US);
+      tb_initiator->read(vga_done, IMG_INPUT_DONE_ADDRESS_LO, sizeof(char));
+    }
+    delete[] vga_done;
+
+    dbgprint("Finished receiving of the image through VGA");
+
+    tb_initiator->read(local_results, IMG_INPUT_ADDRESS_LO, IMAG_ROWS * IMAG_COLS * 3);
+
+    // Sanity check that the image was written in memory as expected
+    for (int i = 0; i < IMAG_ROWS; i++)
+    {
+      for (int j = 0; j < IMAG_COLS; j++)
+      {
+        originalImageAfterMem.at<cv::Vec3b>(i, j)[2] = local_results[(i * IMAG_COLS * 3) + (j * 3) + 2];
+        originalImageAfterMem.at<cv::Vec3b>(i, j)[1] = local_results[(i * IMAG_COLS * 3) + (j * 3) + 1];
+        originalImageAfterMem.at<cv::Vec3b>(i, j)[0] = local_results[(i * IMAG_COLS * 3) + (j * 3)    ];
+      }
+    }
+
     total_number_of_pixels = IMAG_ROWS * IMAG_COLS;
+
+    dbgprint("Starting gray scale conversion");
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -203,7 +372,7 @@ SC_MODULE(Tb_top)
       {
         unsigned char* read_ptr;
         dbgmodprint(use_prints, "Before doing a read in TB");
-        tb_initiator->read(read_ptr, IMG_INPUT + ((i * IMAG_COLS * 3) + (j * 3)), 3 * sizeof(char));
+        tb_initiator->read(read_ptr, IMG_INPUT_ADDRESS_LO + ((i * IMAG_COLS * 3) + (j * 3)), 3 * sizeof(char));
         dbgmodprint(use_prints, "After doing a read in TB");
         localR = *(read_ptr    );
         localG = *(read_ptr + 1);
@@ -227,8 +396,8 @@ SC_MODULE(Tb_top)
         if (local_count == 8)
         {
           dbgmodprint(use_prints, "Before doing a write in TB");
-          sanity_check_address(IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), IMG_INPROCESS_A, IMG_INPROCESS_A + IMG_INPROCESS_A_SZ);
-          tb_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          sanity_check_address(IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), IMG_INPROCESS_A_ADDRESS_LO, IMG_INPROCESS_A_ADDRESS_LO + IMG_INPROCESS_A_SIZE);
+          tb_initiator->write(local_results, IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgmodprint(use_prints, "After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -250,7 +419,7 @@ SC_MODULE(Tb_top)
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* read_ptr;
-        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_INPROCESS_A + ((i * IMAG_COLS) + j));
+        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + j));
         grayImageAfterMem.at<uchar>(i, j) = *read_ptr;
       }
     }
@@ -258,6 +427,8 @@ SC_MODULE(Tb_top)
     local_count = 0;
     current_number_of_pixels = 0;
     next_target_of_completion = 10.0;
+
+    dbgprint("Starting filtering the image");
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -270,14 +441,14 @@ SC_MODULE(Tb_top)
         unsigned char* read_ptr;
         IPS_OUT_TYPE_TB data_returned;
         
-        extract_window(i, j, IMG_INPROCESS_A, local_window_ptr);
+        extract_window(i, j, IMG_INPROCESS_A_ADDRESS_LO, local_window_ptr);
         
         write_ptr = local_window_ptr;
         dbgmodprint(use_prints, "Before doing a write in TB");
-        tb_initiator->write(write_ptr, IMG_FILTER_KERNEL, 9 * sizeof(char));
+        tb_initiator->write(write_ptr, IMG_FILTER_KERNEL_ADDRESS_LO, 9 * sizeof(char));
         dbgmodprint(use_prints, "After doing a write in TB");
         dbgmodprint(use_prints, "Before doing a read in TB");
-        tb_initiator->read(read_ptr, IMG_FILTER_KERNEL, sizeof(IPS_OUT_TYPE_TB));
+        tb_initiator->read(read_ptr, IMG_FILTER_KERNEL_ADDRESS_LO, sizeof(IPS_OUT_TYPE_TB));
         dbgmodprint(use_prints, "After doing a read in TB");
         data_returned_ptr = reinterpret_cast<IPS_OUT_TYPE_TB*>(read_ptr);
         dbgmodprint(use_prints, "Data_returned filtered_result: %f", *data_returned_ptr);
@@ -308,8 +479,8 @@ SC_MODULE(Tb_top)
         if (local_count == 8)
         {
           dbgmodprint(use_prints, "Before doing a write in TB");
-          sanity_check_address(IMG_COMPRESSED + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
-          tb_initiator->write(local_results, IMG_COMPRESSED + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          sanity_check_address(IMG_INPROCESS_D_ADDRESS_LO + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), IMG_INPROCESS_D_ADDRESS_LO, IMG_INPROCESS_D_ADDRESS_LO + IMG_INPROCESS_D_SIZE);
+          tb_initiator->write(local_results, IMG_INPROCESS_D_ADDRESS_LO + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgmodprint(use_prints, "After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -331,7 +502,7 @@ SC_MODULE(Tb_top)
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* read_ptr;
-        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_COMPRESSED + ((i * IMAG_COLS) + j));
+        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_INPROCESS_D_ADDRESS_LO + ((i * IMAG_COLS) + j));
         filteredImageAfterMem.at<uchar>(i, j) = *read_ptr;
       }
     }
@@ -339,6 +510,8 @@ SC_MODULE(Tb_top)
     local_count = 0;
     current_number_of_pixels = 0;
     next_target_of_completion = 10.0;
+
+    dbgprint("Starting calculating sobel gradients of the image");
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -350,7 +523,7 @@ SC_MODULE(Tb_top)
         unsigned char* write_ptr;
         unsigned char* read_ptr;
         
-        extract_window(i, j, IMG_COMPRESSED, local_window_ptr);
+        extract_window(i, j, IMG_INPROCESS_D_ADDRESS_LO, local_window_ptr);
         for (int k = 9; k < 16; k++)
         {
           *(local_window_ptr + k) = 0;
@@ -358,14 +531,14 @@ SC_MODULE(Tb_top)
         
         write_ptr = local_window_ptr;
         dbgmodprint(use_prints, "Before doing a write in TB");
-        tb_initiator->write(write_ptr, SOBEL_INPUT_0, 8 * sizeof(char));
+        tb_initiator->write(write_ptr, SOBEL_INPUT_0_ADDRESS_LO, 8 * sizeof(char));
         dbgmodprint(use_prints, "After doing a write in TB");
         write_ptr = (local_window_ptr + 8);
         dbgmodprint(use_prints, "Before doing a write in TB");
-        tb_initiator->write(write_ptr, SOBEL_INPUT_1, 8 * sizeof(char));
+        tb_initiator->write(write_ptr, SOBEL_INPUT_1_ADDRESS_LO, 8 * sizeof(char));
         dbgmodprint(use_prints, "After doing a write in TB");
         dbgmodprint(use_prints, "Before doing a read in TB");
-        tb_initiator->read(read_ptr, SOBEL_OUTPUT, 8 * sizeof(char));
+        tb_initiator->read(read_ptr, SOBEL_OUTPUT_ADDRESS_LO, 8 * sizeof(char));
         dbgmodprint(use_prints, "After doing a read in TB");
         data_returned_ptr = reinterpret_cast<short int*>(read_ptr);
         dbgmodprint(use_prints, "Data_returned localGradientX: %0d", *data_returned_ptr);
@@ -406,13 +579,13 @@ SC_MODULE(Tb_top)
         {
           write_ptr = local_results;
           dbgmodprint(use_prints, "Before doing a write in TB");
-          sanity_check_address(IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), IMG_INPROCESS_B, IMG_INPROCESS_B + IMG_INPROCESS_B_SZ);
-          tb_initiator->write(write_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          sanity_check_address(IMG_INPROCESS_B_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), IMG_INPROCESS_B_ADDRESS_LO, IMG_INPROCESS_B_ADDRESS_LO + IMG_INPROCESS_B_SIZE);
+          tb_initiator->write(write_ptr, IMG_INPROCESS_B_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgmodprint(use_prints, "After doing a write in TB");
           write_ptr = (local_results + 8);
           dbgmodprint(use_prints, "Before doing a write in TB");
-          sanity_check_address(IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), IMG_INPROCESS_C, IMG_INPROCESS_C + IMG_INPROCESS_C_SZ);
-          tb_initiator->write(write_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          sanity_check_address(IMG_INPROCESS_C_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), IMG_INPROCESS_C_ADDRESS_LO, IMG_INPROCESS_C_ADDRESS_LO + IMG_INPROCESS_C_SIZE);
+          tb_initiator->write(write_ptr, IMG_INPROCESS_C_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgmodprint(use_prints, "After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -436,7 +609,7 @@ SC_MODULE(Tb_top)
         unsigned char* read_ptr;
         short int* data_returned_ptr;
         
-        memory_DUT->backdoor_read(read_ptr, sizeof(short int), IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (j * sizeof(short int))));
+        memory_DUT->backdoor_read(read_ptr, sizeof(short int), IMG_INPROCESS_B_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (j * sizeof(short int))));
         data_returned_ptr = reinterpret_cast<short int*>(read_ptr);
         localGradientX = *data_returned_ptr;
         if ((localGradientX > 255) || (localGradientX < -255)) {
@@ -449,7 +622,7 @@ SC_MODULE(Tb_top)
           detectedImageAfterMemX.at<uchar>(i, j) = (unsigned char)localGradientX; 
         }
         
-        memory_DUT->backdoor_read(read_ptr, sizeof(short int), IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (j * sizeof(short int))));
+        memory_DUT->backdoor_read(read_ptr, sizeof(short int), IMG_INPROCESS_C_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (j * sizeof(short int))));
         data_returned_ptr = reinterpret_cast<short int*>(read_ptr);
         localGradientY = *data_returned_ptr;
         if ((localGradientY > 255) || (localGradientY < -255)) {
@@ -467,6 +640,8 @@ SC_MODULE(Tb_top)
     local_count = 0;
     current_number_of_pixels = 0;
     next_target_of_completion = 10.0;
+
+    dbgprint("Starting with the unification of the magnitude of the gradients of the image");
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -482,11 +657,11 @@ SC_MODULE(Tb_top)
           local_read = new unsigned char[16];
         
           dbgmodprint(use_prints, "Before doing a read in TB");
-          tb_initiator->read(read_ptr, IMG_INPROCESS_B + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          tb_initiator->read(read_ptr, IMG_INPROCESS_B_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgmodprint(use_prints, "After doing a read in TB");
           memcpy((local_read                          ), read_ptr, 4 * sizeof(short int));
           dbgmodprint(use_prints, "Before doing a read in TB");
-          tb_initiator->read(read_ptr, IMG_INPROCESS_C + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
+          tb_initiator->read(read_ptr, IMG_INPROCESS_C_ADDRESS_LO + ((i * IMAG_COLS * sizeof(short int)) + (local_group_count * 4 * sizeof(short int))), 4 * sizeof(short int));
           dbgmodprint(use_prints, "After doing a read in TB");
           memcpy((local_read + (4 * sizeof(short int))), read_ptr, 4 * sizeof(short int));
         }
@@ -514,8 +689,8 @@ SC_MODULE(Tb_top)
         if (local_count == 4)
         {
           dbgmodprint(use_prints, "Before doing a write in TB");
-          sanity_check_address(IMG_INPROCESS_A + ((i * IMAG_COLS) + j), IMG_INPROCESS_A, IMG_INPROCESS_A + IMG_INPROCESS_A_SZ);
-          tb_initiator->write(local_results, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 4 * sizeof(char))), 4 * sizeof(char));
+          sanity_check_address(IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + j), IMG_INPROCESS_A_ADDRESS_LO, IMG_INPROCESS_A_ADDRESS_LO + IMG_INPROCESS_A_SIZE);
+          tb_initiator->write(local_results, IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + (local_group_count * 4 * sizeof(char))), 4 * sizeof(char));
           dbgmodprint(use_prints, "After doing a write in TB");
           local_count = 0;
           local_group_count++;
@@ -537,7 +712,7 @@ SC_MODULE(Tb_top)
       for (int j = 0; j < IMAG_COLS; j++)
       {
         unsigned char* read_ptr;
-        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_INPROCESS_A + ((i * IMAG_COLS) + j));
+        memory_DUT->backdoor_read(read_ptr, 1 * sizeof(char), IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + j));
         detectedImageAfterMem.at<uchar>(i, j) = *read_ptr;
       }
     }
@@ -545,6 +720,8 @@ SC_MODULE(Tb_top)
     local_count = 0;
     current_number_of_pixels = 0;
     next_target_of_completion = 10.0;
+
+    dbgprint("Starting with the compression of the image");
     
     for (int i = 0; i < IMAG_ROWS; i++)
     {
@@ -557,7 +734,7 @@ SC_MODULE(Tb_top)
           local_read = new unsigned char[8];
         
           dbgmodprint(use_prints, "Before doing a read in TB");
-          tb_initiator->read(read_ptr, IMG_INPROCESS_A + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
+          tb_initiator->read(read_ptr, IMG_INPROCESS_A_ADDRESS_LO + ((i * IMAG_COLS) + (local_group_count * 8 * sizeof(char))), 8 * sizeof(char));
           dbgmodprint(use_prints, "After doing a read in TB");
           memcpy(local_read, read_ptr, 8 * sizeof(char));
         }
@@ -599,8 +776,8 @@ SC_MODULE(Tb_top)
       {
         local_results = reinterpret_cast<unsigned char*>(compression_results + (local_group_count * 8 * sizeof(char)));
         dbgmodprint(use_prints, "Before doing a write in TB");
-        sanity_check_address(IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
-        tb_initiator->write(local_results, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), 8 * sizeof(char));
+        sanity_check_address(IMG_OUTPUT_ADDRESS_LO + (local_group_count * 8 * sizeof(char)), IMG_OUTPUT_ADDRESS_LO, IMG_OUTPUT_ADDRESS_LO + IMG_OUTPUT_SIZE);
+        tb_initiator->write(local_results, IMG_OUTPUT_ADDRESS_LO + (local_group_count * 8 * sizeof(char)), 8 * sizeof(char));
         dbgmodprint(use_prints, "After doing a write in TB");
         local_count = 0;
         local_group_count++;
@@ -619,14 +796,46 @@ SC_MODULE(Tb_top)
     {
       local_results = reinterpret_cast<unsigned char*>(compression_results + (local_group_count * 8 * sizeof(char)));
       dbgmodprint(use_prints, "Before doing a write in TB");
-      sanity_check_address(IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), IMG_COMPRESSED, IMG_COMPRESSED + IMG_COMPRESSED_SZ);
-      tb_initiator->write(local_results, IMG_COMPRESSED + (local_group_count * 8 * sizeof(char)), (compression_output_size % 8) * sizeof(char));
+      sanity_check_address(IMG_OUTPUT_ADDRESS_LO + (local_group_count * 8 * sizeof(char)), IMG_OUTPUT_ADDRESS_LO, IMG_OUTPUT_ADDRESS_LO + IMG_OUTPUT_SIZE);
+      tb_initiator->write(local_results, IMG_OUTPUT_ADDRESS_LO + (local_group_count * 8 * sizeof(char)), (compression_output_size % 8) * sizeof(char));
       dbgmodprint(use_prints, "After doing a write in TB");
       local_count = 0;
       local_group_count++;
     }
     
     dbgprint("Finished with the compression of the image");
+    
+    local_count = 0;
+    local_group_count = 0;
+    current_number_of_pixels = 0;
+    next_target_of_completion = 10.0;
+
+    unsigned char* read_ptr;
+    unsigned char* write_ptr;
+
+    dbgprint("Starting with the transmision of the image");
+    dbgprint("Preparing to transmit %0d bytes", compression_output_size);
+
+    write_ptr = (unsigned char *)&compression_output_size;
+    tb_initiator->write(write_ptr, IMG_OUTPUT_SIZE_ADDRESS_LO, sizeof(int));
+
+    write_ptr = new unsigned char[1];
+    *write_ptr = 1;
+    tb_initiator->write(write_ptr, IMG_OUTPUT_DONE_ADDRESS_LO, sizeof(char));
+    delete[] write_ptr;
+
+    tb_initiator->read(read_ptr, IMG_OUTPUT_STATUS_ADDRESS_LO, 1 * sizeof(char));
+    while (*read_ptr == 1)
+    {
+      delete[] read_ptr;
+      wait(100, SC_NS);
+      tb_initiator->read(read_ptr, IMG_OUTPUT_STATUS_ADDRESS_LO, 1 * sizeof(char));
+    }
+
+    dbgprint("Finished with the transmision of the image");
+    
+    
+    imwrite("originalImageAfterMem.jpg", originalImageAfterMem);
     
     imwrite("grayImagePrevMem.jpg", grayImagePrevMem);
     imwrite("grayImageAfterMem.jpg", grayImageAfterMem);
@@ -638,6 +847,8 @@ SC_MODULE(Tb_top)
     imwrite("detectedImageAfterMemY.jpg", detectedImageAfterMemY);
     imwrite("detectedImagePrevMem.jpg", detectedImagePrevMem);
     imwrite("detectedImageAfterMem.jpg", detectedImageAfterMem);
+
+    sc_stop();
   }
   
   void extract_window(int i, int j, unsigned int initial_address, unsigned char*& local_window_ptr)
@@ -860,6 +1071,7 @@ int sc_main(int, char*[])
   
   // Open VCD file
   sc_trace_file* wf = sc_create_vcd_trace_file("edge_detector");
+  sca_util::sca_trace_file* wf_ams = sca_util::sca_create_vcd_trace_file("edge_detector_ams");
   wf->set_time_unit(1, SC_PS);
 
   Tb_top top("top");
@@ -892,7 +1104,7 @@ int sc_main(int, char*[])
   sc_trace(wf, top.edge_detector_DUT->localWindow[1][0], "sobel_localWindow(1)(0)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[1][1], "sobel_localWindow(1)(1)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[1][2], "sobel_localWindow(1)(2)");
-  sc_trace(wf, top.edge_detector_DUT->localWindow[2][0], "sobel_localWindow(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localWindow[2][0], "sobel_localWindow(2)(0)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[2][1], "sobel_localWindow(2)(1)");
   sc_trace(wf, top.edge_detector_DUT->localWindow[2][2], "sobel_localWindow(2)(2)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[0][0], "sobel_localMultX(0)(0)");
@@ -901,7 +1113,7 @@ int sc_main(int, char*[])
   sc_trace(wf, top.edge_detector_DUT->localMultX[1][0], "sobel_localMultX(1)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[1][1], "sobel_localMultX(1)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[1][2], "sobel_localMultX(1)(2)");
-  sc_trace(wf, top.edge_detector_DUT->localMultX[2][0], "sobel_localMultX(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultX[2][0], "sobel_localMultX(2)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[2][1], "sobel_localMultX(2)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultX[2][2], "sobel_localMultX(2)(2)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[0][0], "sobel_localMultY(0)(0)");
@@ -910,7 +1122,7 @@ int sc_main(int, char*[])
   sc_trace(wf, top.edge_detector_DUT->localMultY[1][0], "sobel_localMultY(1)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[1][1], "sobel_localMultY(1)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[1][2], "sobel_localMultY(1)(2)");
-  sc_trace(wf, top.edge_detector_DUT->localMultY[2][0], "sobel_localMultY(0)(0)");
+  sc_trace(wf, top.edge_detector_DUT->localMultY[2][0], "sobel_localMultY(2)(0)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[2][1], "sobel_localMultY(2)(1)");
   sc_trace(wf, top.edge_detector_DUT->localMultY[2][2], "sobel_localMultY(2)(2)");
   sc_trace(wf, top.edge_detector_DUT->resultSobelGradientX, "sobel_resultSobelGradientX");
@@ -919,10 +1131,30 @@ int sc_main(int, char*[])
   sc_trace(wf, top.memory_DUT->mem_address, "memory_address");
   sc_trace(wf, top.memory_DUT->mem_we, "memory_we");
   
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.mlt3_out_signal, "mlt3_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_out_valid, "data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_out, "data_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_in, "pkt_gen_data_in");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_in_valid, "pkt_gen_data_in_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_data_valid, "pkt_gen_n2_data_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_data_out_valid, "pkt_gen_n2_data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_data_out, "pkt_gen_n2_data_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_data_valid, "pkt_gen_n1_data_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_data_out_valid, "pkt_gen_n1_data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_data_out, "pkt_gen_n1_data_out");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.sigBitCount, "pkt_gen_sigBitCount");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n1_sigBitCount, "pkt_gen_n1_sigBitCount");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.n2_sigBitCount, "pkt_gen_n2_sigBitCount");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.tmp_data_out_valid, "pkt_gen_tmp_data_out_valid");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_to_send, "pkt_gen_data_to_send");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.data_valid_to_send, "pkt_gen_data_valid_to_send");
+  sca_util::sca_trace(wf_ams, top.ethernetSignals.remaining_bytes_to_send, "pkt_gen_remaining_bytes_to_send");
+  
   sc_start();
 
   dbgprint("Terminating simulation");
   sc_close_vcd_trace_file(wf);
+  sca_util::sca_close_vcd_trace_file(wf_ams);
 
   return 0;
 }

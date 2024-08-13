@@ -16,15 +16,18 @@ public:
 
     void set_attributes();
     void initialize();
-    void processing();
+    virtual void processing();
 
-    SCA_CTOR(ethernetDecoder)
-    : mlt3_in("mlt3_in"), data_out("data_out"), previous_level(0), bit_count(0), sample_count(0), found_sequence(false),
+    ethernetDecoder(sc_core::sc_module_name name, sca_core::sca_time sample_time) : sca_tdf::sca_module(name),
+      mlt3_in("mlt3_in"), data_out("data_out"), previous_level(0), bit_count(0), sample_count(0), found_sequence(false),
       received_first_eight_decodes(false), data_length(0), decode_count(0)
     {
+      this->sample_time = sample_time;
     }
 
+#ifndef USING_TLM_TB_EN
 private:
+#endif // USING_TLM_TB_EN
     int previous_level;
     int current_level;
     int bit_count;
@@ -41,6 +44,8 @@ private:
     int data_length;
     sc_dt::sc_bv<4> first_eight_decodes[8];
     int decode_count;
+
+    sca_core::sca_time sample_time;
 };
 
 #endif // ETHERNET_DECODER_H

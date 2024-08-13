@@ -106,32 +106,54 @@ struct img_router: sc_module
   #define IMG_FILTER_INITIATOR_ID 0
   #define IMG_SOBEL_INITIATOR_ID  1
   #define IMG_MEMORY_INITIATOR_ID 2
-  #define INVALID_INITIATOR_ID    3
-  
+  #define IMG_ETHERNET_INITIATOR_ID 3
+  #define IMG_VGA_INITIATOR_ID    4
+  #define INVALID_INITIATOR_ID    5
+
   unsigned int decode_address (sc_dt::uint64 address)
   {
     switch(address) {
         // To Filter
-        case IMG_FILTER_KERNEL: {
+        case IMG_FILTER_KERNEL_ADDRESS_LO: {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Filter module.", address);
             return IMG_FILTER_INITIATOR_ID;
         }
 
         // To/from Sobel
-        case SOBEL_INPUT_0: 
-        case SOBEL_INPUT_1: 
-        case SOBEL_OUTPUT: {
+        case SOBEL_INPUT_0_ADDRESS_LO: 
+        case SOBEL_INPUT_1_ADDRESS_LO: 
+        case SOBEL_OUTPUT_ADDRESS_LO: {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Sobel module.", address);
             return IMG_SOBEL_INITIATOR_ID;
         }
 
+        case IMG_OUTPUT_ADDRESS_LO ... (IMG_OUTPUT_ADDRESS_HI - 1):
+        case IMG_OUTPUT_SIZE_ADDRESS_LO:
+        case IMG_OUTPUT_DONE_ADDRESS_LO:
+        case IMG_OUTPUT_STATUS_ADDRESS_LO:
+        {
+          dbgmodprint(use_prints, "Decoded address %016llX corresponds to Ethernet module.", address);
+
+          return IMG_ETHERNET_INITIATOR_ID;
+        }
+
+        // To/from Input Image
+        case IMG_INPUT_ADDRESS_LO ... (IMG_INPUT_ADDRESS_HI - 1):
+        case IMG_INPUT_START_ADDRESS_LO:
+        case IMG_INPUT_DONE_ADDRESS_LO:
+        {
+          dbgmodprint(use_prints, "Decoded address %016llX corresponds to VGA module.", address);
+
+          return IMG_VGA_INITIATOR_ID;
+        }
+
         // To/From Memory Valid addresses
-        case MEM_START ... MEM_FINISH : {
+        case MEMORY_ADDRESS_LO ... (MEMORY_ADDRESS_HI - 1) : {
             dbgmodprint(use_prints, "Decoded address %016llX corresponds to Memory.", address);
             return IMG_MEMORY_INITIATOR_ID;
         }
         default: {
-            dbgmodprint(use_prints, "[ERROR] Decoding invalid address %016llX.", address);
+            dbgmodprint(true, "[ERROR] Decoding invalid address %016llX.", address);
             SC_REPORT_FATAL("[IMG ROUTER]", "Received address is invalid, does not match any hardware block");
             return INVALID_INITIATOR_ID;
         }   

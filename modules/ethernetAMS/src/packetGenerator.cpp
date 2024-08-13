@@ -106,7 +106,9 @@ void packetGenerator::processing()
           n2_data_out = tmp_data_to_send.range(i * 4 + 3, i * 4);
           n2_data_out_valid = true;
           n2_data_valid = tmp_data_valid_to_send;
+#ifndef USING_TLM_TB_EN
           std::cout << "@" << sc_time_stamp() << " Inside generate_packet(): data to sent " << n2_data_out << std::endl;
+#endif // USING_TLM_TB_EN
           break;
         }
         else if ((bitCount == 0) && (tmp_data_out_valid == true))
@@ -123,7 +125,9 @@ void packetGenerator::processing()
           n1_data_out_valid = n2_data_out_valid;
           n1_data_valid = n2_data_valid;
           manual_update = true;
+#ifndef USING_TLM_TB_EN
           std::cout << "@" << sc_time_stamp() << " Inside generate_packet(): data to sent " << n2_data_out << std::endl;
+#endif // USING_TLM_TB_EN
           break;
         }
       }

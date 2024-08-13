@@ -28,9 +28,13 @@ GRAY_DIR=../rgb2gray
 FILTER_DIR=../filter
 UNIFICATION_DIR=../unification
 COMPRESSION_DIR=../compression
+ETHERNET_DIR=../ethernetAMS
+VGA_DIR=../vga
+ADC_DIR=../adc
+UTILS_DIR=../utils
 
-SRCDIRS=$(SRCDIR) $(EDGE_DIR)/src $(GRAY_DIR)/src $(FILTER_DIR)/src $(UNIFICATION_DIR)/src $(COMPRESSION_DIR)/src
-INCDIR+=-I$(EDGE_DIR)/include -I$(GRAY_DIR)/include -I$(FILTER_DIR)/include -I$(UNIFICATION_DIR)/include -I$(COMPRESSION_DIR)/include
+SRCDIRS=$(SRCDIR) $(EDGE_DIR)/src $(GRAY_DIR)/src $(FILTER_DIR)/src $(UNIFICATION_DIR)/src $(COMPRESSION_DIR)/src $(ETHERNET_DIR)/src $(VGA_DIR)/src $(ADC_DIR)/src $(UTILS_DIR)/src
+INCDIR+=-I$(EDGE_DIR)/include -I$(GRAY_DIR)/include -I$(FILTER_DIR)/include -I$(UNIFICATION_DIR)/include -I$(COMPRESSION_DIR)/include -I$(ETHERNET_DIR)/include -I$(VGA_DIR)/include -I$(ADC_DIR)/include -I$(UTILS_DIR)/include
 endif # USING_TLM_TB_EN
 
 ifdef INCLUDE_OPENCV

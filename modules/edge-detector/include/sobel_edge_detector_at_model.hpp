@@ -13,7 +13,7 @@ SC_MODULE(Edge_Detector)
   sc_in<sc_uint<24>> address;
 #else
   sc_uint<64> data;
-  sc_uint<24> address;
+  sc_uint<64> address;
 #endif // USING_TLM_TB_EN
   
   const double delay_full_adder_1_bit = 0.361;
@@ -58,7 +58,7 @@ SC_MODULE(Edge_Detector)
   
   virtual void read();
   
-  void wr();
+  virtual void wr();
   
   void rd();
   

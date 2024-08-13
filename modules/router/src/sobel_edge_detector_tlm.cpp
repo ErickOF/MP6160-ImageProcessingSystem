@@ -50,7 +50,7 @@ void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, uns
 
 void sobel_edge_detector_tlm::read()
 {
-  if ((Edge_Detector::address - SOBEL_OUTPUT) == 0)
+  if ((Edge_Detector::address - SOBEL_OUTPUT_ADDRESS_LO) == 0)
   {
     Edge_Detector::data = (sc_uint<32>(0), resultSobelGradientY, resultSobelGradientX);
   }
