@@ -18,7 +18,7 @@ void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data, uns
   short int sobel_results[4];
   sc_int<16> local_result;
   
-  dbgimgtarmodprint("Calling do_when_read_transaction");
+  dbgimgtarmodprint(use_prints, "Calling do_when_read_transaction");
 
   Edge_Detector::address = address;
   read();
@@ -27,7 +27,7 @@ void sobel_edge_detector_tlm::do_when_read_transaction(unsigned char*& data, uns
   {
     local_result = Edge_Detector::data.range((i + 1) * 16 - 1, i * 16).to_int();
     sobel_results[i] = (short int)local_result;
-    dbgimgtarmodprint("%0d", sobel_results[i]);
+    dbgimgtarmodprint(use_prints, "%0d", sobel_results[i]);
   }
   
   memcpy(data, sobel_results, 4 * sizeof(short int));
@@ -37,7 +37,7 @@ void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, uns
 {
   sc_uint<8> values[8];
   
-  dbgimgtarmodprint("Calling do_when_write_transaction");
+  dbgimgtarmodprint(use_prints, "Calling do_when_write_transaction");
   
   for (int i = 0; i < 8; i++)
   {
@@ -50,7 +50,7 @@ void sobel_edge_detector_tlm::do_when_write_transaction(unsigned char*&data, uns
 
 void sobel_edge_detector_tlm::read()
 {
-  if ((Edge_Detector::address - SOBEL_OUTPUT) == 0)
+  if ((Edge_Detector::address - SOBEL_OUTPUT_ADDRESS_LO) == 0)
   {
     Edge_Detector::data = (sc_uint<32>(0), resultSobelGradientY, resultSobelGradientX);
   }

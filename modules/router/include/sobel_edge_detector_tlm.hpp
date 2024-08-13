@@ -11,13 +11,17 @@ using namespace std;
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
 #include "sobel_edge_detector_at_model.hpp"
-#include "img_target.hpp"
+#include "../src/img_target.cpp"
 
 //Extended Unification TLM
 struct sobel_edge_detector_tlm : public Edge_Detector, public img_target
 {
 
-    SC_CTOR(sobel_edge_detector_tlm): Edge_Detector(Edge_Detector::name()), img_target(img_target::name()) {
+    sobel_edge_detector_tlm(sc_module_name name) : Edge_Detector((std::string(name) + "_HW_block").c_str()), img_target((std::string(name) + "_target").c_str()) {
+#ifdef DISABLE_SOBEL_DEBUG
+        this->use_prints = false;
+#endif //DISABLE_SOBEL_DEBUG
+        checkprintenableimgtar(use_prints);
     }
 
     //Override do_when_transaction functions

@@ -36,7 +36,9 @@ void ethernetEncoder::processing()
 
     if (bitCount == 0) // Process new input only when bitCount is 4 (rightmost bit)
     {
+#ifndef USING_TLM_TB_EN
         std::cout << "Processing sample: " << sampleCount << ", received input: " << input << std::endl;
+#endif // USING_TLM_TB_EN
 
         // 4B/5B Encoding
         if (encoding_map.find(input) != encoding_map.end())
@@ -68,9 +70,11 @@ void ethernetEncoder::processing()
     next_mlt3_out = currentLevel;  // Store the computed value for the next cycle
     bitCount = (bitCount == 4) ? 0 : bitCount + 1; // Decrement bitCount from 4 to 0
 
+#ifndef USING_TLM_TB_EN
     // Debugging output
     std::cout << "Sample: " << sampleCount << ", data_in: " << input 
               << ", code_out: " << lastCodeOut << ", mlt3_out: " << next_mlt3_out << std::endl;
+#endif // USING_TLM_TB_EN
 
     sampleCount++;
 }

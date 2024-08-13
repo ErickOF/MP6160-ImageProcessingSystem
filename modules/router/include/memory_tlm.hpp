@@ -10,14 +10,19 @@ using namespace std;
 #include <tlm_utils/simple_target_socket.h>
 #include <tlm_utils/peq_with_cb_and_phase.h>
 
-#include "img_target.hpp"
+#include "../src/img_target.cpp"
+#include "address_map.hpp"
 
 //Extended Unification TLM
 struct memory_tlm : public img_target
 {
     
-    SC_CTOR(memory_tlm): img_target(img_target::name()) {
-      mem_array = new unsigned char[2764852];
+    memory_tlm(sc_module_name name) : img_target((std::string(name) + "_target").c_str()) {
+      mem_array = new unsigned char[MEMORY_SIZE];
+#ifdef DISABLE_MEM_DEBUG
+      this->use_prints = false;
+#endif //DISABLE_MEM_DEBUG
+      checkprintenableimgtar(use_prints);
     }
     
     //Override do_when_transaction functions

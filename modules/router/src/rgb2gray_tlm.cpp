@@ -18,7 +18,7 @@ void rgb2gray_tlm::do_when_read_transaction(unsigned char*& data, unsigned int d
   unsigned char pixel_value;
   
   pixel_value = this->obtain_gray_value();
-  dbgimgtarmodprint("%0u", pixel_value);
+  dbgimgtarmodprint(use_prints, "%0u", pixel_value);
   memcpy(data, &pixel_value, sizeof(char));
 }
 
@@ -29,7 +29,7 @@ void rgb2gray_tlm::do_when_write_transaction(unsigned char*&data, unsigned int d
   for (unsigned char *i = data; (i - data) < 3; i++)
   {
     rgb_values[j] = *i;
-    dbgimgtarmodprint("VAL: %0ld -> %0u", i - data, *i);
+    dbgimgtarmodprint(use_prints, "VAL: %0ld -> %0u", i - data, *i);
     j++;
   }
 
