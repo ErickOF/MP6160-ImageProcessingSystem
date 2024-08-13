@@ -107,8 +107,9 @@ struct img_router: sc_module
   #define IMG_SOBEL_INITIATOR_ID  1
   #define IMG_MEMORY_INITIATOR_ID 2
   #define IMG_ETHERNET_INITIATOR_ID 3
-  #define INVALID_INITIATOR_ID    4
-  
+  #define IMG_VGA_INITIATOR_ID    4
+  #define INVALID_INITIATOR_ID    5
+
   unsigned int decode_address (sc_dt::uint64 address)
   {
     switch(address) {
@@ -134,6 +135,16 @@ struct img_router: sc_module
           dbgmodprint(use_prints, "Decoded address %016llX corresponds to Ethernet module.", address);
 
           return IMG_ETHERNET_INITIATOR_ID;
+        }
+
+        // To/from Input Image
+        case IMG_INPUT_ADDRESS_LO ... (IMG_INPUT_ADDRESS_HI - 1):
+        case IMG_INPUT_START_ADDRESS_LO:
+        case IMG_INPUT_DONE_ADDRESS_LO:
+        {
+          dbgmodprint(use_prints, "Decoded address %016llX corresponds to VGA module.", address);
+
+          return IMG_VGA_INITIATOR_ID;
         }
 
         // To/From Memory Valid addresses
